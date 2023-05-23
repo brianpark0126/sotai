@@ -1,0 +1,10 @@
+black==23.1.0
+build==0.10.0
+jupyter==1.0.0
+pandas==1.5.3
+pydoc-markdown==4.6.4
+pylint==2.16.2
+pytest==7.3.1
+setuptools==65.6.3
+tox==4.4.8
+twine==4.0.2

@@ -1,0 +1,5 @@
+[TYPECHECK]
+generated-members=pandas.*
+
+[MISCELLANEOUS]
+notes=FIXME
