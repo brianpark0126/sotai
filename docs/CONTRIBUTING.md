@@ -14,20 +14,20 @@ pyenv activate env-name
 pip install -r requirements.txt
 ```
 
-Simply replace `{python_version}` with the version you want the environment to use (e.g. 3.10.9) and name the environment accordingly (e.g. ptcm-3.10).
+Simply replace `{python_version}` with the version you want the environment to use (e.g. 3.10.9) and name the environment accordingly (e.g. sotai-3.10).
 
 ## Development Workflow
 
 1. Search through existing Issues to see if what you want to work on has already been added.
    - If not, please create a new issue. This will help to reduce duplicated work.
-2. For first-time contributors, visit [https://github.com/SOTAI-Labs](https://github.com/SOTAI-Labs/pytorch-calibrated) and "Fork" the repository (see the button in the top right corner).
+2. For first-time contributors, visit [https://github.com/SOTAI-Labs/sotai](https://github.com/SOTAI-Labs/sotai) and "Fork" the repository (see the button in the top right corner).
 
    - You'll need to set up [SSH authentication](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
    - Clone the forked project and point it to the main project:
 
    ```shell
-   git clone https://github.com/<your-username>/pytorch-calibrated.git
-   git remote add upstream https://github.com/SOTAI-Labs/pytorch-calibrated.git
+   git clone https://github.com/<your-username>/sotai.git
+   git remote add upstream https://github.com/SOTAI-Labs/sotai.git
    ```
 
 3. Development.
@@ -48,14 +48,14 @@ Simply replace `{python_version}` with the version you want the environment to u
    - Start coding! commit your changes locally as you work:
 
    ```shell
-   git add pytorch_calibrated/modified_file.py tests/test_modified_file.py
+   git add sotai/modified_file.py tests/test_modified_file.py
    git commit -m "feat: specific description of changes contained in commit"
    ```
 
    - Format your code!
 
    ```shell
-   python -m black pytorch_calibrated tests
+   python -m black sotai tests
    ```
 
    - Lint and test your code! From the base directory, run:
@@ -83,19 +83,14 @@ Please conform to the [Conventional Commits](https://www.conventionalcommits.org
 ## Workspace Structure
 
 ```bash
-pytorch-calibrated/
+sotai/
 ├── ...
 ├── docs/  # All of the documentation here is synced with the online docs.
 │   ├── examples/  # Examples of how to use the library.
 │   ├── reference/  # Auto-generated docstring --> markdown detailed documentation.
 │   └── ...
-├── pytorch_calibrated/  # PyTorch Calibrated library.
-│   ├── layers/  # This is where all lower-level layer modules should live.
+├── sotai/  # SOTAI SDK.
 │   ├── ...
-│   ├── configs.py  # Configs are to support models.py to make them easier to use.
-│   ├── data.py  # Utilities for preparing raw data for calibrated modeling.
-│   ├── enums.py  # Enums used throughout the codebase.
-│   └── models.py  # Constructors for common calibrated modeling architectures.
 ├── tests/  # The entire system should be unit tested. Files should have corresponding test_*.py files here.
 │   └── ...
 └── requirements.txt  # These packages must be installed for the current development branch to work.
@@ -111,7 +106,7 @@ If you are using VS Code, then install the extensions in `.vscode/extensions.jso
 
 If you make any changes to docstrings in the codebase, make sure to generate the markdown docs and include those updates in your PR. This will ensure that any changes will be properly reflected in the online docs as well.
 
-To generate the docs, from `pytorch-calibrated/` run:
+To generate the docs, from `sotai/` run:
 
 ```bash
 sh generate_reference_docs.sh

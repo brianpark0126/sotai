@@ -1,1 +1,0 @@
-pydoc-markdown -p sotai.configs > docs/sotai/configs.md
