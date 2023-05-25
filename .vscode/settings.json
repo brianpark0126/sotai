@@ -5,7 +5,7 @@
   "editor.formatOnSaveMode": "file",
   "editor.formatOnSave": true,
   "files.insertFinalNewline": true,
-  "python.formatting.provider": "black",
+  "python.formatting.provider": "none",
   "python.linting.pylintEnabled": true,
   "python.linting.pylintArgs": [
     "--generated-members=pandas.*",
@@ -17,7 +17,8 @@
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.organizeImports": true
-    }
+    },
+    "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "docwriter.style": "Google"
 }
