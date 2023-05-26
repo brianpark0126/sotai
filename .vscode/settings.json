@@ -5,7 +5,7 @@
   "editor.formatOnSaveMode": "file",
   "editor.formatOnSave": true,
   "files.insertFinalNewline": true,
-  "python.formatting.provider": "none",
+  "python.formatting.provider": "black",
   "python.linting.pylintEnabled": true,
   "python.linting.pylintArgs": [
     "--generated-members=pandas.*",
