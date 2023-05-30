@@ -1,0 +1,24 @@
+{
+  "files.autoSave": "onFocusChange",
+  "editor.rulers": [88],
+  "editor.formatOnPaste": true,
+  "editor.formatOnSaveMode": "file",
+  "editor.formatOnSave": true,
+  "files.insertFinalNewline": true,
+  "python.formatting.provider": "black",
+  "python.linting.pylintEnabled": true,
+  "python.linting.pylintArgs": [
+    "--generated-members=pandas.*",
+    "--disable=R0913"
+  ],
+  "python.terminal.activateEnvironment": true,
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    },
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "docwriter.style": "Google"
+}
