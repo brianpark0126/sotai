@@ -14,6 +14,17 @@ class Pipeline(BaseModel)
 
 A pipeline for calibrated modeling.
 
+A pipline takes in raw data and outputs a calibrated model. This process breaks
+down into the following steps:
+
+- Cleaning. The raw data is cleaned according to the pipeline's cleaning config.
+- Transforming. The cleaned data is transformed according to transformation configs.
+- Preparation. The transformed data is split into train, val, and test sets.
+- Training. Hypertune models on the train and val sets to find the best one.
+
+You can then analyze trained models and their results, and you can use the best
+model that you trust to make predictions on new data.
+
 <a id="sotai/pipelines/pipeline.Pipeline.__init__"></a>
 
 #### \_\_init\_\_
@@ -21,11 +32,26 @@ A pipeline for calibrated modeling.
 ```python
 def __init__(data: pd.DataFrame,
              target: str,
+             target_type: Optional[TargetType] = None,
              name: Optional[str] = None,
              categories: Optional[List[str]] = None)
 ```
 
 Initializes an instance of `Pipeline`.
+
+The pipeline is initialized with a default config, which can be modified later.
+The target type can be optionally specfified. If not specified, the pipeline
+will try to automatically determine the type of the target from the data. For
+classification problems, the default metric will be F1 score. For regression
+problems, the default metric will be Mean Squared Error.
+
+**Arguments**:
+
+- `data` - The raw data to be used for training.
+- `target` - The name of the target column.
+- `target_type` - The type of the target column.
+- `name` - The name of the pipeline.
+- `categories` - The column names in `data` for categorical columns.
 
 <a id="sotai/pipelines/pipeline.Pipeline.clean"></a>
 
@@ -35,7 +61,7 @@ Initializes an instance of `Pipeline`.
 def clean(data: pd.DataFrame) -> pd.DataFrame
 ```
 
-Cleans the given data according to this pipelines cleaning config.
+Returns data cleaned according to the pipeline cleaning config.
 
 <a id="sotai/pipelines/pipeline.Pipeline.transform"></a>
 
@@ -45,7 +71,7 @@ Cleans the given data according to this pipelines cleaning config.
 def transform(data: pd.DataFrame) -> pd.DataFrame
 ```
 
-Creates transformations from pipeline if not present.
+Returns data transformed according to the pipeline transformation config.
 
 <a id="sotai/pipelines/pipeline.Pipeline.prepare"></a>
 
@@ -55,7 +81,7 @@ Creates transformations from pipeline if not present.
 def prepare(data: pd.DataFrame, split: DatasetSplit) -> PreparedData
 ```
 
-Prepares the data for model training.
+Returns an instance of `PreparedData` for the given data and split.
 
 <a id="sotai/pipelines/pipeline.Pipeline.train"></a>
 
@@ -66,7 +92,7 @@ def train(prepared_data: PreparedData, model_config: ModelConfig,
           training_config: TrainingConfig) -> Model
 ```
 
-Trains a model on the prepared data according to the training config.
+Returns a model trained according to the model and training configs.
 
 <a id="sotai/pipelines/pipeline.Pipeline.hypertune"></a>
 
@@ -78,7 +104,18 @@ def hypertune(
         hypertune_config: HypertuneConfig) -> Tuple[int, float, List[int]]
 ```
 
-Runs hyperparameter tuning on the pipeline.
+Runs hyperparameter tuning for the pipeline according to the given config.
+
+**Arguments**:
+
+- `prepared_data` - The prepared data to be used for training.
+- `hypertune_config` - The config for hyperparameter tuning.
+  
+
+**Returns**:
+
+  A tuple of the best model id, the best model's primary metric, and a list of
+  all model ids that were trained.
 
 <a id="sotai/pipelines/pipeline.Pipeline.run"></a>
 
@@ -94,15 +131,48 @@ def run(
 
 Runs the pipeline according to the pipeline and training configs.
 
+The full pipeline run process is as follows:
+- Clean the data.
+- Transform the data.
+- Prepare the data.
+- Hypertune to find the best model.
+
+**Arguments**:
+
+- `data` - The raw data to be used for training.
+- `model_config` - The config for the model to be trained.
+- `hypertune_config` - The config for hyperparameter tuning.
+  
+
+**Returns**:
+
+  A tuple of the best model id, the best model's primary metric, and a list of
+  all model ids that were trained.
+
 <a id="sotai/pipelines/pipeline.Pipeline.predict"></a>
 
 #### predict
 
 ```python
-def predict(data: pd.DataFrame) -> pd.DataFrame
+def predict(data: pd.DataFrame,
+            model_id: Optional[int] = None) -> Tuple[pd.DataFrame, str]
 ```
 
 Runs pipeline without training to generate predictions for given data.
+
+**Arguments**:
+
+- `data` - The data to be used for prediction. Must have all columns used for
+  training the model to be used.
+- `model_id` - The id of the model to be used for prediction. If not specified,
+  the best model will be used.
+  
+
+**Returns**:
+
+  A tuple containing a dataframe with predictions and the new of the new
+  column, which will be the name of the target column with a tag appended to
+  it (e.g. target_prediction).
 
 <a id="sotai/pipelines/pipeline.Pipeline.analyze"></a>
 
@@ -114,15 +184,27 @@ def analyze(model_id: int)
 
 Charts pipeline model results for a specific model.
 
+The following charts will be generated:
+- Calibrator charts for each feature.
+- Feature importance bar chart with feature statistics.
+
+**Arguments**:
+
+- `model_id` - The id of the model to be analyzed.
+
 <a id="sotai/pipelines/pipeline.Pipeline.save"></a>
 
 #### save
 
 ```python
-def save(filename: str)
+def save(filanem: str)
 ```
 
 Saves the pipeline to a file.
+
+**Arguments**:
+
+- `filename` - The name of the file to save the pipeline to.
 
 <a id="sotai/pipelines/pipeline.Pipeline.load"></a>
 
@@ -134,4 +216,13 @@ def load(cls, filename: str) -> Pipeline
 ```
 
 Loads the pipeline from a file.
+
+**Arguments**:
+
+- `filename` - The name of the file to load the pipeline from.
+  
+
+**Returns**:
+
+  An instance of `Pipeline` loaded from the file.
 
