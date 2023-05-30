@@ -12,7 +12,7 @@ Utility functions for pipelines.
 def determine_target_type(data: np.ndarray) -> TargetType
 ```
 
-Determines the type of target from its data.
+Returns the type of a target determined from its data.
 
 <a id="sotai/pipelines/utils.determine_feature_types"></a>
 
@@ -27,6 +27,17 @@ def determine_feature_types(
 
 Determines the type of feature data.
 
+**Arguments**:
+
+- `data` - The data to be used for training.
+- `target` - The name of the target column.
+- `categories` - The column names in `data` for categorical columns.
+  
+
+**Returns**:
+
+  A dictionary mapping column names to their corresponding feature type.
+
 <a id="sotai/pipelines/utils.generate_default_feature_configs"></a>
 
 #### generate\_default\_feature\_configs
@@ -38,4 +49,16 @@ def generate_default_feature_configs(
 ```
 
 Generates default feature configs for the given data and target.
+
+**Arguments**:
+
+- `data` - The data to be used for training.
+- `target` - The name of the target column.
+- `feature_types` - A dictionary mapping column names to their corresponding feature
+  type.
+  
+
+**Returns**:
+
+  A dictionary mapping column names to their corresponding feature config.
 
