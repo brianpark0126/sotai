@@ -42,7 +42,7 @@ class Pipeline(BaseModel):
     model that you trust to make predictions on new data.
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         data: pd.DataFrame,
         target: str,
