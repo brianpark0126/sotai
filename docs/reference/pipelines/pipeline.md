@@ -53,6 +53,66 @@ problems, the default metric will be Mean Squared Error.
 - `name` - The name of the pipeline.
 - `categories` - The column names in `data` for categorical columns.
 
+<a id="sotai/pipelines/pipeline.Pipeline.target"></a>
+
+#### target
+
+```python
+def target()
+```
+
+Returns the target column.
+
+<a id="sotai/pipelines/pipeline.Pipeline.target_type"></a>
+
+#### target\_type
+
+```python
+def target_type()
+```
+
+Returns the target type.
+
+<a id="sotai/pipelines/pipeline.Pipeline.primary_metric"></a>
+
+#### primary\_metric
+
+```python
+def primary_metric()
+```
+
+Returns the primary metric.
+
+<a id="sotai/pipelines/pipeline.Pipeline.configs"></a>
+
+#### configs
+
+```python
+def configs(config_id: int)
+```
+
+Returns the config with the given id.
+
+<a id="sotai/pipelines/pipeline.Pipeline.datasets"></a>
+
+#### datasets
+
+```python
+def datasets(dataset_id: int)
+```
+
+Returns the data with the given id.
+
+<a id="sotai/pipelines/pipeline.Pipeline.models"></a>
+
+#### models
+
+```python
+def models(model_id: int)
+```
+
+Returns the model with the given id.
+
 <a id="sotai/pipelines/pipeline.Pipeline.clean"></a>
 
 #### clean
@@ -89,7 +149,7 @@ Returns an instance of `PreparedData` for the given data and split.
 
 ```python
 def train(prepared_data: PreparedData, model_config: ModelConfig,
-          training_config: TrainingConfig) -> Model
+          training_config: TrainingConfig) -> TrainedModel
 ```
 
 Returns a model trained according to the model and training configs.
@@ -155,7 +215,7 @@ The full pipeline run process is as follows:
 
 ```python
 def predict(data: pd.DataFrame,
-            model_id: Optional[int] = None) -> Tuple[pd.DataFrame, str]
+            model_id: int = None) -> Tuple[pd.DataFrame, str]
 ```
 
 Runs pipeline without training to generate predictions for given data.
@@ -164,8 +224,7 @@ Runs pipeline without training to generate predictions for given data.
 
 - `data` - The data to be used for prediction. Must have all columns used for
   training the model to be used.
-- `model_id` - The id of the model to be used for prediction. If not specified,
-  the best model will be used.
+- `model_id` - The id of the model to be used for prediction.
   
 
 **Returns**:

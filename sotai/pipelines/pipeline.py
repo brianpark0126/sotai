@@ -1,21 +1,21 @@
 """A Pipeline for calibrated modeling."""
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 from pydantic import BaseModel
 
 from ..enums import Metric, TargetType
 from .types import (
+    CleaningConfig,
+    Dataset,
     DatasetSplit,
     HypertuneConfig,
-    Model,
     ModelConfig,
     PipelineConfig,
-    PipelineData,
-    PipelineModels,
     PreparedData,
+    TrainedModel,
     TrainingConfig,
 )
 from .utils import (
@@ -67,21 +67,54 @@ class Pipeline(BaseModel):
         """
         self.name: str = name
         self.goal: str = ""
-        target_type = determine_target_type(data[target])
-        feature_types = determine_feature_types(data, target, categories)
-        self.config = PipelineConfig(
+        self.dataset: Dataset = Dataset(raw_data=data)
+        self.config: PipelineConfig = PipelineConfig(
             columns=data.columns,
-            target=target,
-            target_type=target_type,
-            primary_metric=Metric.F1
-            if target_type == TargetType.CLASSIFICATION
-            else Metric.MSE,
-            features=generate_default_feature_configs(data, target, feature_types),
+            cleaning_config=CleaningConfig(),
+            features=generate_default_feature_configs(
+                data, target, determine_feature_types(data, target, categories)
+            ),
         )
-        # Maps a PipelineData id to its corresponding PipelineData instance.
-        self.data: PipelineData = PipelineData(current_data_id=0, data={0: data})
-        # Maps a PipelineModels id to its corresponding PipelineModels instance.
-        self.pipeline_models: Optional[PipelineModels] = None
+
+        self._target: str = target
+        self._target_type: TargetType = (
+            target_type
+            if target_type is not None
+            else determine_target_type(data[target])
+        )
+        self._primary_metric: Metric = (
+            Metric.F1 if target_type == TargetType.CLASSIFICATION else Metric.MSE
+        )
+        # Maps a PipelineConfig id to its corresponding PipelineConfig instance.
+        self._configs: Dict[int, PipelineConfig] = {}
+        # Maps a Dataset id to its corresponding Dataset instance.
+        self._datasets: Dict[int, Dataset] = {}
+        # Maps a TrainedModel id to its corresponding TrainedModel instance.
+        self._models: Dict[int, TrainedModel] = {}
+
+    def target(self):
+        """Returns the target column."""
+        return self._target
+
+    def target_type(self):
+        """Returns the target type."""
+        return self._target_type
+
+    def primary_metric(self):
+        """Returns the primary metric."""
+        return self._primary_metric
+
+    def configs(self, config_id: int):
+        """Returns the config with the given id."""
+        return self._configs[config_id]
+
+    def datasets(self, dataset_id: int):
+        """Returns the data with the given id."""
+        return self._datasets[dataset_id]
+
+    def models(self, model_id: int):
+        """Returns the model with the given id."""
+        return self._models[model_id]
 
     def clean(self, data: pd.DataFrame) -> pd.DataFrame:
         """Returns data cleaned according to the pipeline cleaning config."""
@@ -100,7 +133,7 @@ class Pipeline(BaseModel):
         prepared_data: PreparedData,
         model_config: ModelConfig,
         training_config: TrainingConfig,
-    ) -> Model:
+    ) -> TrainedModel:
         """Returns a model trained according to the model and training configs."""
         raise NotImplementedError()
 
@@ -145,15 +178,14 @@ class Pipeline(BaseModel):
         raise NotImplementedError()
 
     def predict(
-        self, data: pd.DataFrame, model_id: Optional[int] = None
+        self, data: pd.DataFrame, model_id: int = None
     ) -> Tuple[pd.DataFrame, str]:
         """Runs pipeline without training to generate predictions for given data.
 
         Args:
             data: The data to be used for prediction. Must have all columns used for
                 training the model to be used.
-            model_id: The id of the model to be used for prediction. If not specified,
-                the best model will be used.
+            model_id: The id of the model to be used for prediction.
 
         Returns:
             A tuple containing a dataframe with predictions and the new of the new

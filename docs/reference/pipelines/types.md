@@ -16,10 +16,6 @@ Configuration for cleaning data.
 
 **Attributes**:
 
-- `column_converters` - Maps column names to conversion functions. Functions should
-  take in a single value as input and output a single converted value. Each
-  column's function will be applied to the DF e.g.
-  data[column_name] = data[column_name].apply(column_converters[column_name]).
 - `drop_empty_percentage` - Drop rows that have drop_empty_percentage or more column
   values missing.
 
@@ -78,6 +74,71 @@ Configuration for a transformation feature.
 - `secondary_value` - The secondary value, if any, to use for the transformation.
   Either this or `secondary_feature` must be provided for transformations that
   operate on two values.
+
+<a id="sotai/pipelines/types.PipelineConfig"></a>
+
+## PipelineConfig Objects
+
+```python
+class PipelineConfig(BaseModel)
+```
+
+A configuration object for a `Pipeline`.
+
+**Attributes**:
+
+- `cleaning_config` - The configuration to use for cleaning the dataset.
+- `features` - A dictionary mapping the column name for a feature to its config.
+- `transformations` - A dictionary mapping the column name for a feature
+  transformation to its config.
+
+<a id="sotai/pipelines/types.DatasetSplit"></a>
+
+## DatasetSplit Objects
+
+```python
+class DatasetSplit(BaseModel)
+```
+
+Defines the split percentage for train, val, and test datasets.
+
+**Attributes**:
+
+- `train` - The percentage of the dataset to use for training.
+- `val` - The percentage of the dataset to use for validation.
+- `test` - The percentage of the dataset to use for testing.
+
+<a id="sotai/pipelines/types.PreparedData"></a>
+
+## PreparedData Objects
+
+```python
+class PreparedData(BaseModel)
+```
+
+A train, val, and test set of data that's been cleaned and transformed.
+
+**Attributes**:
+
+- `train` - The training dataset.
+- `val` - The validation dataset.
+- `test` - The testing dataset.
+
+<a id="sotai/pipelines/types.Dataset"></a>
+
+## Dataset Objects
+
+```python
+class Dataset(BaseModel)
+```
+
+A class for managing data.
+
+**Attributes**:
+
+- `raw_data` - The raw data.
+- `dataset_split` - The split percentage for train, val, and test datasets.
+- `prepared_data` - The prepared data.
 
 <a id="sotai/pipelines/types.LinearOptions"></a>
 
@@ -247,12 +308,12 @@ Training results for a single calibrated model.
 - `feature_analysis_objects` - The feature analysis results for each feature.
 - `feature_importances` - The feature importances for each feature.
 
-<a id="sotai/pipelines/types.Model"></a>
+<a id="sotai/pipelines/types.TrainedModel"></a>
 
-## Model Objects
+## TrainedModel Objects
 
 ```python
-class Model(BaseModel)
+class TrainedModel(BaseModel)
 ```
 
 A calibrated model container for configs, results, and the model itself.
@@ -264,107 +325,4 @@ A calibrated model container for configs, results, and the model itself.
 - `training_config` - The configuration used for training the model.
 - `training_results` - The results of training the model.
 - `model` - The trained model.
-
-<a id="sotai/pipelines/types.PipelineModels"></a>
-
-## PipelineModels Objects
-
-```python
-class PipelineModels(BaseModel)
-```
-
-A container for the best model / metric and all models trained in a pipeline.
-
-**Attributes**:
-
-- `best_model_id` - The ID of the best model.
-- `best_primary_metric` - The primary metric of the best model.
-- `models` - A dictionary mapping IDs to models trained in the pipeline.
-
-<a id="sotai/pipelines/types.PipelineConfig"></a>
-
-## PipelineConfig Objects
-
-```python
-class PipelineConfig(BaseModel)
-```
-
-A configuration object for a `Pipeline`.
-
-**Attributes**:
-
-- `id` - The ID of the pipeline.
-- `columns` - The columns to use from the dataset.
-- `target` - The target column to predict.
-- `target_type` - The type of the target column.
-- `primary_metric` - The primary metric to use for evaluating models and selecting
-  the best one from tuning results.
-- `cleaning_config` - The configuration to use for cleaning the dataset.
-- `features` - A dictionary mapping the column name for a feature to its config.
-- `transformations` - A dictionary mapping the column name for a feature
-  transformation to its config.
-
-<a id="sotai/pipelines/types.DatasetSplit"></a>
-
-## DatasetSplit Objects
-
-```python
-class DatasetSplit(BaseModel)
-```
-
-Defines the split percentage for train, val, and test datasets.
-
-**Attributes**:
-
-- `train` - The percentage of the dataset to use for training.
-- `val` - The percentage of the dataset to use for validation.
-- `test` - The percentage of the dataset to use for testing.
-
-<a id="sotai/pipelines/types.PreparedData"></a>
-
-## PreparedData Objects
-
-```python
-class PreparedData(BaseModel)
-```
-
-A train, val, and test set of data that's been cleaned and transformed.
-
-**Attributes**:
-
-- `train` - The training dataset.
-- `val` - The validation dataset.
-- `test` - The testing dataset.
-
-<a id="sotai/pipelines/types.Dataset"></a>
-
-## Dataset Objects
-
-```python
-class Dataset(BaseModel)
-```
-
-A class for managing data.
-
-**Attributes**:
-
-- `id` - The ID of the data.
-- `raw_data` - The raw data.
-- `dataset_split` - The split percentage for train, val, and test datasets.
-- `prepared_data` - The prepared data.
-
-<a id="sotai/pipelines/types.PipelineData"></a>
-
-## PipelineData Objects
-
-```python
-class PipelineData(BaseModel)
-```
-
-A class for managing pipeline data.
-
-**Attributes**:
-
-- `current_data_id` - The ID of the current dataset to use for the pipeline.
-- `data` - A dictionary mapping IDs to datasets.
 

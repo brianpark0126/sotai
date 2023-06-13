@@ -1,5 +1,5 @@
 """Pydantic models for Pipelines."""
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 import pytorch_calibrated as ptcm
@@ -13,31 +13,22 @@ from ..enums import (
     InputKeypointsType,
     Interpolation,
     LossType,
-    Metric,
     ModelFramework,
     ModelType,
     Monotonicity,
     Parameterization,
-    TargetType,
     TransformationType,
 )
-
-# TODO (will): write better Google-style docstrings + any other necessary comments.
 
 
 class CleaningConfig(BaseModel):
     """Configuration for cleaning data.
 
     Attributes:
-        column_converters: Maps column names to conversion functions. Functions should
-            take in a single value as input and output a single converted value. Each
-            column's function will be applied to the DF e.g.
-            data[column_name] = data[column_name].apply(column_converters[column_name]).
         drop_empty_percentage: Drop rows that have drop_empty_percentage or more column
             values missing.
     """
 
-    column_converters: Optional[Dict[str, Callable[[any], any]]] = None
     drop_empty_percentage = 70
 
 
@@ -107,6 +98,64 @@ class TransformationConfig(NumericalFeatureConfig):
     # For ADD and MULTIPLY, must provide at least one of secondary feature / value.
     secondary_feature: Optional[str] = None
     secondary_value: Optional[float] = None
+
+
+class PipelineConfig(BaseModel):
+    """A configuration object for a `Pipeline`.
+
+    Attributes:
+        cleaning_config: The configuration to use for cleaning the dataset.
+        features: A dictionary mapping the column name for a feature to its config.
+        transformations: A dictionary mapping the column name for a feature
+            transformation to its config.
+    """
+
+    columns: List[str]
+    cleaning_config: CleaningConfig
+    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]
+    transformations: Optional[Dict[str, TransformationConfig]] = None
+
+
+class DatasetSplit(BaseModel):
+    """Defines the split percentage for train, val, and test datasets.
+
+    Attributes:
+        train: The percentage of the dataset to use for training.
+        val: The percentage of the dataset to use for validation.
+        test: The percentage of the dataset to use for testing.
+    """
+
+    train: float = 0.8
+    val: float = 0.1
+    test: float = 0.1
+
+
+class PreparedData(BaseModel):
+    """A train, val, and test set of data that's been cleaned and transformed.
+
+    Attributes:
+        train: The training dataset.
+        val: The validation dataset.
+        test: The testing dataset.
+    """
+
+    train: pd.DataFrame
+    val: pd.DataFrame
+    test: pd.DataFrame
+
+
+class Dataset(BaseModel):
+    """A class for managing data.
+
+    Attributes:
+        raw_data: The raw data.
+        dataset_split: The split percentage for train, val, and test datasets.
+        prepared_data: The prepared data.
+    """
+
+    raw_data: pd.DataFrame
+    dataset_split: Optional[DatasetSplit] = None
+    prepared_data: Optional[PreparedData] = None
 
 
 class _ModelOptions(BaseModel):
@@ -311,7 +360,7 @@ class TrainingResults(BaseModel):
     feature_importances: Dict[str, float]
 
 
-class Model(BaseModel):
+class TrainedModel(BaseModel):
     """A calibrated model container for configs, results, and the model itself.
 
     Attributes:
@@ -323,6 +372,8 @@ class Model(BaseModel):
     """
 
     id: int
+    dataset_id: int
+    pipeline_config_id: int
     model_config: ModelConfig
     training_config: TrainingConfig
     training_results: TrainingResults
@@ -332,99 +383,3 @@ class Model(BaseModel):
         tfl.premade.CalibratedLatticeEnsemble,
         ptcm.models.CalibratedLinear,
     ]
-
-
-class PipelineModels(BaseModel):
-    """A container for the best model / metric and all models trained in a pipeline.
-
-    Attributes:
-        best_model_id: The ID of the best model.
-        best_primary_metric: The primary metric of the best model.
-        models: A dictionary mapping IDs to models trained in the pipeline.
-    """
-
-    best_model_id: int
-    best_primary_metric: float
-    models: Dict[int, Model]
-
-
-class PipelineConfig(BaseModel):
-    """A configuration object for a `Pipeline`.
-
-    Attributes:
-        id: The ID of the pipeline.
-        columns: The columns to use from the dataset.
-        target: The target column to predict.
-        target_type: The type of the target column.
-        primary_metric: The primary metric to use for evaluating models and selecting
-            the best one from tuning results.
-        cleaning_config: The configuration to use for cleaning the dataset.
-        features: A dictionary mapping the column name for a feature to its config.
-        transformations: A dictionary mapping the column name for a feature
-            transformation to its config.
-    """
-
-    id: int
-    columns: List[str]
-    target: str
-    target_type: TargetType
-    primary_metric: Metric
-    cleaning_config: Optional[CleaningConfig] = None
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]
-    transformations: Optional[Dict[str, TransformationConfig]] = None
-
-
-class DatasetSplit(BaseModel):
-    """Defines the split percentage for train, val, and test datasets.
-
-    Attributes:
-        train: The percentage of the dataset to use for training.
-        val: The percentage of the dataset to use for validation.
-        test: The percentage of the dataset to use for testing.
-    """
-
-    train: float = 0.8
-    val: float = 0.1
-    test: float = 0.1
-
-
-class PreparedData(BaseModel):
-    """A train, val, and test set of data that's been cleaned and transformed.
-
-    Attributes:
-        train: The training dataset.
-        val: The validation dataset.
-        test: The testing dataset.
-    """
-
-    train: pd.DataFrame
-    val: pd.DataFrame
-    test: pd.DataFrame
-
-
-class Dataset(BaseModel):
-    """A class for managing data.
-
-    Attributes:
-        id: The ID of the data.
-        raw_data: The raw data.
-        dataset_split: The split percentage for train, val, and test datasets.
-        prepared_data: The prepared data.
-    """
-
-    id: int
-    raw_data: pd.DataFrame
-    dataset_split: Optional[DatasetSplit] = None
-    prepared_data: Optional[PreparedData] = None
-
-
-class PipelineData(BaseModel):
-    """A class for managing pipeline data.
-
-    Attributes:
-        current_data_id: The ID of the current dataset to use for the pipeline.
-        data: A dictionary mapping IDs to datasets.
-    """
-
-    current_data_id: Optional[int] = None
-    data: Dict[int, Dataset]
