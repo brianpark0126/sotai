@@ -4,16 +4,11 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from ..enums import FeatureType, TargetType
+from .enums import FeatureType
 from .types import CategoricalFeatureConfig, NumericalFeatureConfig
 
 
-def determine_target_type(data: np.ndarray) -> TargetType:
-    """Returns the type of a target determined from its data."""
-    raise NotImplementedError()
-
-
-def determine_feature_types(
+def _determine_feature_types(
     data: np.ndarray,
     target: str,
     categories: Optional[List[str]] = None,
@@ -31,10 +26,23 @@ def determine_feature_types(
     raise NotImplementedError()
 
 
-def generate_default_feature_configs(
+def default_feature_config(feature_name: str, categorical: bool = False):
+    """Generates a default feature config for the given feature.
+
+    Args:
+        feature_name: The name of the feature.
+        categorical: Whether the feature is categorical.
+
+    Returns:
+        A default feature config for the given feature name.
+    """
+    raise NotImplementedError()
+
+
+def default_feature_configs(
     data: pd.DataFrame,
     target: str,
-    feature_types: Dict[str, FeatureType],
+    categories: Optional[List[str]] = None,
 ) -> Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]:
     """Generates default feature configs for the given data and target.
 

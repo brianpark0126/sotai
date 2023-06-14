@@ -1,25 +1,75 @@
-<a id="sotai/pipelines/types"></a>
+<a id="sotai/types"></a>
 
-# sotai/pipelines/types
+# sotai/types
 
 Pydantic models for Pipelines.
 
-<a id="sotai/pipelines/types.CleaningConfig"></a>
+<a id="sotai/types.DatasetSplit"></a>
 
-## CleaningConfig Objects
+## DatasetSplit Objects
 
 ```python
-class CleaningConfig(BaseModel)
+class DatasetSplit(BaseModel)
 ```
 
-Configuration for cleaning data.
+Defines the split percentage for train, val, and test datasets.
+
+**Attributes**:
+
+- `train` - The percentage of the dataset to use for training.
+- `val` - The percentage of the dataset to use for validation.
+- `test` - The percentage of the dataset to use for testing.
+
+<a id="sotai/types.PrepareDataConfig"></a>
+
+## PrepareDataConfig Objects
+
+```python
+class PrepareDataConfig(BaseModel)
+```
+
+Configuration for preparing data for modeling.
 
 **Attributes**:
 
 - `drop_empty_percentage` - Drop rows that have drop_empty_percentage or more column
   values missing.
+- `split` - The `DatasetSplit` defining the percentages for train, val, and test
+  datasets.
 
-<a id="sotai/pipelines/types.NumericalFeatureConfig"></a>
+<a id="sotai/types.PreparedData"></a>
+
+## PreparedData Objects
+
+```python
+class PreparedData(BaseModel)
+```
+
+A train, val, and test set of data that's been cleaned.
+
+**Attributes**:
+
+- `train` - The training dataset.
+- `val` - The validation dataset.
+- `test` - The testing dataset.
+
+<a id="sotai/types.Dataset"></a>
+
+## Dataset Objects
+
+```python
+class Dataset(BaseModel)
+```
+
+A class for managing data.
+
+**Attributes**:
+
+- `raw_data` - The raw data.
+- `dataset_split` - The split percentage for train, val, and test datasets.
+- `prepared_data` - The prepared data.
+
+<a id="sotai/types.NumericalFeatureConfig"></a>
 
 ## NumericalFeatureConfig Objects
 
@@ -36,7 +86,7 @@ Configuration for a numerical feature.
 - `input_keypoints_type` - The type of input keypoints.
 - `monotonicity` - The monotonicity constraint, if any.
 
-<a id="sotai/pipelines/types.CategoricalFeatureConfig"></a>
+<a id="sotai/types.CategoricalFeatureConfig"></a>
 
 ## CategoricalFeatureConfig Objects
 
@@ -53,94 +103,7 @@ Configuration for a categorical feature.
   categories. The output for the second category will be greater than or equal
   to the output for the first category for each pair, all else being equal.
 
-<a id="sotai/pipelines/types.TransformationConfig"></a>
-
-## TransformationConfig Objects
-
-```python
-class TransformationConfig(NumericalFeatureConfig)
-```
-
-Configuration for a transformation feature.
-
-**Attributes**:
-
-- `transformation_type` - The type of transformation.
-- `primary_feature` - The name of the primary feature. This must match a column name
-  in the dataset to be transformed.
-- `secondary_feature` - The name of the secondary feature, if any, to use for the
-  transformation. Either this or `secondary_value` must be provided for
-  transformations that operate on two values.
-- `secondary_value` - The secondary value, if any, to use for the transformation.
-  Either this or `secondary_feature` must be provided for transformations that
-  operate on two values.
-
-<a id="sotai/pipelines/types.PipelineConfig"></a>
-
-## PipelineConfig Objects
-
-```python
-class PipelineConfig(BaseModel)
-```
-
-A configuration object for a `Pipeline`.
-
-**Attributes**:
-
-- `cleaning_config` - The configuration to use for cleaning the dataset.
-- `features` - A dictionary mapping the column name for a feature to its config.
-- `transformations` - A dictionary mapping the column name for a feature
-  transformation to its config.
-
-<a id="sotai/pipelines/types.DatasetSplit"></a>
-
-## DatasetSplit Objects
-
-```python
-class DatasetSplit(BaseModel)
-```
-
-Defines the split percentage for train, val, and test datasets.
-
-**Attributes**:
-
-- `train` - The percentage of the dataset to use for training.
-- `val` - The percentage of the dataset to use for validation.
-- `test` - The percentage of the dataset to use for testing.
-
-<a id="sotai/pipelines/types.PreparedData"></a>
-
-## PreparedData Objects
-
-```python
-class PreparedData(BaseModel)
-```
-
-A train, val, and test set of data that's been cleaned and transformed.
-
-**Attributes**:
-
-- `train` - The training dataset.
-- `val` - The validation dataset.
-- `test` - The testing dataset.
-
-<a id="sotai/pipelines/types.Dataset"></a>
-
-## Dataset Objects
-
-```python
-class Dataset(BaseModel)
-```
-
-A class for managing data.
-
-**Attributes**:
-
-- `raw_data` - The raw data.
-- `dataset_split` - The split percentage for train, val, and test datasets.
-- `prepared_data` - The prepared data.
-
-<a id="sotai/pipelines/types.LinearOptions"></a>
+<a id="sotai/types.LinearOptions"></a>
 
 ## LinearOptions Objects
 
@@ -154,7 +117,7 @@ Calibrated Linear model options.
 
 - `use_bias` - Whether to use a bias term for the linear combination.
 
-<a id="sotai/pipelines/types.LatticeOptions"></a>
+<a id="sotai/types.LatticeOptions"></a>
 
 ## LatticeOptions Objects
 
@@ -181,7 +144,7 @@ Calibrated Lattice model options.
   be ignored if the parameterization is not KFL.
 - `random_seed` - The random seed to use for the lattice.
 
-<a id="sotai/pipelines/types.EnsembleOptions"></a>
+<a id="sotai/types.EnsembleOptions"></a>
 
 ## EnsembleOptions Objects
 
@@ -206,7 +169,7 @@ Calibrated Lattice Ensemble model options.
 - `fix_ensemble_for_2d_contraints` - Whether to fix the ensemble arrangement for 2D
   constraints.
 
-<a id="sotai/pipelines/types.ModelConfig"></a>
+<a id="sotai/types.ModelConfig"></a>
 
 ## ModelConfig Objects
 
@@ -222,7 +185,7 @@ Configuration for a calibrated model.
 - `type` - The type of model to use.
 - `options` - The configuration options for the model.
 
-<a id="sotai/pipelines/types.TrainingConfig"></a>
+<a id="sotai/types.TrainingConfig"></a>
 
 ## TrainingConfig Objects
 
@@ -239,7 +202,7 @@ Configuration for training a single model.
 - `batch_size` - The number of examples to use for each training step.
 - `learning_rate` - The learning rate to use for the optimizer.
 
-<a id="sotai/pipelines/types.HypertuneConfig"></a>
+<a id="sotai/types.HypertuneConfig"></a>
 
 ## HypertuneConfig Objects
 
@@ -257,7 +220,7 @@ Configuration for hyperparameter tuning to find the best model.
 - `Linear_rate_options` - A list of values to try for the learning rate to use for
   the optimizer.
 
-<a id="sotai/pipelines/types.FeatureAnalysis"></a>
+<a id="sotai/types.FeatureAnalysis"></a>
 
 ## FeatureAnalysis Objects
 
@@ -282,7 +245,7 @@ Feature analysis results for a single feature of a trained model.
   is categorical.
 - `keypoints_outputs` - The output keypoints for each input keypoint.
 
-<a id="sotai/pipelines/types.TrainingResults"></a>
+<a id="sotai/types.TrainingResults"></a>
 
 ## TrainingResults Objects
 
@@ -308,7 +271,7 @@ Training results for a single calibrated model.
 - `feature_analysis_objects` - The feature analysis results for each feature.
 - `feature_importances` - The feature importances for each feature.
 
-<a id="sotai/pipelines/types.TrainedModel"></a>
+<a id="sotai/types.TrainedModel"></a>
 
 ## TrainedModel Objects
 
@@ -325,4 +288,19 @@ A calibrated model container for configs, results, and the model itself.
 - `training_config` - The configuration used for training the model.
 - `training_results` - The results of training the model.
 - `model` - The trained model.
+
+<a id="sotai/types.PipelineConfig"></a>
+
+## PipelineConfig Objects
+
+```python
+class PipelineConfig(BaseModel)
+```
+
+A configuration object for a `Pipeline`.
+
+**Attributes**:
+
+- `cleaning_config` - The configuration to use for cleaning the dataset.
+- `features` - A dictionary mapping the column name for a feature to its config.
 

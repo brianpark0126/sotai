@@ -6,7 +6,7 @@ import pytorch_calibrated as ptcm
 import tensorflow_lattice as tfl
 from pydantic import BaseModel
 
-from ..enums import (
+from .enums import (
     EnsembleType,
     FeatureType,
     InputKeypointsInit,
@@ -17,19 +17,63 @@ from ..enums import (
     ModelType,
     Monotonicity,
     Parameterization,
-    TransformationType,
 )
 
 
-class CleaningConfig(BaseModel):
-    """Configuration for cleaning data.
+class DatasetSplit(BaseModel):
+    """Defines the split percentage for train, val, and test datasets.
+
+    Attributes:
+        train: The percentage of the dataset to use for training.
+        val: The percentage of the dataset to use for validation.
+        test: The percentage of the dataset to use for testing.
+    """
+
+    train: float = 0.8
+    val: float = 0.1
+    test: float = 0.1
+
+
+class PrepareDataConfig(BaseModel):
+    """Configuration for preparing data for modeling.
 
     Attributes:
         drop_empty_percentage: Drop rows that have drop_empty_percentage or more column
             values missing.
+        split: The `DatasetSplit` defining the percentages for train, val, and test
+            datasets.
     """
 
-    drop_empty_percentage = 70
+    drop_empty_percentage: float = 70
+    split: DatasetSplit = DatasetSplit(train=0.8, val=0.1, test=0.1)
+
+
+class PreparedData(BaseModel):
+    """A train, val, and test set of data that's been cleaned.
+
+    Attributes:
+        train: The training dataset.
+        val: The validation dataset.
+        test: The testing dataset.
+    """
+
+    train: pd.DataFrame
+    val: pd.DataFrame
+    test: pd.DataFrame
+
+
+class Dataset(BaseModel):
+    """A class for managing data.
+
+    Attributes:
+        raw_data: The raw data.
+        dataset_split: The split percentage for train, val, and test datasets.
+        prepared_data: The prepared data.
+    """
+
+    raw_data: pd.DataFrame
+    prepare_data_config: Optional[PrepareDataConfig] = None
+    prepared_data: Optional[PreparedData] = None
 
 
 class _FeatureConfig(BaseModel):
@@ -75,87 +119,6 @@ class CategoricalFeatureConfig(_FeatureConfig):
 
     categories: Union[List[str], List[int]]
     monotonicity_pairs: Optional[List[Tuple[str, str]]] = None
-
-
-class TransformationConfig(NumericalFeatureConfig):
-    """Configuration for a transformation feature.
-
-    Attributes:
-        transformation_type: The type of transformation.
-        primary_feature: The name of the primary feature. This must match a column name
-            in the dataset to be transformed.
-        secondary_feature: The name of the secondary feature, if any, to use for the
-            transformation. Either this or `secondary_value` must be provided for
-            transformations that operate on two values.
-        secondary_value: The secondary value, if any, to use for the transformation.
-            Either this or `secondary_feature` must be provided for transformations that
-            operate on two values.
-    """
-
-    transformation_type: TransformationType
-    # Must be the name of a column in the dataset.
-    primary_feature: str
-    # For ADD and MULTIPLY, must provide at least one of secondary feature / value.
-    secondary_feature: Optional[str] = None
-    secondary_value: Optional[float] = None
-
-
-class PipelineConfig(BaseModel):
-    """A configuration object for a `Pipeline`.
-
-    Attributes:
-        cleaning_config: The configuration to use for cleaning the dataset.
-        features: A dictionary mapping the column name for a feature to its config.
-        transformations: A dictionary mapping the column name for a feature
-            transformation to its config.
-    """
-
-    columns: List[str]
-    cleaning_config: CleaningConfig
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]
-    transformations: Optional[Dict[str, TransformationConfig]] = None
-
-
-class DatasetSplit(BaseModel):
-    """Defines the split percentage for train, val, and test datasets.
-
-    Attributes:
-        train: The percentage of the dataset to use for training.
-        val: The percentage of the dataset to use for validation.
-        test: The percentage of the dataset to use for testing.
-    """
-
-    train: float = 0.8
-    val: float = 0.1
-    test: float = 0.1
-
-
-class PreparedData(BaseModel):
-    """A train, val, and test set of data that's been cleaned and transformed.
-
-    Attributes:
-        train: The training dataset.
-        val: The validation dataset.
-        test: The testing dataset.
-    """
-
-    train: pd.DataFrame
-    val: pd.DataFrame
-    test: pd.DataFrame
-
-
-class Dataset(BaseModel):
-    """A class for managing data.
-
-    Attributes:
-        raw_data: The raw data.
-        dataset_split: The split percentage for train, val, and test datasets.
-        prepared_data: The prepared data.
-    """
-
-    raw_data: pd.DataFrame
-    dataset_split: Optional[DatasetSplit] = None
-    prepared_data: Optional[PreparedData] = None
 
 
 class _ModelOptions(BaseModel):
@@ -383,3 +346,16 @@ class TrainedModel(BaseModel):
         tfl.premade.CalibratedLatticeEnsemble,
         ptcm.models.CalibratedLinear,
     ]
+
+
+class PipelineConfig(BaseModel):
+    """A configuration object for a `Pipeline`.
+
+    Attributes:
+        cleaning_config: The configuration to use for cleaning the dataset.
+        features: A dictionary mapping the column name for a feature to its config.
+    """
+
+    columns: List[str]
+    prepare_data_config: PrepareDataConfig
+    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]

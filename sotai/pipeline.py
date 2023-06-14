@@ -1,33 +1,39 @@
 """A Pipeline for calibrated modeling."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
 from pydantic import BaseModel
 
-from ..enums import Metric, TargetType
+from .enums import Metric, TargetType
 from .types import (
-    CleaningConfig,
     Dataset,
-    DatasetSplit,
     HypertuneConfig,
     ModelConfig,
     PipelineConfig,
+    PrepareDataConfig,
     PreparedData,
     TrainedModel,
     TrainingConfig,
 )
-from .utils import (
-    determine_feature_types,
-    determine_target_type,
-    generate_default_feature_configs,
-)
-
-# TODO (will): write better Google-style docstrings.
+from .utils import default_feature_configs
 
 
-class Pipeline(BaseModel):
+def _determine_target_type(data: np.ndarray) -> TargetType:
+    """Returns the type of a target determined from its data."""
+    raise NotImplementedError()
+
+
+def _prepare_data(
+    data: pd.DataFrame, prepare_data_config: PrepareDataConfig
+) -> PreparedData:
+    """Returns an instance of `PreparedData` for the given data and config."""
+    raise NotImplementedError()
+
+
+class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
     """A pipeline for calibrated modeling.
 
     A pipline takes in raw data and outputs a calibrated model. This process breaks
@@ -47,6 +53,7 @@ class Pipeline(BaseModel):
         data: pd.DataFrame,
         target: str,
         target_type: Optional[TargetType] = None,
+        primary_metric: Optional[Metric] = None,
         name: Optional[str] = None,
         categories: Optional[List[str]] = None,
     ):
@@ -54,37 +61,38 @@ class Pipeline(BaseModel):
 
         The pipeline is initialized with a default config, which can be modified later.
         The target type can be optionally specfified. If not specified, the pipeline
-        will try to automatically determine the type of the target from the data. For
-        classification problems, the default metric will be F1 score. For regression
-        problems, the default metric will be Mean Squared Error.
+        will try to automatically determine the type of the target from the data. The
+        same is true for the primary metric. The default primary metric will be F1 score
+        for classification and Mean Squared Error for regression.
 
         Args:
             data: The raw data to be used for training.
             target: The name of the target column.
             target_type: The type of the target column.
+            primary_metric: The primary metric to use for training and evaluation.
             name: The name of the pipeline.
             categories: The column names in `data` for categorical columns.
         """
         self.name: str = name
         self.goal: str = ""
-        self.dataset: Dataset = Dataset(raw_data=data)
         self.config: PipelineConfig = PipelineConfig(
             columns=data.columns,
-            cleaning_config=CleaningConfig(),
-            features=generate_default_feature_configs(
-                data, target, determine_feature_types(data, target, categories)
-            ),
+            prepare_data_config=PrepareDataConfig(),
+            features=default_feature_configs(data, target, categories),
         )
 
         self._target: str = target
         self._target_type: TargetType = (
             target_type
             if target_type is not None
-            else determine_target_type(data[target])
+            else _determine_target_type(data[target])
         )
         self._primary_metric: Metric = (
-            Metric.F1 if target_type == TargetType.CLASSIFICATION else Metric.MSE
+            primary_metric
+            if primary_metric is not None
+            else (Metric.F1 if target_type == TargetType.CLASSIFICATION else Metric.MSE)
         )
+        self._dataset: Dataset = Dataset(raw_data=data)
         # Maps a PipelineConfig id to its corresponding PipelineConfig instance.
         self._configs: Dict[int, PipelineConfig] = {}
         # Maps a Dataset id to its corresponding Dataset instance.
@@ -116,21 +124,10 @@ class Pipeline(BaseModel):
         """Returns the model with the given id."""
         return self._models[model_id]
 
-    def clean(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Returns data cleaned according to the pipeline cleaning config."""
-        raise NotImplementedError()
-
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Returns data transformed according to the pipeline transformation config."""
-        raise NotImplementedError()
-
-    def prepare(self, data: pd.DataFrame, split: DatasetSplit) -> PreparedData:
-        """Returns an instance of `PreparedData` for the given data and split."""
-        raise NotImplementedError()
-
     def train(
         self,
-        prepared_data: PreparedData,
+        dataset_id: int,
+        pipeline_config_id: int,
         model_config: ModelConfig,
         training_config: TrainingConfig,
     ) -> TrainedModel:
@@ -138,12 +135,18 @@ class Pipeline(BaseModel):
         raise NotImplementedError()
 
     def hypertune(
-        self, prepared_data: PreparedData, hypertune_config: HypertuneConfig
+        self,
+        dataset_id: int,
+        pipeline_config_id: int,
+        model_config: ModelConfig,
+        hypertune_config: HypertuneConfig,
     ) -> Tuple[int, float, List[int]]:
         """Runs hyperparameter tuning for the pipeline according to the given config.
 
         Args:
-            prepared_data: The prepared data to be used for training.
+            dataset_id: The id of the dataset to be used for training.
+            pipeline_config_id: The id of the pipeline config to be used for training.
+            model_config: The config for the model to be trained.
             hypertune_config: The config for hyperparameter tuning.
 
         Returns:
@@ -154,20 +157,37 @@ class Pipeline(BaseModel):
 
     def run(
         self,
-        data: Optional[pd.DataFrame] = None,
+        dataset: Optional[Union[pd.DataFrame, int]] = None,
+        pipeline_config_id: Optional[int] = None,
+        prepare_data_config: Optional[PrepareDataConfig] = None,
         model_config: Optional[ModelConfig] = None,
         hypertune_config: Optional[HypertuneConfig] = None,
     ) -> Tuple[int, float, List[int]]:
         """Runs the pipeline according to the pipeline and training configs.
 
         The full pipeline run process is as follows:
-            - Clean the data.
-            - Transform the data.
             - Prepare the data.
-            - Hypertune to find the best model.
+            - Hypertune to find the best model for the current config.
+
+        When `data` is not specified, the pipeline will use the most recently used data
+        unless this is the first run, in which case it will use the data that was passed
+        in during initialization. When `model_config` is not specified, the pipeline will
+        use the default model config. When `hypertune_config` is not specified, the
+        pipeline will use the default hypertune config.
+
+        A call to `run` will create new dataset and pipeline config versions unless
+        explicit ids for previous versions are provided.
 
         Args:
-            data: The raw data to be used for training.
+            dataset: The data to be used for training. Can be a pandas DataFrame
+                containing new data or the id of a previously used dataset. If not
+                specified, the pipeline will use the most recently used dataset unless
+                this is the first run, in which case it will use the data that was
+                passed in during initialization.
+            pipeline_config_id: The id of the pipeline config to be used for training.
+                If not specified, the pipeline will use the current settings for the
+                primary pipeline config.
+            prepare_data_config: The config for preparing the data.
             model_config: The config for the model to be trained.
             hypertune_config: The config for hyperparameter tuning.
 
