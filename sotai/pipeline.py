@@ -77,7 +77,6 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
         self.name: str = name
         self.goal: str = ""
         self.config: PipelineConfig = PipelineConfig(
-            columns=data.columns,
             prepare_data_config=PrepareDataConfig(),
             features=default_feature_configs(data, target, categories),
         )

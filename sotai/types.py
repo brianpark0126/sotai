@@ -352,11 +352,10 @@ class PipelineConfig(BaseModel):
     """A configuration object for a `Pipeline`.
 
     Attributes:
-        cleaning_config: The configuration to use for cleaning the dataset.
+        prepare_data_config: The configuration for preparing the data.
         features: A dictionary mapping the column name for a feature to its config.
     """
 
-    columns: List[str]
     prepare_data_config: PrepareDataConfig
     features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]
 
