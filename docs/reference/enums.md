@@ -4,16 +4,6 @@
 
 Enum Classes for SOTAI SDK
 
-<a id="sotai/enums.TransformationType"></a>
-
-## TransformationType Objects
-
-```python
-class TransformationType(_Enum)
-```
-
-The type of transformation to compute.
-
 <a id="sotai/enums.TargetType"></a>
 
 ## TargetType Objects

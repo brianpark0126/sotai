@@ -18,14 +18,6 @@ class _Enum(str, Enum, metaclass=_Metaclass):
     """Base Enum Class"""
 
 
-class TransformationType(_Enum):
-    """The type of transformation to compute."""
-
-    NORMALIZE = "normalize"
-    ADD = "add"
-    MULTIPLY = "multiply"
-
-
 class TargetType(_Enum):
     """The type of target to predict."""
 
