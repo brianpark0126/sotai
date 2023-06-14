@@ -1,7 +1,6 @@
 name: tests
 run-name: ${{ github.actor }} is linting and testing the package
 on:
-  push:
   pull_request:
     branches:
       - main
