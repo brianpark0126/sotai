@@ -13,6 +13,7 @@ from .types import (
     HypertuneConfig,
     ModelConfig,
     PipelineConfig,
+    PipelineRun,
     PrepareDataConfig,
     PreparedData,
     TrainedModel,
@@ -155,14 +156,14 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
         """
         raise NotImplementedError()
 
-    def run(
+    def run(  # pylint: disable=too-many-arguments
         self,
         dataset: Optional[Union[pd.DataFrame, int]] = None,
         pipeline_config_id: Optional[int] = None,
         prepare_data_config: Optional[PrepareDataConfig] = None,
         model_config: Optional[ModelConfig] = None,
         hypertune_config: Optional[HypertuneConfig] = None,
-    ) -> Tuple[int, float, List[int]]:
+    ) -> PipelineRun:
         """Runs the pipeline according to the pipeline and training configs.
 
         The full pipeline run process is as follows:

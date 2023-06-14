@@ -359,3 +359,22 @@ class PipelineConfig(BaseModel):
     columns: List[str]
     prepare_data_config: PrepareDataConfig
     features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]
+
+
+class PipelineRun(BaseModel):
+    """A container for the results of running a `Pipeline`.
+
+    Attributes:
+        dataset_id: The ID of the dataset used for the pipeline run.
+        pipeline_config_id: The ID of the pipeline config used for the pipeline run.
+        best_model_id: The ID of the best model found by the pipeline run.
+        best_primary_metric: The primary metric of the best model found by the pipeline
+            run.
+        trained_model_ids: The IDs of all models trained by the pipeline run.
+    """
+
+    dataset_id: int
+    pipeline_config_id: int
+    best_model_id: int
+    best_primary_metric: float
+    trained_model_ids: List[int]
