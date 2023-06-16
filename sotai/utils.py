@@ -25,9 +25,9 @@ def _determine_feature_types(
     Returns:
         A dictionary mapping column names to their corresponding feature type.
     """
-    feature_types = {}
+    feature_types = {category: FeatureType.CATEGORICAL for category in categories or []}
     for column in data.columns:
-        if column == "target":
+        if column == target or column in feature_types:
             continue
         dtype_kind = data[column].dtype.kind
         if dtype_kind in ["S", "O", "b"]:  # string, object, boolean
