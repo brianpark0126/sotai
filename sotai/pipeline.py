@@ -34,7 +34,7 @@ def _prepare_data(
     raise NotImplementedError()
 
 
-class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
+class Pipeline:  # pylint: disable=too-many-instance-attributes
     """A pipeline for calibrated modeling.
 
     A pipline takes in raw data and outputs a calibrated model. This process breaks
@@ -71,58 +71,35 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
             target: The name of the target column.
             target_type: The type of the target column.
             primary_metric: The primary metric to use for training and evaluation.
-            name: The name of the pipeline.
+            name: The name of the pipeline. If not provided, the name will be set to
+                `{target}_{target_type}`.
             categories: The column names in `data` for categorical columns.
         """
-        self.name: str = name
-        self.goal: str = ""
-        self.config: PipelineConfig = PipelineConfig(
-            prepare_data_config=PrepareDataConfig(),
-            features=default_feature_configs(data, target, categories),
-        )
-
-        self._target: str = target
-        self._target_type: TargetType = (
+        self.target: str = target
+        self.target_type: TargetType = (
             target_type
             if target_type is not None
             else _determine_target_type(data[target])
         )
-        self._primary_metric: Metric = (
+        self.primary_metric: Metric = (
             primary_metric
             if primary_metric is not None
             else (Metric.F1 if target_type == TargetType.CLASSIFICATION else Metric.MSE)
         )
-        self._dataset: Dataset = Dataset(raw_data=data)
+        # Tracks the most recently used dataset used to run the pipeline.
+        self.most_recent_dataset: Dataset = Dataset(raw_data=data)
         # Maps a PipelineConfig id to its corresponding PipelineConfig instance.
-        self._configs: Dict[int, PipelineConfig] = {}
+        self.configs: Dict[int, PipelineConfig] = {}
         # Maps a Dataset id to its corresponding Dataset instance.
-        self._datasets: Dict[int, Dataset] = {}
+        self.datasets: Dict[int, Dataset] = {}
         # Maps a TrainedModel id to its corresponding TrainedModel instance.
-        self._models: Dict[int, TrainedModel] = {}
+        self.models: Dict[int, TrainedModel] = {}
 
-    def target(self):
-        """Returns the target column."""
-        return self._target
-
-    def target_type(self):
-        """Returns the target type."""
-        return self._target_type
-
-    def primary_metric(self):
-        """Returns the primary metric."""
-        return self._primary_metric
-
-    def configs(self, config_id: int):
-        """Returns the config with the given id."""
-        return self._configs[config_id]
-
-    def datasets(self, dataset_id: int):
-        """Returns the data with the given id."""
-        return self._datasets[dataset_id]
-
-    def models(self, model_id: int):
-        """Returns the model with the given id."""
-        return self._models[model_id]
+        self.name: str = name if name else f"{target}_{target_type}"
+        self.config: PipelineConfig = PipelineConfig(
+            prepare_data_config=PrepareDataConfig(),
+            features=default_feature_configs(data, target, categories),
+        )
 
     def train(
         self,

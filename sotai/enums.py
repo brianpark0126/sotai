@@ -40,6 +40,7 @@ class Metric(_Enum):
 
     AUC = "auc"
     BINARY_ACCURACY = "binary_accuracy"
+    F1 = "f1"
     MEAN_ABSOLUTE_ERROR = "mean_absolute_error"
     MEAN_SQUARED_ERROR = "mean_squared_error"
     PRECISION = "precision"
@@ -121,12 +122,14 @@ class InputKeypointsType(_Enum):
 class FeatureType(_Enum):
     """Type of feature.
 
+    - UNKNOWN: a feature with a type that our system does not currently support.
     - NUMERICAL: a numerical feature that should be calibrated using an instance of
         `NumericalCalibrator`.
     - CATEGORICAL: a categorical feature that should be calibrated using an instance of
         `CategoricalCalibrator`.
     """
 
+    UNKNOWN = "unknown"
     NUMERICAL = "numerical"
     CATEGORICAL = "categorical"
 

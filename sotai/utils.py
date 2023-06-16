@@ -1,4 +1,6 @@
 """Utility functions for pipelines."""
+import logging
+import math
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -9,7 +11,7 @@ from .types import CategoricalFeatureConfig, NumericalFeatureConfig
 
 
 def _determine_feature_types(
-    data: np.ndarray,
+    data: pd.DataFrame,
     target: str,
     categories: Optional[List[str]] = None,
 ) -> Dict[str, FeatureType]:
@@ -23,20 +25,18 @@ def _determine_feature_types(
     Returns:
         A dictionary mapping column names to their corresponding feature type.
     """
-    raise NotImplementedError()
-
-
-def default_feature_config(feature_name: str, categorical: bool = False):
-    """Generates a default feature config for the given feature.
-
-    Args:
-        feature_name: The name of the feature.
-        categorical: Whether the feature is categorical.
-
-    Returns:
-        A default feature config for the given feature name.
-    """
-    raise NotImplementedError()
+    feature_types = {}
+    for column in data.columns:
+        if column == "target":
+            continue
+        dtype_kind = data[column].dtype.kind
+        if dtype_kind in ["S", "O", "b"]:  # string, object, boolean
+            feature_types[column] = FeatureType.CATEGORICAL
+        elif dtype_kind in ["i", "u", "f"]:  # integer, unsigned integer, float
+            feature_types[column] = FeatureType.NUMERICAL
+        else:  # datetime, timedelta, complex, etc.
+            feature_types[column] = FeatureType.UNKNOWN
+    return feature_types
 
 
 def default_feature_configs(
@@ -55,4 +55,20 @@ def default_feature_configs(
     Returns:
         A dictionary mapping column names to their corresponding feature config.
     """
-    raise NotImplementedError()
+    feature_configs = {}
+    feature_types = _determine_feature_types(data, target, categories)
+    for feature_name, feature_type in feature_types.items():
+        if feature_type == FeatureType.CATEGORICAL:
+            feature_configs[feature_name] = CategoricalFeatureConfig(
+                name=feature_name,
+                categories=data[feature_name].dropna().unique().tolist(),
+            )
+        elif feature_type == FeatureType.NUMERICAL:
+            feature_configs[feature_name] = NumericalFeatureConfig(
+                name=feature_name,
+                missing_input_value=math.floor(data[feature_name].min() - 1),
+            )
+        else:
+            logging.info("Skipping feature %s with unknown type.", feature_name)
+            continue
+    return feature_configs
