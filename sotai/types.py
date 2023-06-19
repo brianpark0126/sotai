@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import pandas as pd
 import pytorch_calibrated as ptcm
 import tensorflow_lattice as tfl
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, root_validator
 
 from .enums import (
     EnsembleType,
@@ -29,23 +29,18 @@ class DatasetSplit(BaseModel):
         test: The percentage of the dataset to use for testing.
     """
 
-    train: float = 0.8
-    val: float = 0.1
-    test: float = 0.1
+    train: int = 80
+    val: int = 10
+    test: int = 10
 
-
-class PrepareDataConfig(BaseModel):
-    """Configuration for preparing data for modeling.
-
-    Attributes:
-        drop_empty_percentage: Drop rows that have drop_empty_percentage or more column
-            values missing.
-        split: The `DatasetSplit` defining the percentages for train, val, and test
-            datasets.
-    """
-
-    drop_empty_percentage: float = 70
-    split: DatasetSplit = DatasetSplit(train=0.8, val=0.1, test=0.1)
+    @root_validator(pre=True, allow_reuse=True)
+    @classmethod
+    def validate_split_sum(cls, values):
+        """Ensures that the split percentages add up to 100."""
+        assert (
+            values["train"] + values["val"] + values["test"] == 100
+        ), "split percentages must add up to 100"
+        return values
 
 
 class PreparedData(BaseModel):
@@ -57,23 +52,29 @@ class PreparedData(BaseModel):
         test: The testing dataset.
     """
 
-    train: pd.DataFrame
-    val: pd.DataFrame
-    test: pd.DataFrame
+    train: pd.DataFrame = Field(...)
+    val: pd.DataFrame = Field(...)
+    test: pd.DataFrame = Field(...)
+
+    class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        arbitrary_types_allowed = True
 
 
 class Dataset(BaseModel):
     """A class for managing data.
 
     Attributes:
-        raw_data: The raw data.
-        dataset_split: The split percentage for train, val, and test datasets.
-        prepared_data: The prepared data.
+        pipeline_config_id: The ID of the pipeline config used to create this dataset.
+        columns: The columns of the dataset.
+        prepared_data: The prepared data ready for training.
     """
 
-    raw_data: pd.DataFrame
-    prepare_data_config: Optional[PrepareDataConfig] = None
-    prepared_data: Optional[PreparedData] = None
+    pipeline_config_id: int = Field(...)
+    columns: List[str] = Field(...)
+    prepared_data: PreparedData = Field(...)
+
+    class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        arbitrary_types_allowed = True
 
 
 class _FeatureConfig(BaseModel):
@@ -86,21 +87,27 @@ class _FeatureConfig(BaseModel):
             then it will be assumed that no values are missing for this feature.
     """
 
-    name: str
-    type: FeatureType
+    name: str = Field(...)
     missing_input_value: Optional[float] = None
 
 
-class NumericalFeatureConfig(_FeatureConfig):
+class NumericalFeatureConfig(BaseModel):
     """Configuration for a numerical feature.
 
     Attributes:
+        name: The name of the feature.
+        type: The type of the feature. Always `FeatureType.NUMERICAL`.
+        missing_input_value: The value that represents a missing input value. If None,
+            then it will be assumed that no values are missing for this feature.
         num_keypoints: The number of keypoints to use for the calibrator.
         input_keypoints_init: The method for initializing the input keypoints.
         input_keypoints_type: The type of input keypoints.
         monotonicity: The monotonicity constraint, if any.
     """
 
+    name: str = Field(...)
+    type: FeatureType = Field(FeatureType.NUMERICAL, const=True)
+    missing_input_value: Optional[float] = None
     num_keypoints: int = 10
     input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
     input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
@@ -111,14 +118,24 @@ class CategoricalFeatureConfig(_FeatureConfig):
     """Configuration for a categorical feature.
 
     Attributes:
+        name: The name of the feature.
+        type: The type of the feature. Always `FeatureType.CATEGORICAL`.
+        missing_input_value: The value that represents a missing input value. If None,
+            then it will be assumed that no values are missing for this feature.
         categories: The categories for the feature.
         monotonicity_pairs: The monotonicity constraints, if any, defined as pairs of
             categories. The output for the second category will be greater than or equal
             to the output for the first category for each pair, all else being equal.
     """
 
-    categories: Union[List[str], List[int]]
+    name: str = Field(...)
+    type: FeatureType = Field(FeatureType.CATEGORICAL, const=True)
+    missing_input_value: str = Field("<Missing Value>")
+    categories: Union[List[str], List[int]] = Field(...)
     monotonicity_pairs: Optional[List[Tuple[str, str]]] = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class _ModelOptions(BaseModel):
@@ -208,7 +225,8 @@ class EnsembleOptions(LatticeOptions):
     # This can be properly defaulted in the configure function.
     num_lattices: Optional[int] = None
     lattice_rank: Optional[int] = None
-    separate_calibrators: bool = True
+    # TODO (will): Add support for separate calibrators.
+    separate_calibrators: bool = Field(False, const=True)
     use_linear_combination: bool = False
     use_bias: bool = False
     fix_ensemble_for_2d_contraints: bool = True
@@ -223,9 +241,11 @@ class ModelConfig(BaseModel):
         options: The configuration options for the model.
     """
 
-    framework: ModelFramework
-    type: ModelType
-    options: Union[LinearOptions, LatticeOptions, EnsembleOptions]
+    # TODO (will): Add support for PyTorch Calibrated.
+    framework: ModelFramework = Field(ModelFramework.TENSORFLOW, const=True)
+    # TODO (will): Add support for Calibrated Lattice and Calibrated Lattice Ensemble.
+    type: ModelType = Field(ModelType.LINEAR, const=True)
+    options: Union[LinearOptions, LatticeOptions, EnsembleOptions] = Field(...)
 
 
 class TrainingConfig(BaseModel):
@@ -238,7 +258,7 @@ class TrainingConfig(BaseModel):
         learning_rate: The learning rate to use for the optimizer.
     """
 
-    loss_type: Optional[LossType] = None
+    loss_type: LossType = Field(...)
     epochs: int = 100
     batch_size: int = 32
     learning_rate: float = 1e-3
@@ -278,17 +298,17 @@ class FeatureAnalysis(BaseModel):
         keypoints_outputs: The output keypoints for each input keypoint.
     """
 
-    feature_name: str
-    feature_type: str
-    min: float
-    max: float
-    mean: float
-    median: float
-    std: float
+    feature_name: str = Field(...)
+    feature_type: str = Field(...)
+    min: float = Field(...)
+    max: float = Field(...)
+    mean: float = Field(...)
+    median: float = Field(...)
+    std: float = Field(...)
     # One of the keypoint inputs must exist, which one depends on feature_type.
-    keypoints_inputs_numerical: Optional[List[float]]
-    keypoints_inputs_categorical: Optional[List[str]]
-    keypoints_outputs: List[float]
+    keypoints_inputs_numerical: Optional[List[float]] = Field(...)
+    keypoints_inputs_categorical: Optional[List[str]] = Field(...)
+    keypoints_outputs: List[float] = Field(...)
 
 
 class TrainingResults(BaseModel):
@@ -310,54 +330,62 @@ class TrainingResults(BaseModel):
         feature_importances: The feature importances for each feature.
     """
 
-    training_time: float
-    evaluation_time: float
-    feature_analysis_extraction_time: float
-    train_loss_by_epoch: List[float]
-    train_primary_metric_by_epoch: List[float]
-    validation_loss_by_epoch: List[float]
-    validation_primary_metric_by_epoch: List[float]
-    test_loss: float
-    test_primary_metric: float
-    feature_analysis_objects: Dict[str, FeatureAnalysis]
-    feature_importances: Dict[str, float]
+    training_time: float = Field(...)
+    evaluation_time: float = Field(...)
+    feature_analysis_extraction_time: float = Field(...)
+    train_loss_by_epoch: List[float] = Field(...)
+    train_primary_metric_by_epoch: List[float] = Field(...)
+    validation_loss_by_epoch: List[float] = Field(...)
+    validation_primary_metric_by_epoch: List[float] = Field(...)
+    test_loss: float = Field(...)
+    test_primary_metric: float = Field(...)
+    feature_analysis_objects: Dict[str, FeatureAnalysis] = Field(...)
+    feature_importances: Dict[str, float] = Field(...)
 
 
 class TrainedModel(BaseModel):
     """A calibrated model container for configs, results, and the model itself.
 
     Attributes:
-        id: The ID of the model.
         model_config: The configuration for the model.
         training_config: The configuration used for training the model.
         training_results: The results of training the model.
         model: The trained model.
     """
 
-    id: int
-    dataset_id: int
-    pipeline_config_id: int
-    model_config: ModelConfig
-    training_config: TrainingConfig
-    training_results: TrainingResults
+    dataset_id: int = Field(...)
+    pipeline_config_id: int = Field(...)
+    model_config: ModelConfig = Field(...)
+    training_config: TrainingConfig = Field(...)
+    training_results: TrainingResults = Field(...)
     model: Union[
         tfl.premade.CalibratedLinear,
         tfl.premade.CalibratedLattice,
         tfl.premade.CalibratedLatticeEnsemble,
         ptcm.models.CalibratedLinear,
-    ]
+    ] = Field(...)
+
+    class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        arbitrary_types_allowed = True
 
 
 class PipelineConfig(BaseModel):
     """A configuration object for a `Pipeline`.
 
     Attributes:
-        prepare_data_config: The configuration for preparing the data.
+        shuffle_data: Whether to shuffle the data before splitting it into train,
+            validation, and test sets.
+        drop_empty_percentage: Rows will be dropped if they are this percentage empty.
+        dataset_split: The split of the dataset into train, validation, and test sets.
         features: A dictionary mapping the column name for a feature to its config.
     """
 
-    prepare_data_config: PrepareDataConfig
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]
+    shuffle_data: bool = True
+    drop_empty_percentage: int = 70
+    dataset_split: DatasetSplit = DatasetSplit(train=80, val=10, test=10)
+    features: Dict[
+        str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]
+    ] = Field(...)
 
 
 class PipelineRun(BaseModel):
@@ -372,8 +400,8 @@ class PipelineRun(BaseModel):
         trained_model_ids: The IDs of all models trained by the pipeline run.
     """
 
-    dataset_id: int
-    pipeline_config_id: int
-    best_model_id: int
-    best_primary_metric: float
-    trained_model_ids: List[int]
+    dataset_id: int = Field(...)
+    pipeline_config_id: int = Field(...)
+    best_model_id: int = Field(...)
+    best_primary_metric: float = Field(...)
+    trained_model_ids: List[int] = Field(...)

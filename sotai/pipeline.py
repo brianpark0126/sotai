@@ -1,11 +1,10 @@
 """A Pipeline for calibrated modeling."""
 from __future__ import annotations
 
+import copy
 from typing import Dict, List, Optional, Tuple, Union
 
-import numpy as np
 import pandas as pd
-from pydantic import BaseModel
 
 from .enums import Metric, TargetType
 from .types import (
@@ -14,7 +13,6 @@ from .types import (
     ModelConfig,
     PipelineConfig,
     PipelineRun,
-    PrepareDataConfig,
     PreparedData,
     TrainedModel,
     TrainingConfig,
@@ -22,28 +20,14 @@ from .types import (
 from .utils import default_feature_configs
 
 
-def _determine_target_type(data: np.ndarray) -> TargetType:
-    """Returns the type of a target determined from its data."""
-    raise NotImplementedError()
-
-
-def _prepare_data(
-    data: pd.DataFrame, prepare_data_config: PrepareDataConfig
-) -> PreparedData:
-    """Returns an instance of `PreparedData` for the given data and config."""
-    raise NotImplementedError()
-
-
-class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
+class Pipeline:  # pylint: disable=too-many-instance-attributes
     """A pipeline for calibrated modeling.
 
     A pipline takes in raw data and outputs a calibrated model. This process breaks
     down into the following steps:
 
-    - Cleaning. The raw data is cleaned according to the pipeline's cleaning config.
-    - Transforming. The cleaned data is transformed according to transformation configs.
-    - Preparation. The transformed data is split into train, val, and test sets.
-    - Training. Hypertune models on the train and val sets to find the best one.
+    - Preparation. The data is prepared and split into train, val, and test sets.
+    - Training. Models are trained on the train and val sets.
 
     You can then analyze trained models and their results, and you can use the best
     model that you trust to make predictions on new data.
@@ -71,58 +55,81 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
             target: The name of the target column.
             target_type: The type of the target column.
             primary_metric: The primary metric to use for training and evaluation.
-            name: The name of the pipeline.
+            name: The name of the pipeline. If not provided, the name will be set to
+                `{target}_{target_type}`.
             categories: The column names in `data` for categorical columns.
         """
-        self.name: str = name
-        self.goal: str = ""
-        self.config: PipelineConfig = PipelineConfig(
-            prepare_data_config=PrepareDataConfig(),
-            features=default_feature_configs(data, target, categories),
-        )
-
-        self._target: str = target
-        self._target_type: TargetType = (
+        self.target: str = target
+        self.target_type: TargetType = (
             target_type
             if target_type is not None
-            else _determine_target_type(data[target])
+            else self._determine_target_type(data[self.target])
         )
-        self._primary_metric: Metric = (
+        self.primary_metric: Metric = (
             primary_metric
             if primary_metric is not None
-            else (Metric.F1 if target_type == TargetType.CLASSIFICATION else Metric.MSE)
+            else (
+                Metric.F1
+                if self.target_type == TargetType.CLASSIFICATION
+                else Metric.MSE
+            )
         )
-        self._dataset: Dataset = Dataset(raw_data=data)
         # Maps a PipelineConfig id to its corresponding PipelineConfig instance.
-        self._configs: Dict[int, PipelineConfig] = {}
+        self.configs: Dict[int, PipelineConfig] = {}
         # Maps a Dataset id to its corresponding Dataset instance.
-        self._datasets: Dict[int, Dataset] = {}
+        self.datasets: Dict[int, Dataset] = {}
         # Maps a TrainedModel id to its corresponding TrainedModel instance.
-        self._models: Dict[int, TrainedModel] = {}
+        self.models: Dict[int, TrainedModel] = {}
 
-    def target(self):
-        """Returns the target column."""
-        return self._target
+        self.name: str = name if name else f"{self.target}_{self.target_type}"
+        self.config: PipelineConfig = PipelineConfig(
+            features=default_feature_configs(data, self.target, categories),
+        )
 
-    def target_type(self):
-        """Returns the target type."""
-        return self._target_type
+    def prepare(
+        self,
+        data: Optional[pd.DataFrame] = None,
+        pipeline_config_id: Optional[int] = None,
+    ) -> Tuple[int, int]:
+        """Prepares the pipeline and dataset for training given the preparation config.
 
-    def primary_metric(self):
-        """Returns the primary metric."""
-        return self._primary_metric
+        Args:
+            data: The raw data to be prepared for training.
+            pipeline_config_id: The id of the pipeline config to be used for training.
+                If not provided, the current pipeline config will be used and versioned.
 
-    def configs(self, config_id: int):
-        """Returns the config with the given id."""
-        return self._configs[config_id]
+        Returns:
+            A tuple of the dataset id and the pipeline config id used for preparation.
+        """
+        if pipeline_config_id is None:
+            pipeline_config_id = len(self.configs) + 1
+            pipeline_config = copy.deepcopy(self.config)
+            self.configs[pipeline_config_id] = pipeline_config
+        else:
+            pipeline_config = self.configs[pipeline_config_id]
 
-    def datasets(self, dataset_id: int):
-        """Returns the data with the given id."""
-        return self._datasets[dataset_id]
+        if pipeline_config.shuffle_data:
+            data = data.sample(frac=1).reset_index(drop=True)
 
-    def models(self, model_id: int):
-        """Returns the model with the given id."""
-        return self._models[model_id]
+        train_percentage = pipeline_config.dataset_split.train / 100
+        train_data = data.iloc[: int(len(data) * train_percentage)]
+        val_percentage = pipeline_config.dataset_split.val / 100
+        val_data = data.iloc[
+            int(len(data) * train_percentage) : int(
+                len(data) * (train_percentage + val_percentage)
+            )
+        ]
+        test_data = data.iloc[int(len(data) * (train_percentage + val_percentage)) :]
+
+        dataset = Dataset(
+            pipeline_config_id=pipeline_config_id,
+            columns=data.columns.to_list(),
+            prepared_data=PreparedData(train=train_data, val=val_data, test=test_data),
+        )
+        dataset_id = len(self.datasets) + 1
+        self.datasets[dataset_id] = dataset
+
+        return dataset_id, pipeline_config_id
 
     def train(
         self,
@@ -136,10 +143,10 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
 
     def hypertune(
         self,
-        dataset_id: int,
-        pipeline_config_id: int,
         model_config: ModelConfig,
         hypertune_config: HypertuneConfig,
+        dataset: Optional[Union[Dataset, int]] = None,
+        pipeline_config: Optional[Union[PipelineConfig, int]] = None,
     ) -> Tuple[int, float, List[int]]:
         """Runs hyperparameter tuning for the pipeline according to the given config.
 
@@ -159,7 +166,6 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
         self,
         dataset: Optional[Union[pd.DataFrame, int]] = None,
         pipeline_config_id: Optional[int] = None,
-        prepare_data_config: Optional[PrepareDataConfig] = None,
         model_config: Optional[ModelConfig] = None,
         hypertune_config: Optional[HypertuneConfig] = None,
     ) -> PipelineRun:
@@ -167,7 +173,10 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
 
         The full pipeline run process is as follows:
             - Prepare the data.
-            - Hypertune to find the best model for the current config.
+            - Train the model.
+
+        In future versions, running the pipeline will also include hyperparameter tuning
+        to make it easier to find the best performing model.
 
         When `data` is not specified, the pipeline will use the most recently used data
         unless this is the first run, in which case it will use the data that was passed
@@ -187,7 +196,6 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
             pipeline_config_id: The id of the pipeline config to be used for training.
                 If not specified, the pipeline will use the current settings for the
                 primary pipeline config.
-            prepare_data_config: The config for preparing the data.
             model_config: The config for the model to be trained.
             hypertune_config: The config for hyperparameter tuning.
 
@@ -245,3 +253,18 @@ class Pipeline(BaseModel):  # pylint: disable=too-many-instance-attributes
             An instance of `Pipeline` loaded from the file.
         """
         raise NotImplementedError()
+
+    #############################
+    #     Private Functions     #
+    #############################
+
+    def _determine_target_type(self, target_data: pd.Series) -> TargetType:
+        """Returns the type of a target determined from its data."""
+        if target_data.dtype.kind in ["i", "u"] and sorted(target_data.unique()) == [
+            0,
+            1,
+        ]:
+            return TargetType.CLASSIFICATION
+        if target_data.dtype.kind == "f":
+            return TargetType.REGRESSION
+        return TargetType.UNKNOWN

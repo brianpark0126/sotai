@@ -21,6 +21,7 @@ class _Enum(str, Enum, metaclass=_Metaclass):
 class TargetType(_Enum):
     """The type of target to predict."""
 
+    UNKNOWN = "unknown"
     CLASSIFICATION = "classification"
     REGRESSION = "regression"
 
@@ -40,11 +41,12 @@ class Metric(_Enum):
 
     AUC = "auc"
     BINARY_ACCURACY = "binary_accuracy"
-    MEAN_ABSOLUTE_ERROR = "mean_absolute_error"
-    MEAN_SQUARED_ERROR = "mean_squared_error"
+    F1 = "f1"
+    MAE = "mean_absolute_error"
+    MSE = "mean_squared_error"
     PRECISION = "precision"
     RECALL = "recall"
-    ROOT_MEAN_SQUARED_ERROR = "root_mean_squared_error"
+    RMSE = "root_mean_squared_error"
 
 
 class ModelFramework(_Enum):
@@ -121,12 +123,14 @@ class InputKeypointsType(_Enum):
 class FeatureType(_Enum):
     """Type of feature.
 
+    - UNKNOWN: a feature with a type that our system does not currently support.
     - NUMERICAL: a numerical feature that should be calibrated using an instance of
         `NumericalCalibrator`.
     - CATEGORICAL: a categorical feature that should be calibrated using an instance of
         `CategoricalCalibrator`.
     """
 
+    UNKNOWN = "unknown"
     NUMERICAL = "numerical"
     CATEGORICAL = "categorical"
 
