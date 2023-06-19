@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import pandas as pd
 import pytorch_calibrated as ptcm
 import tensorflow_lattice as tfl
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 from .enums import (
     EnsembleType,
@@ -29,23 +29,18 @@ class DatasetSplit(BaseModel):
         test: The percentage of the dataset to use for testing.
     """
 
-    train: float = 0.8
-    val: float = 0.1
-    test: float = 0.1
+    train: int = 80
+    val: int = 10
+    test: int = 10
 
-
-class PrepareDataConfig(BaseModel):
-    """Configuration for preparing data for modeling.
-
-    Attributes:
-        drop_empty_percentage: Drop rows that have drop_empty_percentage or more column
-            values missing.
-        split: The `DatasetSplit` defining the percentages for train, val, and test
-            datasets.
-    """
-
-    drop_empty_percentage: float = 70
-    split: DatasetSplit = DatasetSplit(train=0.8, val=0.1, test=0.1)
+    @root_validator(pre=True, allow_reuse=True)
+    @classmethod
+    def validate_split_sum(cls, values):
+        """Ensures that the split percentages add up to 100."""
+        assert (
+            values["train"] + values["val"] + values["test"] == 100
+        ), "split percentages must add up to 100"
+        return values
 
 
 class PreparedData(BaseModel):
@@ -57,9 +52,9 @@ class PreparedData(BaseModel):
         test: The testing dataset.
     """
 
-    train: pd.DataFrame
-    val: pd.DataFrame
-    test: pd.DataFrame
+    train: pd.DataFrame = Field(...)
+    val: pd.DataFrame = Field(...)
+    test: pd.DataFrame = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True
@@ -69,14 +64,14 @@ class Dataset(BaseModel):
     """A class for managing data.
 
     Attributes:
-        raw_data: The raw data.
-        dataset_split: The split percentage for train, val, and test datasets.
-        prepared_data: The prepared data.
+        pipeline_config_id: The ID of the pipeline config used to create this dataset.
+        columns: The columns of the dataset.
+        prepared_data: The prepared data ready for training.
     """
 
-    raw_data: pd.DataFrame
-    prepare_data_config: Optional[PrepareDataConfig] = None
-    prepared_data: Optional[PreparedData] = None
+    pipeline_config_id: int = Field(...)
+    columns: List[str] = Field(...)
+    prepared_data: PreparedData = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True
@@ -263,7 +258,7 @@ class TrainingConfig(BaseModel):
         learning_rate: The learning rate to use for the optimizer.
     """
 
-    loss_type: Optional[LossType] = Field(...)
+    loss_type: LossType = Field(...)
     epochs: int = 100
     batch_size: int = 32
     learning_rate: float = 1e-3
@@ -352,14 +347,12 @@ class TrainedModel(BaseModel):
     """A calibrated model container for configs, results, and the model itself.
 
     Attributes:
-        id: The ID of the model.
         model_config: The configuration for the model.
         training_config: The configuration used for training the model.
         training_results: The results of training the model.
         model: The trained model.
     """
 
-    id: int = Field(...)
     dataset_id: int = Field(...)
     pipeline_config_id: int = Field(...)
     model_config: ModelConfig = Field(...)
@@ -380,11 +373,16 @@ class PipelineConfig(BaseModel):
     """A configuration object for a `Pipeline`.
 
     Attributes:
-        prepare_data_config: The configuration for preparing the data.
+        shuffle_data: Whether to shuffle the data before splitting it into train,
+            validation, and test sets.
+        drop_empty_percentage: Rows will be dropped if they are this percentage empty.
+        dataset_split: The split of the dataset into train, validation, and test sets.
         features: A dictionary mapping the column name for a feature to its config.
     """
 
-    prepare_data_config: PrepareDataConfig = Field(...)
+    shuffle_data: bool = True
+    drop_empty_percentage: int = 70
+    dataset_split: DatasetSplit = DatasetSplit(train=80, val=10, test=10)
     features: Dict[
         str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]
     ] = Field(...)
