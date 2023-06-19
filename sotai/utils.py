@@ -3,7 +3,6 @@ import logging
 import math
 from typing import Dict, List, Optional, Union
 
-import numpy as np
 import pandas as pd
 
 from .enums import FeatureType
