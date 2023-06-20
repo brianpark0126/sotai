@@ -4,32 +4,19 @@ from datetime import datetime
 import pandas as pd
 
 from sotai.enums import FeatureType
-from sotai.utils import default_feature_configs
+from sotai.utils import determine_feature_types
 
 
-def test_default_feature_configs():
-    """Tests the generation of default feature configs."""
-    target = "target"
+def test_determine_feature_types():
+    """Tests the determination of feature types from data."""
     data = pd.DataFrame(
         {
-            target: [0, 1, 0],
             "numerical": [0, 1, 2],
             "categorical": ["a", "b", "c"],
-            "unknown": [
-                datetime(2020, 1, 1),
-                datetime(2020, 1, 2),
-                datetime(2020, 1, 3),
-            ],
+            "unknown": [datetime.now(), datetime.now(), datetime.now()],
         }
     )
-    categories = ["categorical"]
-    feature_configs = default_feature_configs(data, target, categories)
-    assert len(feature_configs) == 2
-    numerical_feature_config = feature_configs["numerical"]
-    assert numerical_feature_config.name == "numerical"
-    assert numerical_feature_config.type == FeatureType.NUMERICAL
-    assert numerical_feature_config.missing_input_value == -1
-    categorical_feature_config = feature_configs["categorical"]
-    assert categorical_feature_config.name == "categorical"
-    assert categorical_feature_config.type == FeatureType.CATEGORICAL
-    assert categorical_feature_config.missing_input_value == "<Missing Value>"
+    feature_types = determine_feature_types(data)
+    assert feature_types["numerical"] == FeatureType.NUMERICAL
+    assert feature_types["categorical"] == FeatureType.CATEGORICAL
+    assert feature_types["unknown"] == FeatureType.UNKNOWN

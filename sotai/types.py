@@ -264,20 +264,20 @@ class TrainingConfig(BaseModel):
     learning_rate: float = 1e-3
 
 
-class HypertuneConfig(BaseModel):
+class TuningConfig(BaseModel):
     """Configuration for hyperparameter tuning to find the best model.
 
     Attributes:
         epochs_options: A list of values to try for how many epochs to train the model.
         batch_size_options: A list of values to try for how many examples to use for
             each training step.
-        Linear_rate_options: A list of values to try for the learning rate to use for
+        learning_rate_options: A list of values to try for the learning rate to use for
             the optimizer.
     """
 
     epochs_options: List[int] = [50, 100]
     batch_size_options: List[int] = [32, 64]
-    Linear_rate_options: List[float] = [1e-3, 1e-4]
+    learning_rate_options: List[float] = [1e-3, 1e-4]
 
 
 class FeatureAnalysis(BaseModel):
@@ -388,8 +388,8 @@ class PipelineConfig(BaseModel):
     ] = Field(...)
 
 
-class PipelineRun(BaseModel):
-    """A container for the results of running a `Pipeline`.
+class PipelineTuningResults(BaseModel):
+    """A container for the results of tuning a `Pipeline`.
 
     Attributes:
         dataset_id: The ID of the dataset used for the pipeline run.
