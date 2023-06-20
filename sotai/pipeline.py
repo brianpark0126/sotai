@@ -2,22 +2,25 @@
 from __future__ import annotations
 
 import copy
-from typing import Dict, List, Optional, Tuple, Union
+import logging
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from .enums import Metric, TargetType
+from .enums import FeatureType, Metric, TargetType
 from .types import (
+    CategoricalFeatureConfig,
     Dataset,
-    HypertuneConfig,
     ModelConfig,
+    NumericalFeatureConfig,
     PipelineConfig,
-    PipelineRun,
+    PipelineTuningResults,
     PreparedData,
     TrainedModel,
     TrainingConfig,
+    TuningConfig,
 )
-from .utils import default_feature_configs
+from .utils import determine_feature_types
 
 
 class Pipeline:  # pylint: disable=too-many-instance-attributes
@@ -35,36 +38,33 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        data: pd.DataFrame,
+        features: List[str],
         target: str,
-        target_type: Optional[TargetType] = None,
+        target_type: TargetType,
+        categories: Optional[Dict[str, List[str]]] = None,
         primary_metric: Optional[Metric] = None,
         name: Optional[str] = None,
-        categories: Optional[List[str]] = None,
     ):
         """Initializes an instance of `Pipeline`.
 
         The pipeline is initialized with a default config, which can be modified later.
-        The target type can be optionally specfified. If not specified, the pipeline
-        will try to automatically determine the type of the target from the data. The
-        same is true for the primary metric. The default primary metric will be F1 score
-        for classification and Mean Squared Error for regression.
+        The target type can be optionally specfified. The default primary metric will be
+        F1 score for classification and Mean Squared Error for regression if not
+        specified.
 
         Args:
-            data: The raw data to be used for training.
+            features: The column names in your data to use as features.
             target: The name of the target column.
             target_type: The type of the target column.
+            categories: A dictionary mapping feature names to unique categories. Any
+                values not in the categories list for a given feature will be treated
+                as a missing value.
             primary_metric: The primary metric to use for training and evaluation.
             name: The name of the pipeline. If not provided, the name will be set to
                 `{target}_{target_type}`.
-            categories: The column names in `data` for categorical columns.
         """
         self.target: str = target
-        self.target_type: TargetType = (
-            target_type
-            if target_type is not None
-            else self._determine_target_type(data[self.target])
-        )
+        self.target_type: TargetType = target_type
         self.primary_metric: Metric = (
             primary_metric
             if primary_metric is not None
@@ -83,15 +83,29 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         self.name: str = name if name else f"{self.target}_{self.target_type}"
         self.config: PipelineConfig = PipelineConfig(
-            features=default_feature_configs(data, self.target, categories),
+            features={
+                feature_name: (
+                    CategoricalFeatureConfig(
+                        name=feature_name,
+                        categories=categories[feature_name],
+                    )
+                    if categories and feature_name in categories
+                    else NumericalFeatureConfig(name=feature_name)
+                )
+                for feature_name in features
+            },
         )
 
     def prepare(
         self,
-        data: Optional[pd.DataFrame] = None,
+        data: pd.DataFrame,
         pipeline_config_id: Optional[int] = None,
     ) -> Tuple[int, int]:
         """Prepares the pipeline and dataset for training given the preparation config.
+
+        If any features in data are detected as non-numeric, the pipeline will attempt
+        to handle them as categorical features. Any features that the pipeline cannot
+        handle will be skipped.
 
         Args:
             data: The raw data to be prepared for training.
@@ -107,6 +121,33 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             self.configs[pipeline_config_id] = pipeline_config
         else:
             pipeline_config = self.configs[pipeline_config_id]
+
+        feature_types = determine_feature_types(
+            data[list(pipeline_config.features.keys())]
+        )
+        for feature_name, feature_type in feature_types.items():
+            feature_config = pipeline_config.features[feature_name]
+            if (
+                feature_type == FeatureType.NUMERICAL
+                or feature_config.type == FeatureType.CATEGORICAL
+            ):
+                continue
+            if feature_type == FeatureType.CATEGORICAL:
+                logging.info(
+                    "Detected %s as categorical. Replacing numerical config with "
+                    "default categorical config",
+                    feature_name,
+                )
+                pipeline_config.features[feature_name] = CategoricalFeatureConfig(
+                    name=feature_name,
+                    categories=data[feature_name].unique().tolist(),
+                )
+            else:
+                logging.info(
+                    "Removing feature %s because its data type is not supported.",
+                    feature_name,
+                )
+                pipeline_config.features.pop(feature_name)
 
         if pipeline_config.shuffle_data:
             data = data.sample(frac=1).reset_index(drop=True)
@@ -138,64 +179,27 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         model_config: ModelConfig,
         training_config: TrainingConfig,
     ) -> TrainedModel:
-        """Returns a model trained according to the model and training configs."""
+        """Returns a calibrated model trained according to the given configs."""
         raise NotImplementedError()
 
-    def hypertune(
+    def tune(  # pylint: disable=too-many-arguments
         self,
-        model_config: ModelConfig,
-        hypertune_config: HypertuneConfig,
-        dataset: Optional[Union[Dataset, int]] = None,
-        pipeline_config: Optional[Union[PipelineConfig, int]] = None,
-    ) -> Tuple[int, float, List[int]]:
-        """Runs hyperparameter tuning for the pipeline according to the given config.
-
-        Args:
-            dataset_id: The id of the dataset to be used for training.
-            pipeline_config_id: The id of the pipeline config to be used for training.
-            model_config: The config for the model to be trained.
-            hypertune_config: The config for hyperparameter tuning.
-
-        Returns:
-            A tuple of the best model id, the best model's primary metric, and a list of
-            all model ids that were trained.
-        """
-        raise NotImplementedError()
-
-    def run(  # pylint: disable=too-many-arguments
-        self,
-        dataset: Optional[Union[pd.DataFrame, int]] = None,
-        pipeline_config_id: Optional[int] = None,
+        dataset_id: int,
+        pipeline_config_id: int,
         model_config: Optional[ModelConfig] = None,
-        hypertune_config: Optional[HypertuneConfig] = None,
-    ) -> PipelineRun:
-        """Runs the pipeline according to the pipeline and training configs.
+        tuning_config: Optional[TuningConfig] = None,
+    ) -> PipelineTuningResults:
+        """Tunes the pipeline according to the pipeline and training configs.
 
-        The full pipeline run process is as follows:
-            - Prepare the data.
-            - Train the model.
-
-        In future versions, running the pipeline will also include hyperparameter tuning
-        to make it easier to find the best performing model.
-
-        When `data` is not specified, the pipeline will use the most recently used data
-        unless this is the first run, in which case it will use the data that was passed
-        in during initialization. When `model_config` is not specified, the pipeline will
-        use the default model config. When `hypertune_config` is not specified, the
-        pipeline will use the default hypertune config.
-
-        A call to `run` will create new dataset and pipeline config versions unless
-        explicit ids for previous versions are provided.
+        You must provide a dataset id and pipeline config id generated from preparing
+        the pipeline. When `model_config` is not specified, the pipeline will use a
+        default model config. When `tuning_config` is not specified, the pipeline will
+        use a default tuning config.
 
         Args:
-            dataset: The data to be used for training. Can be a pandas DataFrame
-                containing new data or the id of a previously used dataset. If not
-                specified, the pipeline will use the most recently used dataset unless
-                this is the first run, in which case it will use the data that was
-                passed in during initialization.
-            pipeline_config_id: The id of the pipeline config to be used for training.
-                If not specified, the pipeline will use the current settings for the
-                primary pipeline config.
+            dataset_id: The id of a dataset that has been prepared for training.
+            pipeline_config_id: The id of the pipeline config that has been prepared
+                for training.
             model_config: The config for the model to be trained.
             hypertune_config: The config for hyperparameter tuning.
 
@@ -216,22 +220,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             model_id: The id of the model to be used for prediction.
 
         Returns:
-            A tuple containing a dataframe with predictions and the new of the new
+            A tuple containing a dataframe with predictions and the name of the new
             column, which will be the name of the target column with a tag appended to
             it (e.g. target_prediction).
         """
         raise NotImplementedError()
 
     def analyze(self, model_id: int):
-        """Charts pipeline model results for a specific model.
-
-        The following charts will be generated:
-            - Calibrator charts for each feature.
-            - Feature importance bar chart with feature statistics.
-
-        Args:
-            model_id: The id of the model to be analyzed.
-        """
+        """WIP Web-App Client Analysis"""
         raise NotImplementedError()
 
     def save(self, filanem: str):
@@ -253,18 +249,3 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             An instance of `Pipeline` loaded from the file.
         """
         raise NotImplementedError()
-
-    #############################
-    #     Private Functions     #
-    #############################
-
-    def _determine_target_type(self, target_data: pd.Series) -> TargetType:
-        """Returns the type of a target determined from its data."""
-        if target_data.dtype.kind in ["i", "u"] and sorted(target_data.unique()) == [
-            0,
-            1,
-        ]:
-            return TargetType.CLASSIFICATION
-        if target_data.dtype.kind == "f":
-            return TargetType.REGRESSION
-        return TargetType.UNKNOWN
