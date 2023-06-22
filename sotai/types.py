@@ -1,5 +1,5 @@
 """Pydantic models for Pipelines."""
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 import pytorch_calibrated as ptcm
@@ -7,16 +7,12 @@ import tensorflow_lattice as tfl
 from pydantic import BaseModel, Field, root_validator
 
 from .enums import (
-    EnsembleType,
     FeatureType,
     InputKeypointsInit,
     InputKeypointsType,
-    Interpolation,
     LossType,
     ModelFramework,
-    ModelType,
     Monotonicity,
-    Parameterization,
 )
 
 
@@ -65,30 +61,14 @@ class Dataset(BaseModel):
 
     Attributes:
         pipeline_config_id: The ID of the pipeline config used to create this dataset.
-        columns: The columns of the dataset.
         prepared_data: The prepared data ready for training.
     """
 
     pipeline_config_id: int = Field(...)
-    columns: List[str] = Field(...)
     prepared_data: PreparedData = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True
-
-
-class _FeatureConfig(BaseModel):
-    """Base class for feature configs.
-
-    Attributes:
-        name: The name of the feature.
-        type: The type of the feature.
-        missing_input_value: The value that represents a missing input value. If None,
-            then it will be assumed that no values are missing for this feature.
-    """
-
-    name: str = Field(...)
-    missing_input_value: Optional[float] = None
 
 
 class NumericalFeatureConfig(BaseModel):
@@ -97,8 +77,6 @@ class NumericalFeatureConfig(BaseModel):
     Attributes:
         name: The name of the feature.
         type: The type of the feature. Always `FeatureType.NUMERICAL`.
-        missing_input_value: The value that represents a missing input value. If None,
-            then it will be assumed that no values are missing for this feature.
         num_keypoints: The number of keypoints to use for the calibrator.
         input_keypoints_init: The method for initializing the input keypoints.
         input_keypoints_type: The type of input keypoints.
@@ -107,32 +85,25 @@ class NumericalFeatureConfig(BaseModel):
 
     name: str = Field(...)
     type: FeatureType = Field(FeatureType.NUMERICAL, const=True)
-    missing_input_value: Optional[float] = None
     num_keypoints: int = 10
     input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
     input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
     monotonicity: Monotonicity = Monotonicity.NONE
 
 
-class CategoricalFeatureConfig(_FeatureConfig):
+class CategoricalFeatureConfig(BaseModel):
     """Configuration for a categorical feature.
 
     Attributes:
         name: The name of the feature.
         type: The type of the feature. Always `FeatureType.CATEGORICAL`.
-        missing_input_value: The value that represents a missing input value. If None,
-            then it will be assumed that no values are missing for this feature.
         categories: The categories for the feature.
-        monotonicity_pairs: The monotonicity constraints, if any, defined as pairs of
-            categories. The output for the second category will be greater than or equal
-            to the output for the first category for each pair, all else being equal.
     """
 
     name: str = Field(...)
     type: FeatureType = Field(FeatureType.CATEGORICAL, const=True)
-    missing_input_value: str = Field("<Missing Value>")
     categories: Union[List[str], List[int]] = Field(...)
-    monotonicity_pairs: Optional[List[Tuple[str, str]]] = None
+    # TODO (will): add support for categorical monotonicity.
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -175,63 +146,6 @@ class LinearOptions(_ModelOptions):
     use_bias: bool = True
 
 
-class LatticeOptions(_ModelOptions):
-    """Calibrated Lattice model options.
-
-    Attributes:
-        lattice_size: The size of the lattice. For 1D lattices, this is the number of
-            vertices. For higher-dimensional lattices, this is the number of vertices
-            along each dimension. For example, a 2x2 lattice has 4 vertices.
-        interpolation: The interpolation method to use for the lattice. Hypercube
-            interpolation interpolates all vertices in the lattice. Simplex
-            interpolation only interpolates the vertices along the edges of the lattice
-            simplices.
-        parameterization: The parameterization method to use for the lattice. Lattices
-            with lattice size `L` and `N` inputs have ``L ** N`` parameters. All
-            vertices parameterizes the lattice uses all ``L ** N`` vertices. KFL uses a
-            factorized form that grows linearly with ``N``.
-        num_terms: The number of terms to use for a kroncker-factored lattice. This will
-            be ignored if the parameterization is not KFL.
-        random_seed: The random seed to use for the lattice.
-    """
-
-    lattice_size: int = 2
-    interpolation: Interpolation = Interpolation.HYPERCUBE
-    parameterization: Parameterization = Parameterization.KFL
-    num_terms: int = 2
-    random_seed: int = 42
-
-
-class EnsembleOptions(LatticeOptions):
-    """Calibrated Lattice Ensemble model options.
-
-    Attributes:
-        lattices: The type of ensembling to use for lattice arrangement.
-        num_lattices: The number of lattices to use for the ensemble.
-        lattice_rank: The number of features to use for each lattice in the ensemble.
-        separate_calibrators: Whether to use separate calibrators for each lattice in
-            the ensemble. If False, then a single calibrator will be used for each input
-            feature.
-        use_linear_combination: Whether to use a linear combination of the lattices in
-            the ensemble. If False, then the output will be the average of the outputs.
-        use_bias: Whether to use a bias term for the linear combination. Ignored if
-            `use_linear_combination` is False.
-        fix_ensemble_for_2d_contraints: Whether to fix the ensemble arrangement for 2D
-            constraints.
-    """
-
-    lattices: EnsembleType = EnsembleType.RANDOM
-    # Note: num_lattices * lattice_rank should be >= num_features
-    # This can be properly defaulted in the configure function.
-    num_lattices: Optional[int] = None
-    lattice_rank: Optional[int] = None
-    # TODO (will): Add support for separate calibrators.
-    separate_calibrators: bool = Field(False, const=True)
-    use_linear_combination: bool = False
-    use_bias: bool = False
-    fix_ensemble_for_2d_contraints: bool = True
-
-
 class ModelConfig(BaseModel):
     """Configuration for a calibrated model.
 
@@ -241,11 +155,9 @@ class ModelConfig(BaseModel):
         options: The configuration options for the model.
     """
 
-    # TODO (will): Add support for PyTorch Calibrated.
     framework: ModelFramework = Field(ModelFramework.TENSORFLOW, const=True)
     # TODO (will): Add support for Calibrated Lattice and Calibrated Lattice Ensemble.
-    type: ModelType = Field(ModelType.LINEAR, const=True)
-    options: Union[LinearOptions, LatticeOptions, EnsembleOptions] = Field(...)
+    options: LinearOptions = Field(...)
 
 
 class TrainingConfig(BaseModel):
@@ -262,22 +174,6 @@ class TrainingConfig(BaseModel):
     epochs: int = 100
     batch_size: int = 32
     learning_rate: float = 1e-3
-
-
-class TuningConfig(BaseModel):
-    """Configuration for hyperparameter tuning to find the best model.
-
-    Attributes:
-        epochs_options: A list of values to try for how many epochs to train the model.
-        batch_size_options: A list of values to try for how many examples to use for
-            each training step.
-        learning_rate_options: A list of values to try for the learning rate to use for
-            the optimizer.
-    """
-
-    epochs_options: List[int] = [50, 100]
-    batch_size_options: List[int] = [32, 64]
-    learning_rate_options: List[float] = [1e-3, 1e-4]
 
 
 class FeatureAnalysis(BaseModel):
@@ -299,7 +195,7 @@ class FeatureAnalysis(BaseModel):
     """
 
     feature_name: str = Field(...)
-    feature_type: str = Field(...)
+    feature_type: FeatureType = Field(...)
     min: float = Field(...)
     max: float = Field(...)
     mean: float = Field(...)
@@ -316,30 +212,33 @@ class TrainingResults(BaseModel):
 
     Attributes:
         training_time: The total time spent training the model.
-        evaluation_time: The total time spent evaluating the model.
-        feature_analysis_extraction_time: The total time spent extracting feature
-            analysis data from the model.
         train_loss_by_epoch: The training loss for each epoch.
         train_primary_metric_by_epoch: The training primary metric for each epoch.
-        validation_loss_by_epoch: The validation loss for each epoch.
-        validation_primary_metric_by_epoch: The validation primary metric for each
+        val_loss_by_epoch: The validation loss for each epoch.
+        val_primary_metric_by_epoch: The validation primary metric for each
             epoch.
+        evaluation_time: The total time spent evaluating the model.
         test_loss: The test loss.
         test_primary_metric: The test primary metric.
-        feature_analysis_objects: The feature analysis results for each feature.
+        feature_analysis_extraction_time: The total time spent extracting feature
+            analysis data from the model.
+        feature_analyses: The feature analysis results for each feature.
+        feature_importance_extraction_time: The total time spent extracting feature
+            importance data from the model.
         feature_importances: The feature importances for each feature.
     """
 
     training_time: float = Field(...)
-    evaluation_time: float = Field(...)
-    feature_analysis_extraction_time: float = Field(...)
     train_loss_by_epoch: List[float] = Field(...)
     train_primary_metric_by_epoch: List[float] = Field(...)
-    validation_loss_by_epoch: List[float] = Field(...)
-    validation_primary_metric_by_epoch: List[float] = Field(...)
+    val_loss_by_epoch: List[float] = Field(...)
+    val_primary_metric_by_epoch: List[float] = Field(...)
+    evaluation_time: float = Field(...)
     test_loss: float = Field(...)
     test_primary_metric: float = Field(...)
-    feature_analysis_objects: Dict[str, FeatureAnalysis] = Field(...)
+    feature_analyses_extraction_time: float = Field(...)
+    feature_analyses: Dict[str, FeatureAnalysis] = Field(...)
+    feature_importance_extraction_time: float = Field(...)
     feature_importances: Dict[str, float] = Field(...)
 
 
@@ -386,22 +285,3 @@ class PipelineConfig(BaseModel):
     features: Dict[
         str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]
     ] = Field(...)
-
-
-class PipelineTuningResults(BaseModel):
-    """A container for the results of tuning a `Pipeline`.
-
-    Attributes:
-        dataset_id: The ID of the dataset used for the pipeline run.
-        pipeline_config_id: The ID of the pipeline config used for the pipeline run.
-        best_model_id: The ID of the best model found by the pipeline run.
-        best_primary_metric: The primary metric of the best model found by the pipeline
-            run.
-        trained_model_ids: The IDs of all models trained by the pipeline run.
-    """
-
-    dataset_id: int = Field(...)
-    pipeline_config_id: int = Field(...)
-    best_model_id: int = Field(...)
-    best_primary_metric: float = Field(...)
-    trained_model_ids: List[int] = Field(...)

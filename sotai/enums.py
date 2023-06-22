@@ -3,7 +3,6 @@ from enum import Enum, EnumMeta
 from typing import Any
 
 
-# TODO (will): Fill out docstrings for those missing details.
 class _Metaclass(EnumMeta):
     """Base `EnumMeta` subclass for accessing enum members directly."""
 
@@ -21,7 +20,6 @@ class _Enum(str, Enum, metaclass=_Metaclass):
 class TargetType(_Enum):
     """The type of target to predict."""
 
-    UNKNOWN = "unknown"
     CLASSIFICATION = "classification"
     REGRESSION = "regression"
 
@@ -29,24 +27,20 @@ class TargetType(_Enum):
 class LossType(_Enum):
     """The type of loss function to use."""
 
-    BINARY_CROSSENTROPY = "binary"
+    BINARY_CROSSENTROPY = "binary_crossentropy"
     HINGE = "hinge"
     HUBER = "huber"
-    MEAN_ABSOLUTE_ERROR = "mae"
-    MEAN_SQUARED_ERROR = "mse"
+    MAE = "mae"
+    MSE = "mse"
 
 
 class Metric(_Enum):
     """The type of metric to use."""
 
     AUC = "auc"
-    BINARY_ACCURACY = "binary_accuracy"
-    F1 = "f1"
+    F1 = "f1_score"
     MAE = "mean_absolute_error"
     MSE = "mean_squared_error"
-    PRECISION = "precision"
-    RECALL = "recall"
-    RMSE = "root_mean_squared_error"
 
 
 class ModelFramework(_Enum):
@@ -54,51 +48,6 @@ class ModelFramework(_Enum):
 
     TENSORFLOW = "tensorflow"
     PYTORCH = "pytorch"
-
-
-class ModelType(_Enum):
-    """The type of model to use."""
-
-    LINEAR = "linear"
-    LATTICE = "lattice"
-    ENSEMBLE = "ensemble"
-
-
-class CalibratorRegularizationType(_Enum):
-    """The type of regularization to use for the calibrator."""
-
-    LAPLACIAN = "laplacian"
-    HESSIAN = "hessian"
-    WRINKLE = "wrinkle"
-
-
-class LatticeRegularizationType(_Enum):
-    """The type of regularization to use for the lattice."""
-
-    LAPLACIAN = "laplacian"
-    TORSION = "torsion"
-
-
-class Interpolation(_Enum):
-    """The type of interpolation to use for the lattice."""
-
-    HYPERCUBE = "hypercube"
-    SIMPLEX = "simplex"
-
-
-class Parameterization(_Enum):
-    """The type of parameterization to use for the lattice."""
-
-    ALL_VERTICES = "all_vertices"
-    KFL = "kronecker_factored"
-
-
-class EnsembleType(_Enum):
-    """The type of ensemble to use."""
-
-    RANDOM = "random"
-    RTL = "rtl_layer"
-    CRYSTALS = "crystals"
 
 
 class InputKeypointsInit(_Enum):
@@ -114,10 +63,15 @@ class InputKeypointsInit(_Enum):
 
 
 class InputKeypointsType(_Enum):
-    """The type of input keypoints to use."""
+    """The type of input keypoints to use.
+
+    - FIXED: the input keypoints will be fixed during initialization.
+    - LEARNED: the input keypoints will be learned during training after initialization.
+    """
 
     FIXED = "fixed"
-    LEARNED = "learned"
+    # Note: learned is only available for TFL currently.
+    LEARNED = "learned_interior"
 
 
 class FeatureType(_Enum):

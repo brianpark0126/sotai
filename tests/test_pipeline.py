@@ -2,15 +2,16 @@
 import pandas as pd
 import pytest
 
-from sotai.enums import FeatureType, Metric, TargetType
+from sotai.enums import FeatureType, Metric, ModelFramework, TargetType
 from sotai.pipeline import Pipeline
+from sotai.types import LinearOptions, ModelConfig
 
 
 @pytest.mark.parametrize(
     "target_type,expected_primary_metric",
     [(TargetType.CLASSIFICATION, Metric.F1), (TargetType.REGRESSION, Metric.MSE)],
 )
-def test_pipeline_init(target_type, expected_primary_metric):
+def test_init(target_type, expected_primary_metric):
     """Tests pipeline initialization for a classification target."""
     features = ["numerical", "categorical"]
     target = "target"
@@ -30,7 +31,7 @@ def test_pipeline_init(target_type, expected_primary_metric):
     assert categorical_config.type == FeatureType.NUMERICAL
 
 
-def test_pipeline_init_with_categories():
+def test_init_with_categories():
     """Tests pipeline initialization with specified categories."""
     features = ["numerical", "categorical"]
     target = "target"
@@ -45,11 +46,11 @@ def test_pipeline_init_with_categories():
     assert categorical_config.type == FeatureType.CATEGORICAL
 
 
-def test_pipeline_prepare():
+def test_prepare():
     """Tests the pipeline prepare function."""
     target = "target"
     data = pd.DataFrame(
-        {target: [0, 1, 0], "numerical": [0, 1, 2], "categorical": ["a", "b", "c"]}
+        {"numerical": [0, 1, 2], "categorical": ["a", "b", "c"], target: [0, 1, 0]}
     )
     features = data.columns.drop(target).to_list()
     pipeline = Pipeline(features, target, target_type=TargetType.CLASSIFICATION)
@@ -65,7 +66,62 @@ def test_pipeline_prepare():
     assert categorical_config.categories == ["a", "b", "c"]
     assert dataset_id == 1
     assert pipeline.datasets[dataset_id].pipeline_config_id == pipeline_config_id
-    assert set(pipeline.datasets[dataset_id].columns) == set(data.columns)
     assert pipeline.datasets[dataset_id].prepared_data.train.equals(data.iloc[:1])
     assert pipeline.datasets[dataset_id].prepared_data.val.equals(data.iloc[1:2])
     assert pipeline.datasets[dataset_id].prepared_data.test.equals(data.iloc[2:3])
+
+
+def test_train_tfl_calibrated_linear_classification_model():
+    """Tests pipeline training for calibrated linear classficiation model."""
+    target = "target"
+    data = pd.DataFrame(
+        {
+            target: [0, 1, 0, 1, 1, 0, 0, 1, 0, 1],
+            "numerical": [0, 1, 2, 1, 6, 4, 3, 5, 6, 3],
+            "categorical": ["a", "b", "c", "c", "b", "c", "a", "a", "b", "c"],
+        }
+    )
+    features = data.columns.drop(target).to_list()
+    pipeline = Pipeline(features, target, target_type=TargetType.CLASSIFICATION)
+    pipeline.config.shuffle_data = False
+    pipeline.config.dataset_split.train = 80
+    pipeline.config.dataset_split.val = 10
+    pipeline.config.dataset_split.test = 10
+    dataset_id, pipeline_config_id = pipeline.prepare(data)
+    trained_model_id, trained_model = pipeline.train(
+        dataset_id,
+        pipeline_config_id,
+        model_config=ModelConfig(
+            framework=ModelFramework.TENSORFLOW, options=LinearOptions()
+        ),
+    )
+    assert trained_model_id == 1
+    assert trained_model
+
+
+def test_train_tfl_calibrated_linear_regression_model():
+    """Tests pipeline training for calibrated linear regression model."""
+    target = "target"
+    data = pd.DataFrame(
+        {
+            target: [12, 5.6, 4, 23.5, 3.5, 2.7, 7.3, 34, 45.2, 1.0],
+            "numerical": [0, 1, 2, 1, 6, 4, 3, 5, 6, 3],
+            "categorical": ["a", "b", "c", "c", "b", "c", "a", "a", "b", "c"],
+        }
+    )
+    features = data.columns.drop(target).to_list()
+    pipeline = Pipeline(features, target, target_type=TargetType.REGRESSION)
+    pipeline.config.shuffle_data = False
+    pipeline.config.dataset_split.train = 80
+    pipeline.config.dataset_split.val = 10
+    pipeline.config.dataset_split.test = 10
+    dataset_id, pipeline_config_id = pipeline.prepare(data)
+    trained_model_id, trained_model = pipeline.train(
+        dataset_id,
+        pipeline_config_id,
+        model_config=ModelConfig(
+            framework=ModelFramework.TENSORFLOW, options=LinearOptions()
+        ),
+    )
+    assert trained_model_id == 1
+    assert trained_model
