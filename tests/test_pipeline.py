@@ -1,4 +1,5 @@
 """Temporary scaffolded test file for pipeline."""
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -78,19 +79,22 @@ def test_prepare():
 def test_train_calibrated_linear_classification_model(model_framework):
     """Tests pipeline training for calibrated linear classficiation model."""
     target = "target"
+    categorical_mapping = {0: "a", 1: "b", 2: "c", 3: "d"}
     data = pd.DataFrame(
         {
-            target: [0, 1, 0, 1, 1, 0, 0, 1, 0, 1],
-            "numerical": [0, 1, 2, 1, 6, 4, 3, 5, 6, 3],
-            "categorical": ["a", "b", "c", "c", "b", "c", "a", "a", "b", "c"],
+            target: np.random.randint(0, 2, 100),
+            "numerical": np.random.rand(100),
+            "categorical": [
+                categorical_mapping[x] for x in np.random.randint(0, 4, 100)
+            ],
         }
     )
     features = data.columns.drop(target).to_list()
     pipeline = Pipeline(features, target, target_type=TargetType.CLASSIFICATION)
     pipeline.config.shuffle_data = False
-    pipeline.config.dataset_split.train = 80
-    pipeline.config.dataset_split.val = 10
-    pipeline.config.dataset_split.test = 10
+    pipeline.config.dataset_split.train = 60
+    pipeline.config.dataset_split.val = 20
+    pipeline.config.dataset_split.test = 20
     dataset_id, pipeline_config_id = pipeline.prepare(data)
     trained_model_id, trained_model = pipeline.train(
         dataset_id,
@@ -108,11 +112,14 @@ def test_train_calibrated_linear_classification_model(model_framework):
 def test_train_calibrated_linear_regression_model(model_framework):
     """Tests pipeline training for calibrated linear regression model."""
     target = "target"
+    categorical_mapping = {0: "a", 1: "b", 2: "c", 3: "d"}
     data = pd.DataFrame(
         {
-            target: [12, 5.6, 4, 23.5, 3.5, 2.7, 7.3, 34, 45.2, 1.0],
-            "numerical": [0, 1, 2, 1, 6, 4, 3, 5, 6, 3],
-            "categorical": ["a", "b", "c", "c", "b", "c", "a", "a", "b", "c"],
+            target: np.random.rand(100) * 50,
+            "numerical": np.random.rand(100),
+            "categorical": [
+                categorical_mapping[x] for x in np.random.randint(0, 4, 100)
+            ],
         }
     )
     features = data.columns.drop(target).to_list()
