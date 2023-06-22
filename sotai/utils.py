@@ -18,3 +18,8 @@ def determine_feature_types(data: pd.DataFrame) -> Dict[str, FeatureType]:
         else:  # datetime, timedelta, complex, etc.
             feature_types[column] = FeatureType.UNKNOWN
     return feature_types
+
+
+def extract_linear_coefficients():
+    """Extracts the linear coefficients from a calibrated linear model."""
+    raise NotImplementedError()
