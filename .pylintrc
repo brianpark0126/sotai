@@ -5,7 +5,7 @@ generated-members=pandas.*, torch.*
 extension-pkg-whitelist=pydantic
 
 [MESSAGES CONTROL]
-disable=R0801,R0913
+disable=R0801,R0913,R0903
 
 [MISCELLANEOUS]
 notes=FIXME
