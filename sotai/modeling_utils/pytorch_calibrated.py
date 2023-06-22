@@ -354,3 +354,14 @@ def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
         training_results=training_results,
         model=trained_ptcm_model,
     )
+
+
+def ptcm_model_predict(
+    ptcm_model: ptcm.models.CalibratedLinear, data: pd.DataFrame
+) -> np.ndarray:
+    """Returns predictions for the given input data using the given model."""
+    csv_data = ptcm.data.CSVData(data)
+    csv_data.prepare(ptcm_model.feature_configs, None)
+    inputs = list(csv_data.batch(csv_data.num_examples))[0]
+    with torch.no_grad():
+        return ptcm_model(inputs).numpy()

@@ -3,15 +3,21 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from .constants import MISSING_CATEGORY_VALUE, MISSING_NUMERICAL_VALUE
 from .enums import FeatureType, LossType, Metric, ModelFramework, TargetType
-from .training_utils.ptcm_training import train_and_evaluate_ptcm_model
-from .training_utils.tfl_training import train_and_evaluate_tfl_model
+from .modeling_utils.pytorch_calibrated import (
+    ptcm_model_predict,
+    train_and_evaluate_ptcm_model,
+)
+from .modeling_utils.tensorflow_lattice import (
+    tfl_model_predict,
+    train_and_evaluate_tfl_model,
+)
 from .types import (
     CategoricalFeatureConfig,
     Dataset,
@@ -143,7 +149,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 )
                 pipeline_config.features[feature_name] = CategoricalFeatureConfig(
                     name=feature_name,
-                    categories=data[feature_name].unique().tolist(),
+                    categories=sorted(data[feature_name].unique().tolist()),
                 )
             else:
                 logging.info(
@@ -163,25 +169,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         data = data[data.isnull().sum(axis=1) <= max_num_empty_columns]
 
         # Replace any missing values (i.e. NaN) with missing value constants.
-        for feature_name, feature_config in pipeline_config.features.items():
-            if feature_config.type == FeatureType.CATEGORICAL:
-                unspecified_categories = list(
-                    set(data[feature_name].unique().tolist())
-                    - set(feature_config.categories)
-                )
-                if unspecified_categories:
-                    logging.info(
-                        "Replacing %s with %s for feature %s",
-                        unspecified_categories,
-                        MISSING_CATEGORY_VALUE,
-                        feature_name,
-                    )
-                    data[feature_name].replace(
-                        unspecified_categories, MISSING_CATEGORY_VALUE, inplace=True
-                    )
-                data[feature_name].fillna(MISSING_CATEGORY_VALUE, inplace=True)
-            else:
-                data[feature_name].fillna(MISSING_NUMERICAL_VALUE, inplace=True)
+        self._replace_missing_values(data, pipeline_config)
 
         if pipeline_config.shuffle_data:
             data = data.sample(frac=1).reset_index(drop=True)
@@ -258,8 +246,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         return model_id, trained_model
 
     def predict(
-        self, data: pd.DataFrame, model_id: int = None
-    ) -> Tuple[pd.DataFrame, str]:
+        self, data: pd.DataFrame, model_id: int
+    ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """Runs pipeline without training to generate predictions for given data.
 
         Args:
@@ -268,13 +256,32 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             model_id: The id of the model to be used for prediction.
 
         Returns:
-            A tuple containing a dataframe with predictions and the name of the new
-            column, which will be the name of the target column with a tag appended to
-            it (e.g. target_prediction).
+            If the pipeline target type is regression, a numpy array of predictions.
+            If the pipeline target type is classification, a tuple containing a numpy
+            array of predictions (logits) and a numpy array of probabilities.
         """
-        raise NotImplementedError()
+        trained_model = self.models[model_id]
+        pipeline_config = self.configs[trained_model.pipeline_config_id]
+        data = data[list(pipeline_config.features.keys())]
+        self._replace_missing_values(data, pipeline_config)
 
-    def save(self, filanem: str):
+        if trained_model.model_config.framework == ModelFramework.TENSORFLOW:
+            predictions = tfl_model_predict(
+                trained_model.model, pipeline_config.features, data
+            )
+        elif trained_model.model_config.framework == ModelFramework.PYTORCH:
+            predictions = ptcm_model_predict(trained_model.model, data)
+        else:
+            raise ValueError(f"Unknown model framework: {trained_model.framework}.")
+
+        if self.target_type == TargetType.REGRESSION:
+            return predictions
+        elif self.target_type == TargetType.CLASSIFICATION:
+            return predictions, 1.0 / (1.0 + np.exp(-predictions))
+        else:
+            raise ValueError(f"Unknown target type: {self.target_type}.")
+
+    def save(self, filename: str):
         """Saves the pipeline to a file.
 
         Args:
@@ -293,3 +300,31 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             An instance of `Pipeline` loaded from the file.
         """
         raise NotImplementedError()
+
+    ################################################################################
+    #                              PRIVATE METHODS                                 #
+    ################################################################################
+
+    def _replace_missing_values(
+        self, data: pd.DataFrame, pipeline_config: PipelineConfig
+    ):
+        """Replaces empty values or unspecified categories with a constant value."""
+        for feature_name, feature_config in pipeline_config.features.items():
+            if feature_config.type == FeatureType.CATEGORICAL:
+                unspecified_categories = list(
+                    set(data[feature_name].unique().tolist())
+                    - set(feature_config.categories)
+                )
+                if unspecified_categories:
+                    logging.info(
+                        "Replacing %s with %s for feature %s",
+                        unspecified_categories,
+                        MISSING_CATEGORY_VALUE,
+                        feature_name,
+                    )
+                    data[feature_name].replace(
+                        unspecified_categories, MISSING_CATEGORY_VALUE, inplace=True
+                    )
+                data[feature_name].fillna(MISSING_CATEGORY_VALUE, inplace=True)
+            else:
+                data[feature_name].fillna(MISSING_NUMERICAL_VALUE, inplace=True)
