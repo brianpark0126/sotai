@@ -1,5 +1,5 @@
 [TYPECHECK]
-generated-members=pandas.*, torch.*
+generated-members=pandas.*, torch.*, tensorflow.*
 
 [MASTER]
 extension-pkg-whitelist=pydantic

@@ -52,7 +52,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         The pipeline is initialized with a default config, which can be modified later.
         The target type can be optionally specfified. The default primary metric will be
-        F1 score for classification and Mean Squared Error for regression if not
+        AUC score for classification and Mean Squared Error for regression if not
         specified.
 
         Args:
@@ -72,7 +72,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             primary_metric
             if primary_metric is not None
             else (
-                Metric.F1
+                Metric.AUC
                 if self.target_type == TargetType.CLASSIFICATION
                 else Metric.MSE
             )

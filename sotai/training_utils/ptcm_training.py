@@ -96,8 +96,6 @@ def _create_ptcm_metric(metric: Metric) -> torchmetrics.Metric:
     """Returns a torchmetric Metric for the given `Metric`."""
     if metric == Metric.AUC:
         return torchmetrics.AUROC("binary")
-    if metric == Metric.F1:
-        return torchmetrics.F1Score("binary")
     if metric == Metric.MAE:
         return torchmetrics.MeanAbsoluteError()
     if metric == Metric.MSE:

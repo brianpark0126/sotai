@@ -139,30 +139,10 @@ def _create_tfl_loss(loss_type: LossType) -> tf.keras.losses.Loss:
     raise ValueError(f"Unknown loss type: {loss_type}")
 
 
-class FromLogitsMixin:  # pylint: disable=too-few-public-methods
-    """TF Keras metric mixin to convert logits to probabilities."""
-
-    def __init__(self, from_logits, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.from_logits = from_logits
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Standard update state method."""
-        if self.from_logits:
-            y_pred = tf.nn.sigmoid(y_pred)
-        return super().update_state(y_true, y_pred, sample_weight)
-
-
-class F1Score(FromLogitsMixin, tf.keras.metrics.F1Score):
-    """F1Score wrapper so that it works with logits."""
-
-
 def _create_tfl_metric(metric: Metric) -> tf.keras.metrics.Metric:
     """Returns a Keras metric from the given `Metric`."""
     if metric == Metric.AUC:
         return tf.keras.metrics.AUC(from_logits=True)
-    if metric == Metric.F1:
-        return F1Score(threshold=0.5, from_logits=True)
     if metric == Metric.MAE:
         return tf.keras.metrics.MeanAbsoluteError()
     if metric == Metric.MSE:

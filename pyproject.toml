@@ -35,11 +35,14 @@ classifiers=[
 requires-python = ">=3.8,<3.11"
 dependencies = [
     "pandas>=1.5.3",
-    "pandas==1.5.3",
-    "pydantic==1.10.7",
+    "pydantic>=1.10.7",
     "pytorch-calibrated==0.1.1",
-    "tensorflow==2.13.0rc0",
-    "tensorflow-lattice==2.0.11",
+    "shap==0.41.0",
+    "tensorflow>=2.11.0",
+    "tensorflow-lattice>=2.0.11",
+    "torch>=2.0.0",
+    "torchmetrics>=0.11.4",
+    "torchvision>=0.15.1",
 ]
 
 [project.urls]

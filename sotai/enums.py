@@ -38,7 +38,6 @@ class Metric(_Enum):
     """The type of metric to use."""
 
     AUC = "auc"
-    F1 = "f1_score"
     MAE = "mean_absolute_error"
     MSE = "mean_squared_error"
 

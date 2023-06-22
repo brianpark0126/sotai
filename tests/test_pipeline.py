@@ -9,7 +9,7 @@ from sotai.types import LinearOptions, ModelConfig
 
 @pytest.mark.parametrize(
     "target_type,expected_primary_metric",
-    [(TargetType.CLASSIFICATION, Metric.F1), (TargetType.REGRESSION, Metric.MSE)],
+    [(TargetType.CLASSIFICATION, Metric.AUC), (TargetType.REGRESSION, Metric.MSE)],
 )
 def test_init(target_type, expected_primary_metric):
     """Tests pipeline initialization for a classification target."""
