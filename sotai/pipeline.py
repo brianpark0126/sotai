@@ -39,7 +39,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     model that you trust to make predictions on new data.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         features: List[str],
         target: str,
@@ -99,7 +99,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             },
         )
 
-    def prepare(
+    def prepare(  # pylint: disable=too-many-locals
         self,
         data: pd.DataFrame,
         pipeline_config_id: Optional[int] = None,
@@ -244,7 +244,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 dataset_id,
                 dataset,
                 self.target,
-                self.target_type,
                 self.primary_metric,
                 pipeline_config_id,
                 pipeline_config,

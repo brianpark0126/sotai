@@ -71,7 +71,11 @@ def test_prepare():
     assert pipeline.datasets[dataset_id].prepared_data.test.equals(data.iloc[2:3])
 
 
-def test_train_tfl_calibrated_linear_classification_model():
+@pytest.mark.parametrize(
+    "model_framework",
+    [(ModelFramework.TENSORFLOW), (ModelFramework.PYTORCH)],
+)
+def test_train_calibrated_linear_classification_model(model_framework):
     """Tests pipeline training for calibrated linear classficiation model."""
     target = "target"
     data = pd.DataFrame(
@@ -91,15 +95,17 @@ def test_train_tfl_calibrated_linear_classification_model():
     trained_model_id, trained_model = pipeline.train(
         dataset_id,
         pipeline_config_id,
-        model_config=ModelConfig(
-            framework=ModelFramework.TENSORFLOW, options=LinearOptions()
-        ),
+        model_config=ModelConfig(framework=model_framework, options=LinearOptions()),
     )
     assert trained_model_id == 1
     assert trained_model
 
 
-def test_train_tfl_calibrated_linear_regression_model():
+@pytest.mark.parametrize(
+    "model_framework",
+    [(ModelFramework.TENSORFLOW), (ModelFramework.PYTORCH)],
+)
+def test_train_calibrated_linear_regression_model(model_framework):
     """Tests pipeline training for calibrated linear regression model."""
     target = "target"
     data = pd.DataFrame(
@@ -119,9 +125,7 @@ def test_train_tfl_calibrated_linear_regression_model():
     trained_model_id, trained_model = pipeline.train(
         dataset_id,
         pipeline_config_id,
-        model_config=ModelConfig(
-            framework=ModelFramework.TENSORFLOW, options=LinearOptions()
-        ),
+        model_config=ModelConfig(framework=model_framework, options=LinearOptions()),
     )
     assert trained_model_id == 1
     assert trained_model

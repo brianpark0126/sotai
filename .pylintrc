@@ -1,8 +1,11 @@
 [TYPECHECK]
-generated-members=pandas.*
+generated-members=pandas.*, torch.*
 
 [MASTER]
 extension-pkg-whitelist=pydantic
+
+[MESSAGES CONTROL]
+disable=R0801,R0913
 
 [MISCELLANEOUS]
 notes=FIXME

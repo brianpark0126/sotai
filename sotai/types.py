@@ -155,7 +155,7 @@ class ModelConfig(BaseModel):
         options: The configuration options for the model.
     """
 
-    framework: ModelFramework = Field(ModelFramework.TENSORFLOW, const=True)
+    framework: ModelFramework = ModelFramework.TENSORFLOW
     # TODO (will): Add support for Calibrated Lattice and Calibrated Lattice Ensemble.
     options: LinearOptions = Field(...)
 

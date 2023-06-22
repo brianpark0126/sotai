@@ -38,7 +38,7 @@ def _prepare_tfl_data(
     features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
     data: pd.DataFrame,
 ) -> Tuple[List[np.ndarray], np.ndarray, Dict[str, np.ndarray]]:
-    """Prepares a `Dataset` for training a TensorFlow Lattice model."""
+    """Prepares a dataset for training a TensorFlow Lattice model."""
     x_data, y_data = (
         data[list(features.keys())],
         data[target],
@@ -102,7 +102,7 @@ def _create_tfl_feature_configs(
     return feature_configs
 
 
-def _create_tfl_model_config(
+def _create_tfl_model(
     model_config: ModelConfig,
     tfl_feature_configs: List[tfl.configs.FeatureConfig],
     labels: np.ndarray,
@@ -124,7 +124,7 @@ def _create_tfl_model_config(
     return tfl.premade.CalibratedLinear(tfl_model_config)
 
 
-def _create_tfl_loss(loss_type: LossType):
+def _create_tfl_loss(loss_type: LossType) -> tf.keras.losses.Loss:
     """Returns a Keras loss function from the given `LossType`."""
     if loss_type == LossType.BINARY_CROSSENTROPY:
         return tf.keras.losses.BinaryCrossentropy()
@@ -139,7 +139,7 @@ def _create_tfl_loss(loss_type: LossType):
     raise ValueError(f"Unknown loss type: {loss_type}")
 
 
-class FromLogitsMixin:
+class FromLogitsMixin:  # pylint: disable=too-few-public-methods
     """TF Keras metric mixin to convert logits to probabilities."""
 
     def __init__(self, from_logits, *args, **kwargs):
@@ -157,7 +157,7 @@ class F1Score(FromLogitsMixin, tf.keras.metrics.F1Score):
     """F1Score wrapper so that it works with logits."""
 
 
-def _create_tfl_metric(metric: Metric):
+def _create_tfl_metric(metric: Metric) -> tf.keras.metrics.Metric:
     """Returns a Keras metric from the given `Metric`."""
     if metric == Metric.AUC:
         return tf.keras.metrics.AUC(from_logits=True)
@@ -184,7 +184,7 @@ def _train_tfl_model(
 ) -> Tuple[tfl.premade.CalibratedLinear, tf.keras.callbacks.History]:
     """Train a TensorFlow Lattice model on the provided data under the given config."""
     tfl_feature_configs = _create_tfl_feature_configs(features, train_dict)
-    tfl_model = _create_tfl_model_config(
+    tfl_model = _create_tfl_model(
         model_config,
         tfl_feature_configs,
         np.array(y_train).squeeze(),
@@ -218,7 +218,7 @@ def _extract_feature_analyses_from_tfl_model(
     """Extracts feature statistics and calibration weights for each feature.
 
     Args:
-        model: A TensorFlow Lattice Premade model.
+        trained_tfl_model: A TensorFlow Lattice Premade model.
         features: A mapping from feature name to feature config.
         data: The training + validation data for this model.
 
@@ -398,7 +398,6 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
         time.time() - feature_importance_extraction_start_time
     )
 
-    print(list(history.history.keys()))
     training_results = TrainingResults(
         training_time=training_time,
         train_loss_by_epoch=history.history["loss"],
