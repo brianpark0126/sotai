@@ -266,7 +266,7 @@ def extract_coefficients_from_tfl_linear_model(
     return linear_coefficients
 
 
-def train_and_evaluate_tfl_model(
+def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
     dataset: Dataset,
     target: str,
     target_type: TargetType,

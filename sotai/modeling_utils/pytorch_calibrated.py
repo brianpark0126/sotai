@@ -234,13 +234,9 @@ def extract_coefficients_from_ptcm_linear_model(
     features: List[str],
 ) -> Dict[str, float]:
     """Extracts linear coefficients from a PyTorch `CalibratedLinear` model."""
-    linear_coefficients = {
-        feature_name: coefficient
-        for feature_name, coefficient in zip(
-            features,
-            ptcm_linear_model.linear.kernel.detach().numpy().flatten(),
-        )
-    }
+    linear_coefficients = dict(
+        zip(features, ptcm_linear_model.linear.kernel.detach().numpy().flatten())
+    )
     if ptcm_linear_model.use_bias:
         linear_coefficients["bias"] = ptcm_linear_model.linear.bias.detach().numpy()[0]
 
