@@ -1,4 +1,5 @@
 """Tests for TrainedModel."""
+import warnings
 from typing import Dict, Union
 
 import numpy as np
@@ -109,10 +110,8 @@ def _construct_trained_model(
             evaluation_time=1,
             test_loss=1,
             test_primary_metric=1,
-            feature_analyses_extraction_time=1,
             feature_analyses={},
-            feature_importance_extraction_time=1,
-            feature_importances={},
+            linear_coefficients={},
         ),
         model=model,
     )

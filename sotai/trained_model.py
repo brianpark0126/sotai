@@ -37,12 +37,9 @@ class TrainedModel(BaseModel):
     model_config: ModelConfig = Field(...)
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)
-    model: Union[
-        tfl.premade.CalibratedLinear,
-        tfl.premade.CalibratedLattice,
-        tfl.premade.CalibratedLatticeEnsemble,
-        ptcm.models.CalibratedLinear,
-    ] = Field(...)
+    model: Union[tfl.premade.CalibratedLinear, ptcm.models.CalibratedLinear] = Field(
+        ...
+    )
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True

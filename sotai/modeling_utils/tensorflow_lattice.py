@@ -1,20 +1,10 @@
 """TensorFlow Lattice training utility functions."""
 import re
 import time
-import warnings
 from typing import Dict, List, Optional, Tuple, Union
-
-# pylint: disable=wrong-import-position
-warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
-warnings.filterwarnings("ignore", message=".*np.bool8` is a deprecated alias.*")
-warnings.filterwarnings(
-    "ignore", message=".*Importing display from IPython.core.display is deprecated.*"
-)
-# pylint: enable=wrong-import-position
 
 import numpy as np
 import pandas as pd
-import shap
 import tensorflow as tf
 import tensorflow_lattice as tfl
 
@@ -191,11 +181,7 @@ def train_tfl_model(
 
 
 def extract_feature_analyses_from_tfl_model(
-    trained_tfl_model: Union[
-        tfl.premade.CalibratedLinear,
-        tfl.premade.CalibratedLattice,
-        tfl.premade.CalibratedLatticeEnsemble,
-    ],
+    trained_tfl_model: tfl.premade.CalibratedLinear,
     features: Dict[str, Union[CategoricalFeature, NumericalFeature]],
     data: List[np.ndarray],
 ) -> Dict[str, FeatureAnalysis]:
@@ -262,67 +248,25 @@ def extract_feature_analyses_from_tfl_model(
     return feature_analyses
 
 
-def extract_feature_importances_from_tfl_model(  # pylint: disable=too-many-locals
-    model: Union[
-        tfl.premade.CalibratedLinear,
-        tfl.premade.CalibratedLattice,
-        tfl.premade.CalibratedLatticeEnsemble,
-    ],
-    x_val: List[np.ndarray],
+def extract_coefficients_from_tfl_linear_model(
+    tfl_linear_model: tfl.premade.CalibratedLinear,
+    features: List[str],
 ) -> Dict[str, float]:
-    """Extracts the feature importances for each feature using validation samples.
+    """Extracts coefficients from a TensorFlow Lattice `CalibratedLinear` model."""
+    linear_coefficients = {}
+    for layer in tfl_linear_model.layers:
+        if layer.name == "tfl_linear_0":
+            for feature_name, coefficient in zip(
+                features, layer.kernel.numpy().flatten()
+            ):
+                linear_coefficients[feature_name] = coefficient
+            if layer.use_bias:
+                linear_coefficients["bias"] = layer.bias.numpy()
 
-    The feature importances returned are simply the mean absolute value across each
-    individual example since shapley values are calculated at the individual example
-    level.
-
-    Args:
-        model: A TensorFlow Lattice Premade model.
-        x_val: The validation data used for validating the model results. This is
-            what the explainer uses for producing sampled estimates.
-
-    Returns:
-        A dictionary mapping feature names to importances.
-    """
-    num_features = len(x_val)
-
-    # Extract feature names from the calibration layers
-    feature_names = []
-    matcher = re.compile(r"(?<=tfl_calib_)\w+")
-    for layer in model.layers:
-        match = matcher.match(layer.name)
-        if match:
-            feature_names.append(match.group(0))
-
-    # Wrap the model with the correct input shape
-    wrapper_input = tf.keras.Input((num_features,))
-    wrapper_output = model(tf.split(wrapper_input, num_features, axis=1))
-    wrapper_model = tf.keras.Model(inputs=wrapper_input, outputs=wrapper_output)
-
-    # Restructure the data to be the correct shape and pull samples
-    formatted_data = np.transpose(x_val)
-    num_examples = np.shape(formatted_data)[0]
-    sample_size = min(num_examples, 100)
-    formatted_samples = np.take(
-        formatted_data, np.random.choice(num_examples, sample_size), axis=0
-    )
-    explanation_size = min(num_examples, 500)
-    formatted_explanations = np.take(
-        formatted_data, np.random.choice(num_examples, explanation_size), axis=0
-    )
-
-    # Create our Explainer and determine our shapley values --> feature importances
-    explainer = shap.KernelExplainer(wrapper_model, formatted_samples)
-    shap_values = explainer.shap_values(formatted_explanations, nsamples=500)[0]
-    feature_importances = np.mean(np.absolute(shap_values), axis=0)
-
-    return {
-        feature_name: feature_importances[i]
-        for i, feature_name in enumerate(feature_names)
-    }
+    return linear_coefficients
 
 
-def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
+def train_and_evaluate_tfl_model(
     dataset: Dataset,
     target: str,
     target_type: TargetType,
@@ -330,14 +274,7 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
     pipeline_config: PipelineConfig,
     model_config: ModelConfig,
     training_config: TrainingConfig,
-) -> Tuple[
-    Union[
-        tfl.premade.CalibratedLinear,
-        tfl.premade.CalibratedLattice,
-        tfl.premade.CalibratedLatticeEnsemble,
-    ],
-    TrainingResults,
-]:
+) -> Tuple[tfl.premade.CalibratedLinear, TrainingResults,]:
     """Trains and evaluates TensorFlow Lattice model according to the given config."""
     x_train, y_train, train_dict = prepare_tfl_data(
         dataset.prepared_data.train, pipeline_config.features, target
@@ -369,22 +306,14 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
     evaluation_results = trained_tfl_model.evaluate(x_test, y_test, verbose=0)
     evaluation_time = time.time() - evaluation_start_time
 
-    feature_analyses_extraction_start_time = time.time()
     feature_analyses = extract_feature_analyses_from_tfl_model(
         trained_tfl_model,
         pipeline_config.features,
         np.concatenate([np.transpose(x_train), np.transpose(x_val)], axis=0).T,
     )
-    feature_analyses_extraction_time = (
-        time.time() - feature_analyses_extraction_start_time
-    )
 
-    feature_importance_extraction_start_time = time.time()
-    feature_importances = extract_feature_importances_from_tfl_model(
-        trained_tfl_model, x_val
-    )
-    feature_importance_extraction_time = (
-        time.time() - feature_importance_extraction_start_time
+    linear_coefficients = extract_coefficients_from_tfl_linear_model(
+        trained_tfl_model, list(pipeline_config.features.keys())
     )
 
     training_results = TrainingResults(
@@ -396,10 +325,8 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
         evaluation_time=evaluation_time,
         test_loss=evaluation_results[0],
         test_primary_metric=evaluation_results[1],
-        feature_analyses_extraction_time=feature_analyses_extraction_time,
         feature_analyses=feature_analyses,
-        feature_importance_extraction_time=feature_importance_extraction_time,
-        feature_importances=feature_importances,
+        linear_coefficients=linear_coefficients,
     )
 
     return trained_tfl_model, training_results
