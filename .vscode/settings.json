@@ -8,7 +8,7 @@
   "python.formatting.provider": "black",
   "python.linting.pylintEnabled": true,
   "python.linting.pylintArgs": [
-    "--generated-members=pandas.*",
+    "--generated-members=pandas.*, torch.*",
     "--disable=R0913"
   ],
   "python.terminal.activateEnvironment": true,

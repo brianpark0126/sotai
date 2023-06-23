@@ -1,42 +1,50 @@
 """A Pipeline for calibrated modeling."""
 from __future__ import annotations
 
-import copy
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-from .constants import MISSING_CATEGORY_VALUE, MISSING_NUMERICAL_VALUE
 from .enums import FeatureType, LossType, Metric, ModelFramework, TargetType
-from .training_utils.ptcm_training import train_and_evaluate_ptcm_model
-from .training_utils.tfl_training import train_and_evaluate_tfl_model
+from .modeling_utils import train_and_evaluate_ptcm_model, train_and_evaluate_tfl_model
+from .trained_model import TrainedModel
 from .types import (
-    CategoricalFeatureConfig,
+    CategoricalFeature,
     Dataset,
+    DatasetSplit,
     LinearOptions,
     ModelConfig,
-    NumericalFeatureConfig,
+    NumericalFeature,
     PipelineConfig,
     PreparedData,
-    TrainedModel,
     TrainingConfig,
 )
-from .utils import determine_feature_types
+from .utils import determine_feature_types, replace_missing_values
 
 
 class Pipeline:  # pylint: disable=too-many-instance-attributes
     """A pipeline for calibrated modeling.
 
-    A pipline takes in raw data and outputs a calibrated model. This process breaks
-    down into the following steps:
+    The pipeline defines the configuration for training a calibrated model. The
+    pipeline itself defines the features, target, and target type to be used. When
+    training a model, the data and configuration used will be versioned and stored in
+    the pipeline. The pipeline can be used to train multiple models with different
+    configurations if desired; however, the target, target type, and primary metric
+    should not be changed after initialization so that models trained by this pipeline
+    can be compared.
 
-    - Preparation. The data is prepared and split into train, val, and test sets.
-    - Training. Models are trained on the train and val sets.
+    Example:
 
-    You can then analyze trained models and their results, and you can use the best
-    model that you trust to make predictions on new data.
+    ```python
+    data = pd.read_csv(...)
+    pipeline = Pipeline(features, target, TargetType.CLASSIFICATION)
+    trained_model = pipeline.train(data)
+    ```
+
+    Attributes:
+        ...
     """
 
     def __init__(
@@ -52,8 +60,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         The pipeline is initialized with a default config, which can be modified later.
         The target type can be optionally specfified. The default primary metric will be
-        AUC score for classification and Mean Squared Error for regression if not
-        specified.
+        AUC for classification and Mean Squared Error for regression if not specified.
 
         Args:
             features: The column names in your data to use as features.
@@ -66,6 +73,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             name: The name of the pipeline. If not provided, the name will be set to
                 `{target}_{target_type}`.
         """
+        self.name: str = name if name else f"{target}_{target_type}"
         self.target: str = target
         self.target_type: TargetType = target_type
         self.primary_metric: Metric = (
@@ -77,34 +85,32 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 else Metric.MSE
             )
         )
-        # Maps a PipelineConfig id to its corresponding PipelineConfig instance.
-        self.configs: Dict[int, PipelineConfig] = {}
-        # Maps a Dataset id to its corresponding Dataset instance.
-        self.datasets: Dict[int, Dataset] = {}
-        # Maps a TrainedModel id to its corresponding TrainedModel instance.
-        self.models: Dict[int, TrainedModel] = {}
-
-        self.name: str = name if name else f"{self.target}_{self.target_type}"
-        self.config: PipelineConfig = PipelineConfig(
-            features={
-                feature_name: (
-                    CategoricalFeatureConfig(
-                        name=feature_name,
-                        categories=categories[feature_name],
-                    )
-                    if categories and feature_name in categories
-                    else NumericalFeatureConfig(name=feature_name)
+        self.features: Dict[str, Union[CategoricalFeature, NumericalFeature]] = {
+            feature_name: (
+                CategoricalFeature(
+                    name=feature_name,
+                    categories=categories[feature_name],
                 )
-                for feature_name in features
-            },
-        )
+                if categories and feature_name in categories
+                else NumericalFeature(name=feature_name)
+            )
+            for feature_name in features
+        }
+        self.shuffle_data: bool = True
+        self.drop_empty_percentage: int = 70
+        self.dataset_split: DatasetSplit = DatasetSplit(train=80, val=10, test=10)
+
+        # Maps a pipeline config id to its corresponding `PipelineConfig`` instance.
+        self.configs: Dict[int, PipelineConfig] = {}
+        # Maps a dataset id to its corresponding `Dataset`` instance.
+        self.datasets: Dict[int, Dataset] = {}
 
     def prepare(  # pylint: disable=too-many-locals
         self,
         data: pd.DataFrame,
         pipeline_config_id: Optional[int] = None,
-    ) -> Tuple[int, int]:
-        """Prepares the pipeline and dataset for training given the preparation config.
+    ) -> Tuple[Dataset, PipelineConfig]:
+        """Prepares the data and versions it along with the current pipeline config.
 
         If any features in data are detected as non-numeric, the pipeline will attempt
         to handle them as categorical features. Any features that the pipeline cannot
@@ -116,14 +122,159 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 If not provided, the current pipeline config will be used and versioned.
 
         Returns:
-            A tuple of the dataset id and the pipeline config id used for preparation.
+            A tuple of the versioned dataset and pipeline config.
         """
+        data.replace("", np.nan, inplace=True)  # treat empty strings as NaN
         if pipeline_config_id is None:
-            pipeline_config_id = len(self.configs) + 1
-            pipeline_config = copy.deepcopy(self.config)
+            pipeline_config_id = len(self.configs)
+            pipeline_config = self._version_pipeline_config(data, pipeline_config_id)
             self.configs[pipeline_config_id] = pipeline_config
         else:
             pipeline_config = self.configs[pipeline_config_id]
+
+        # Select only the features defined in the pipeline config.
+        data = data[list(pipeline_config.features.keys()) + [self.target]]
+        # Drop rows with too many missing values according to the drop empty percent.
+        max_num_empty_columns = int(
+            (pipeline_config.drop_empty_percentage * data.shape[1]) / 100
+        )
+        data = data[data.isnull().sum(axis=1) <= max_num_empty_columns]
+        # Replace any missing values (i.e. NaN) with missing value constants.
+        data = replace_missing_values(data, pipeline_config.features)
+        if pipeline_config.shuffle_data:
+            data = data.sample(frac=1).reset_index(drop=True)
+        train_percentage = pipeline_config.dataset_split.train / 100
+        train_data = data.iloc[: int(len(data) * train_percentage)]
+        val_percentage = pipeline_config.dataset_split.val / 100
+        val_data = data.iloc[
+            int(len(data) * train_percentage) : int(
+                len(data) * (train_percentage + val_percentage)
+            )
+        ]
+        test_data = data.iloc[int(len(data) * (train_percentage + val_percentage)) :]
+
+        dataset_id = len(self.datasets)
+        dataset = Dataset(
+            id=dataset_id,
+            pipeline_config_id=pipeline_config_id,
+            prepared_data=PreparedData(train=train_data, val=val_data, test=test_data),
+        )
+        self.datasets[dataset_id] = dataset
+
+        return dataset, pipeline_config
+
+    def train(
+        self,
+        data: Union[pd.DataFrame, int],
+        pipeline_config_id: Optional[int] = None,
+        model_config: Optional[ModelConfig] = None,
+        training_config: Optional[TrainingConfig] = None,
+    ) -> TrainedModel:
+        """Returns a calibrated model trained according to the given configs.
+
+        Args:
+            data: The raw data to be prepared and trained on. If an int is provided,
+                it is assumed to be a dataset id and the corresponding dataset will be
+                used.
+            pipeline_config_id: The id of the pipeline config to be used for training.
+                If not provided, the current pipeline config will be versioned and used.
+                If data is an int, this argument is ignored and the pipeline config used
+                to prepare the data with the given id will be used.
+            model_config: The config to be used for training the model. If not provided,
+                a default config will be used.
+            training_config: The config to be used for training the model. If not
+                provided, a default config will be used.
+
+        Returns:
+            A `TrainedModel` instance.
+        """
+        if isinstance(data, int):
+            dataset = self.datasets[data]
+            pipeline_config = self.configs[dataset.pipeline_config_id]
+        else:
+            dataset, pipeline_config = self.prepare(data, pipeline_config_id)
+
+        if model_config is None:
+            model_config = ModelConfig(
+                framework=ModelFramework.TENSORFLOW, options=LinearOptions()
+            )
+
+        if training_config is None:
+            training_config = TrainingConfig(
+                loss_type=LossType.BINARY_CROSSENTROPY
+                if self.target_type == TargetType.CLASSIFICATION
+                else LossType.MSE
+            )
+
+        if model_config.framework == ModelFramework.TENSORFLOW:
+            model, training_results = train_and_evaluate_tfl_model(
+                dataset,
+                self.target,
+                self.target_type,
+                self.primary_metric,
+                pipeline_config,
+                model_config,
+                training_config,
+            )
+        else:  # ModelFramework.PYTORCH
+            model, training_results = train_and_evaluate_ptcm_model(
+                dataset,
+                self.target,
+                self.primary_metric,
+                pipeline_config,
+                model_config,
+                training_config,
+            )
+
+        return TrainedModel(
+            dataset_id=dataset.id,
+            pipeline_config=pipeline_config,
+            model_config=model_config,
+            training_config=training_config,
+            training_results=training_results,
+            model=model,
+        )
+
+    def save(self, filepath: str):
+        """Saves the pipeline to the specified filepath.
+
+        Args:
+            filepath: The filepath to which the pipeline wil be saved. If the filepath
+                does not exist, this function will attempt to create it. If the filepath
+                already exists, this function will overwrite it.
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def load(cls, filepath: str) -> Pipeline:
+        """Loads the pipeline from the specified filepath.
+
+        Args:
+            filepath: The filepath from which to load the pipeline. The filepath should
+                point to a file created by the `save` method of a `TrainedModel`
+                instance.
+
+        Returns:
+            A `Pipeline` instance.
+        """
+        raise NotImplementedError()
+
+    ############################################################################
+    #                            Private Methods                               #
+    ############################################################################
+
+    def _version_pipeline_config(self, data: pd.DataFrame, pipeline_config_id: int):
+        """Returns a new `PipelineConfig` instance verisoned from the current config."""
+        pipeline_config = PipelineConfig(
+            id=pipeline_config_id,
+            target=self.target,
+            target_type=self.target_type,
+            primary_metric=self.primary_metric,
+            features=self.features,
+            shuffle_data=self.shuffle_data,
+            drop_empty_percentage=self.drop_empty_percentage,
+            dataset_split=self.dataset_split,
+        )
 
         feature_types = determine_feature_types(
             data[list(pipeline_config.features.keys())]
@@ -138,12 +289,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             if feature_type == FeatureType.CATEGORICAL:
                 logging.info(
                     "Detected %s as categorical. Replacing numerical config with "
-                    "default categorical config using all unique values as categories",
+                    "default categorical config using unique values as categories",
                     feature_name,
                 )
-                pipeline_config.features[feature_name] = CategoricalFeatureConfig(
+                pipeline_config.features[feature_name] = CategoricalFeature(
                     name=feature_name,
-                    categories=data[feature_name].unique().tolist(),
+                    categories=sorted(data[feature_name].dropna().unique().tolist()),
                 )
             else:
                 logging.info(
@@ -152,144 +303,4 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 )
                 pipeline_config.features.pop(feature_name)
 
-        # Select only the features defined in the pipeline config.
-        data = data[list(pipeline_config.features.keys()) + [self.target]]
-
-        # Drop rows with too many missing values according to the drop empty percent.
-        data.replace("", np.nan, inplace=True)
-        max_num_empty_columns = int(
-            (pipeline_config.drop_empty_percentage * data.shape[1]) / 100
-        )
-        data = data[data.isnull().sum(axis=1) <= max_num_empty_columns]
-
-        # Replace any missing values (i.e. NaN) with missing value constants.
-        for feature_name, feature_config in pipeline_config.features.items():
-            if feature_config.type == FeatureType.CATEGORICAL:
-                unspecified_categories = list(
-                    set(data[feature_name].unique().tolist())
-                    - set(feature_config.categories)
-                )
-                if unspecified_categories:
-                    logging.info(
-                        "Replacing %s with %s for feature %s",
-                        unspecified_categories,
-                        MISSING_CATEGORY_VALUE,
-                        feature_name,
-                    )
-                    data[feature_name].replace(
-                        unspecified_categories, MISSING_CATEGORY_VALUE, inplace=True
-                    )
-                data[feature_name].fillna(MISSING_CATEGORY_VALUE, inplace=True)
-            else:
-                data[feature_name].fillna(MISSING_NUMERICAL_VALUE, inplace=True)
-
-        if pipeline_config.shuffle_data:
-            data = data.sample(frac=1).reset_index(drop=True)
-
-        train_percentage = pipeline_config.dataset_split.train / 100
-        train_data = data.iloc[: int(len(data) * train_percentage)]
-        val_percentage = pipeline_config.dataset_split.val / 100
-        val_data = data.iloc[
-            int(len(data) * train_percentage) : int(
-                len(data) * (train_percentage + val_percentage)
-            )
-        ]
-        test_data = data.iloc[int(len(data) * (train_percentage + val_percentage)) :]
-
-        dataset_id = len(self.datasets) + 1
-        dataset = Dataset(
-            id=dataset_id,
-            pipeline_config_id=pipeline_config_id,
-            prepared_data=PreparedData(train=train_data, val=val_data, test=test_data),
-        )
-        self.datasets[dataset_id] = dataset
-
-        return dataset_id, pipeline_config_id
-
-    def train(
-        self,
-        dataset_id: int,
-        pipeline_config_id: int,
-        model_config: Optional[ModelConfig] = None,
-        training_config: Optional[TrainingConfig] = None,
-    ) -> Tuple[int, TrainedModel]:
-        """Returns a calibrated model trained according to the given configs."""
-        dataset = self.datasets[dataset_id]
-        pipeline_config = self.configs[pipeline_config_id]
-        if model_config is None:
-            model_config = ModelConfig(
-                framework=ModelFramework.TENSORFLOW, options=LinearOptions()
-            )
-        if training_config is None:
-            training_config = TrainingConfig(
-                loss_type=LossType.BINARY_CROSSENTROPY
-                if self.target_type == TargetType.CLASSIFICATION
-                else LossType.MSE
-            )
-
-        if model_config.framework == ModelFramework.TENSORFLOW:
-            trained_model = train_and_evaluate_tfl_model(
-                dataset_id,
-                dataset,
-                self.target,
-                self.target_type,
-                self.primary_metric,
-                pipeline_config_id,
-                pipeline_config,
-                model_config,
-                training_config,
-            )
-        elif model_config.framework == ModelFramework.PYTORCH:
-            trained_model = train_and_evaluate_ptcm_model(
-                dataset_id,
-                dataset,
-                self.target,
-                self.primary_metric,
-                pipeline_config_id,
-                pipeline_config,
-                model_config,
-                training_config,
-            )
-        else:
-            raise ValueError(f"Unknown model framework: {model_config.framework}.")
-
-        model_id = len(self.models) + 1
-        self.models[model_id] = trained_model
-        return model_id, trained_model
-
-    def predict(
-        self, data: pd.DataFrame, model_id: int = None
-    ) -> Tuple[pd.DataFrame, str]:
-        """Runs pipeline without training to generate predictions for given data.
-
-        Args:
-            data: The data to be used for prediction. Must have all columns used for
-                training the model to be used.
-            model_id: The id of the model to be used for prediction.
-
-        Returns:
-            A tuple containing a dataframe with predictions and the name of the new
-            column, which will be the name of the target column with a tag appended to
-            it (e.g. target_prediction).
-        """
-        raise NotImplementedError()
-
-    def save(self, filanem: str):
-        """Saves the pipeline to a file.
-
-        Args:
-            filename: The name of the file to save the pipeline to.
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    def load(cls, filename: str) -> Pipeline:
-        """Loads the pipeline from a file.
-
-        Args:
-            filename: The name of the file to load the pipeline from.
-
-        Returns:
-            An instance of `Pipeline` loaded from the file.
-        """
-        raise NotImplementedError()
+        return pipeline_config
