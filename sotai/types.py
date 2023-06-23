@@ -11,8 +11,10 @@ from .enums import (
     InputKeypointsInit,
     InputKeypointsType,
     LossType,
+    Metric,
     ModelFramework,
     Monotonicity,
+    TargetType,
 )
 
 
@@ -64,6 +66,7 @@ class Dataset(BaseModel):
         prepared_data: The prepared data ready for training.
     """
 
+    id: int = Field(...)
     pipeline_config_id: int = Field(...)
     prepared_data: PreparedData = Field(...)
 
@@ -71,7 +74,7 @@ class Dataset(BaseModel):
         arbitrary_types_allowed = True
 
 
-class NumericalFeatureConfig(BaseModel):
+class NumericalFeature(BaseModel):
     """Configuration for a numerical feature.
 
     Attributes:
@@ -91,7 +94,7 @@ class NumericalFeatureConfig(BaseModel):
     monotonicity: Monotonicity = Monotonicity.NONE
 
 
-class CategoricalFeatureConfig(BaseModel):
+class CategoricalFeature(BaseModel):
     """Configuration for a categorical feature.
 
     Attributes:
@@ -242,46 +245,25 @@ class TrainingResults(BaseModel):
     feature_importances: Dict[str, float] = Field(...)
 
 
-class TrainedModel(BaseModel):
-    """A calibrated model container for configs, results, and the model itself.
-
-    Attributes:
-        model_config: The configuration for the model.
-        training_config: The configuration used for training the model.
-        training_results: The results of training the model.
-        model: The trained model.
-    """
-
-    dataset_id: int = Field(...)
-    pipeline_config_id: int = Field(...)
-    model_config: ModelConfig = Field(...)
-    training_config: TrainingConfig = Field(...)
-    training_results: TrainingResults = Field(...)
-    model: Union[
-        tfl.premade.CalibratedLinear,
-        tfl.premade.CalibratedLattice,
-        tfl.premade.CalibratedLatticeEnsemble,
-        ptcm.models.CalibratedLinear,
-    ] = Field(...)
-
-    class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
-        arbitrary_types_allowed = True
-
-
 class PipelineConfig(BaseModel):
     """A configuration object for a `Pipeline`.
 
     Attributes:
+        target: The column name for the target.
+        target_type: The type of the target.
+        primary_metric: The primary metric to use for training and evaluation.
+        features: A dictionary mapping the column name for a feature to its config.
         shuffle_data: Whether to shuffle the data before splitting it into train,
             validation, and test sets.
         drop_empty_percentage: Rows will be dropped if they are this percentage empty.
         dataset_split: The split of the dataset into train, validation, and test sets.
-        features: A dictionary mapping the column name for a feature to its config.
     """
 
-    shuffle_data: bool = True
-    drop_empty_percentage: int = 70
-    dataset_split: DatasetSplit = DatasetSplit(train=80, val=10, test=10)
-    features: Dict[
-        str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]
-    ] = Field(...)
+    id: int = Field(...)
+    target: str = Field(...)
+    target_type: TargetType = Field(...)
+    primary_metric: Metric = Field(...)
+    features: Dict[str, Union[NumericalFeature, CategoricalFeature]] = Field(...)
+    shuffle_data: bool = Field(...)
+    drop_empty_percentage: int = Field(...)
+    dataset_split: DatasetSplit = Field(...)

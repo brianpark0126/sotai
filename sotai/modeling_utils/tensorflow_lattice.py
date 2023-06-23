@@ -21,21 +21,20 @@ import tensorflow_lattice as tfl
 from ..constants import MISSING_CATEGORY_VALUE, MISSING_NUMERICAL_VALUE
 from ..enums import FeatureType, LossType, Metric, TargetType
 from ..types import (
-    CategoricalFeatureConfig,
+    CategoricalFeature,
     Dataset,
     FeatureAnalysis,
     ModelConfig,
-    NumericalFeatureConfig,
+    NumericalFeature,
     PipelineConfig,
-    TrainedModel,
     TrainingConfig,
     TrainingResults,
 )
 
 
-def _prepare_tfl_data(
+def prepare_tfl_data(
     data: pd.DataFrame,
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
+    features: Dict[str, Union[CategoricalFeature, NumericalFeature]],
     target: Optional[str],
 ) -> Tuple[List[np.ndarray], np.ndarray, Dict[str, np.ndarray]]:
     """Prepares a dataset for training a TensorFlow Lattice model."""
@@ -59,8 +58,8 @@ def _prepare_tfl_data(
     return x_list, y_data, x_dict
 
 
-def _create_tfl_feature_configs(
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
+def create_tfl_feature_configs(
+    features: Dict[str, Union[CategoricalFeature, NumericalFeature]],
     train_dict: Dict[str, np.ndarray],
 ) -> List[tfl.configs.FeatureConfig]:
     """Returns TFL feature configs using the provided feature configs."""
@@ -100,9 +99,37 @@ def _create_tfl_feature_configs(
     return feature_configs
 
 
-def _create_tfl_model(
-    model_config: ModelConfig,
+def create_tfl_loss(loss_type: LossType) -> tf.keras.losses.Loss:
+    """Returns a Keras loss function from the given `LossType`."""
+    if loss_type == LossType.BINARY_CROSSENTROPY:
+        return tf.keras.losses.BinaryCrossentropy()
+    if loss_type == LossType.HINGE:
+        return tf.keras.losses.Hinge()
+    if loss_type == LossType.HUBER:
+        return tf.keras.losses.Huber()
+    if loss_type == LossType.MAE:
+        return tf.keras.losses.MeanAbsoluteError()
+    if loss_type == LossType.MSE:
+        return tf.keras.losses.MeanSquaredError()
+    raise ValueError(f"Unknown loss type: {loss_type}")
+
+
+def create_tfl_metric(metric: Metric) -> tf.keras.metrics.Metric:
+    """Returns a Keras metric from the given `Metric`."""
+    if metric == Metric.AUC:
+        return tf.keras.metrics.AUC(from_logits=True, name=Metric.AUC)
+    if metric == Metric.MAE:
+        return tf.keras.metrics.MeanAbsoluteError(name=Metric.MAE)
+    if metric == Metric.MSE:
+        return tf.keras.metrics.MeanSquaredError(name=Metric.MSE)
+    raise ValueError(f"Unknown metric: {metric}")
+
+
+def create_tfl_model(
     tfl_feature_configs: List[tfl.configs.FeatureConfig],
+    model_config: ModelConfig,
+    training_config: TrainingConfig,
+    primary_metric: Metric,
     labels: np.ndarray,
     logits_output: bool,
 ) -> tfl.premade.CalibratedLinear:
@@ -119,36 +146,18 @@ def _create_tfl_model(
         # This does nothing but is required to pass the model construction validation...
         tfl_model_config.output_initialization = [-2.0, 2.0]
 
-    return tfl.premade.CalibratedLinear(tfl_model_config)
+    tfl_model = tfl.premade.CalibratedLinear(tfl_model_config)
+
+    tfl_model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=training_config.learning_rate),
+        loss=create_tfl_loss(training_config.loss_type),
+        metrics=[create_tfl_metric(primary_metric)],
+    )
+
+    return tfl_model
 
 
-def _create_tfl_loss(loss_type: LossType) -> tf.keras.losses.Loss:
-    """Returns a Keras loss function from the given `LossType`."""
-    if loss_type == LossType.BINARY_CROSSENTROPY:
-        return tf.keras.losses.BinaryCrossentropy()
-    if loss_type == LossType.HINGE:
-        return tf.keras.losses.Hinge()
-    if loss_type == LossType.HUBER:
-        return tf.keras.losses.Huber()
-    if loss_type == LossType.MAE:
-        return tf.keras.losses.MeanAbsoluteError()
-    if loss_type == LossType.MSE:
-        return tf.keras.losses.MeanSquaredError()
-    raise ValueError(f"Unknown loss type: {loss_type}")
-
-
-def _create_tfl_metric(metric: Metric) -> tf.keras.metrics.Metric:
-    """Returns a Keras metric from the given `Metric`."""
-    if metric == Metric.AUC:
-        return tf.keras.metrics.AUC(from_logits=True, name=Metric.AUC)
-    if metric == Metric.MAE:
-        return tf.keras.metrics.MeanAbsoluteError(name=Metric.MAE)
-    if metric == Metric.MSE:
-        return tf.keras.metrics.MeanSquaredError(name=Metric.MSE)
-    raise ValueError(f"Unknown metric: {metric}")
-
-
-def _train_tfl_model(
+def train_tfl_model(
     target_type: TargetType,
     primary_metric: Metric,
     x_train: List[np.ndarray],
@@ -156,22 +165,19 @@ def _train_tfl_model(
     x_val: List[np.ndarray],
     y_val: np.ndarray,
     train_dict: Dict[str, np.ndarray],
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
+    features: Dict[str, Union[CategoricalFeature, NumericalFeature]],
     model_config: ModelConfig,
     training_config: TrainingConfig,
 ) -> Tuple[tfl.premade.CalibratedLinear, tf.keras.callbacks.History]:
     """Train a TensorFlow Lattice model on the provided data under the given config."""
-    tfl_feature_configs = _create_tfl_feature_configs(features, train_dict)
-    tfl_model = _create_tfl_model(
-        model_config,
+    tfl_feature_configs = create_tfl_feature_configs(features, train_dict)
+    tfl_model = create_tfl_model(
         tfl_feature_configs,
+        model_config,
+        training_config,
+        primary_metric,
         np.array(y_train).squeeze(),
         target_type == TargetType.CLASSIFICATION,
-    )
-    tfl_model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=training_config.learning_rate),
-        loss=_create_tfl_loss(training_config.loss_type),
-        metrics=[_create_tfl_metric(primary_metric)],
     )
     history = tfl_model.fit(
         x_train,
@@ -184,13 +190,13 @@ def _train_tfl_model(
     return tfl_model, history
 
 
-def _extract_feature_analyses_from_tfl_model(
+def extract_feature_analyses_from_tfl_model(
     trained_tfl_model: Union[
         tfl.premade.CalibratedLinear,
         tfl.premade.CalibratedLattice,
         tfl.premade.CalibratedLatticeEnsemble,
     ],
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
+    features: Dict[str, Union[CategoricalFeature, NumericalFeature]],
     data: List[np.ndarray],
 ) -> Dict[str, FeatureAnalysis]:
     """Extracts feature statistics and calibration weights for each feature.
@@ -208,7 +214,7 @@ def _extract_feature_analyses_from_tfl_model(
     calibration_layers_info: Dict[
         str,
         Tuple[
-            Union[NumericalFeatureConfig, CategoricalFeatureConfig],
+            Union[CategoricalFeature, NumericalFeature],
             Union[tfl.layers.PWLCalibration, tfl.layers.CategoricalCalibration],
         ],
     ] = {}
@@ -256,7 +262,7 @@ def _extract_feature_analyses_from_tfl_model(
     return feature_analyses
 
 
-def _extract_feature_importances_from_tfl_model(  # pylint: disable=too-many-locals
+def extract_feature_importances_from_tfl_model(  # pylint: disable=too-many-locals
     model: Union[
         tfl.premade.CalibratedLinear,
         tfl.premade.CalibratedLattice,
@@ -317,26 +323,31 @@ def _extract_feature_importances_from_tfl_model(  # pylint: disable=too-many-loc
 
 
 def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
-    dataset_id: int,
     dataset: Dataset,
     target: str,
     target_type: TargetType,
     primary_metric: Metric,
-    pipeline_config_id: int,
     pipeline_config: PipelineConfig,
     model_config: ModelConfig,
     training_config: TrainingConfig,
-) -> TrainedModel:
+) -> Tuple[
+    Union[
+        tfl.premade.CalibratedLinear,
+        tfl.premade.CalibratedLattice,
+        tfl.premade.CalibratedLatticeEnsemble,
+    ],
+    TrainingResults,
+]:
     """Trains and evaluates TensorFlow Lattice model according to the given config."""
-    x_train, y_train, train_dict = _prepare_tfl_data(
+    x_train, y_train, train_dict = prepare_tfl_data(
         dataset.prepared_data.train, pipeline_config.features, target
     )
-    x_val, y_val, _ = _prepare_tfl_data(
+    x_val, y_val, _ = prepare_tfl_data(
         dataset.prepared_data.val, pipeline_config.features, target
     )
 
     training_start_time = time.time()
-    trained_tfl_model, history = _train_tfl_model(
+    trained_tfl_model, history = train_tfl_model(
         target_type,
         primary_metric,
         x_train,
@@ -350,7 +361,7 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
     )
     training_time = time.time() - training_start_time
 
-    x_test, y_test, _ = _prepare_tfl_data(
+    x_test, y_test, _ = prepare_tfl_data(
         dataset.prepared_data.test, pipeline_config.features, target
     )
 
@@ -359,7 +370,7 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
     evaluation_time = time.time() - evaluation_start_time
 
     feature_analyses_extraction_start_time = time.time()
-    feature_analyses = _extract_feature_analyses_from_tfl_model(
+    feature_analyses = extract_feature_analyses_from_tfl_model(
         trained_tfl_model,
         pipeline_config.features,
         np.concatenate([np.transpose(x_train), np.transpose(x_val)], axis=0).T,
@@ -369,14 +380,13 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
     )
 
     feature_importance_extraction_start_time = time.time()
-    feature_importances = _extract_feature_importances_from_tfl_model(
+    feature_importances = extract_feature_importances_from_tfl_model(
         trained_tfl_model, x_val
     )
     feature_importance_extraction_time = (
         time.time() - feature_importance_extraction_start_time
     )
 
-    print(list(history.history.keys()))
     training_results = TrainingResults(
         training_time=training_time,
         train_loss_by_epoch=history.history["loss"],
@@ -392,25 +402,4 @@ def train_and_evaluate_tfl_model(  # pylint: disable=too-many-locals
         feature_importances=feature_importances,
     )
 
-    return TrainedModel(
-        dataset_id=dataset_id,
-        pipeline_config_id=pipeline_config_id,
-        model_config=model_config,
-        training_config=training_config,
-        training_results=training_results,
-        model=trained_tfl_model,
-    )
-
-
-def tfl_model_predict(
-    tfl_model: Union[
-        tfl.premade.CalibratedLinear,
-        tfl.premade.CalibratedLattice,
-        tfl.premade.CalibratedLatticeEnsemble,
-    ],
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
-    data: pd.DataFrame,
-) -> np.ndarray:
-    """Returns predictions for the given input data using the given model."""
-    x_data, _, _ = _prepare_tfl_data(data, features, None)
-    return tfl_model.predict(x_data, verbose=0)
+    return trained_tfl_model, training_results

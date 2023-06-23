@@ -1,35 +1,17 @@
-"""Temporary scaffolded test file for pipeline."""
-from typing import List, Tuple
-
+"""Tests for Pipeline."""
 import numpy as np
 import pandas as pd
 import pytest
 
-from sotai.enums import FeatureType, Metric, ModelFramework, TargetType
-from sotai.pipeline import Pipeline
-from sotai.types import LinearOptions, ModelConfig
-
-
-def _create_pipeline_and_train_model(
-    data: pd.DataFrame,
-    features: List[str],
-    target: str,
-    target_type: TargetType,
-    model_framework: ModelFramework,
-) -> Tuple[Pipeline, int]:
-    """Returns a pipeline and trained model id."""
-    pipeline = Pipeline(features, target, target_type)
-    pipeline.config.shuffle_data = False
-    pipeline.config.dataset_split.train = 60
-    pipeline.config.dataset_split.val = 20
-    pipeline.config.dataset_split.test = 20
-    dataset_id, pipeline_config_id = pipeline.prepare(data)
-    trained_model_id, _ = pipeline.train(
-        dataset_id,
-        pipeline_config_id,
-        model_config=ModelConfig(framework=model_framework, options=LinearOptions()),
-    )
-    return pipeline, trained_model_id
+from sotai import (
+    FeatureType,
+    LinearOptions,
+    Metric,
+    ModelConfig,
+    ModelFramework,
+    Pipeline,
+    TargetType,
+)
 
 
 @pytest.fixture(name="test_target")
@@ -69,16 +51,15 @@ def fixture_test_features(test_data, test_target):
 def test_init(test_features, test_target, target_type, expected_primary_metric):
     """Tests pipeline initialization for a classification target."""
     pipeline = Pipeline(test_features, test_target, target_type)
+    assert pipeline.name == f"{test_target}_{target_type}"
     assert pipeline.target == test_target
     assert pipeline.target_type == target_type
     assert pipeline.primary_metric == expected_primary_metric
-    assert pipeline.name == f"{test_target}_{target_type}"
-    assert pipeline.config
-    assert len(pipeline.config.features) == 2
-    numerical_config = pipeline.config.features["numerical"]
+    assert len(pipeline.features) == 2
+    numerical_config = pipeline.features["numerical"]
     assert numerical_config.name == "numerical"
     assert numerical_config.type == FeatureType.NUMERICAL
-    categorical_config = pipeline.config.features["categorical"]
+    categorical_config = pipeline.features["categorical"]
     assert categorical_config.name == "categorical"
     # Note: we expect the default config to be numerical if not specified.
     assert categorical_config.type == FeatureType.NUMERICAL
@@ -92,9 +73,10 @@ def test_init_with_categories(test_features, test_target, test_categories):
         TargetType.CLASSIFICATION,
         categories={"categorical": test_categories},
     )
-    categorical_config = pipeline.config.features["categorical"]
+    categorical_config = pipeline.features["categorical"]
     assert categorical_config.name == "categorical"
     assert categorical_config.type == FeatureType.CATEGORICAL
+    assert categorical_config.categories == test_categories
 
 
 def test_prepare(test_data, test_features, test_target, test_categories):
@@ -103,109 +85,56 @@ def test_prepare(test_data, test_features, test_target, test_categories):
         test_features, test_target, target_type=TargetType.CLASSIFICATION
     )
     # We set shuffle to false to ensure the data is split in the same way.
-    pipeline.config.shuffle_data = False
-    pipeline.config.dataset_split.train = 80
-    pipeline.config.dataset_split.val = 10
-    pipeline.config.dataset_split.test = 10
-    dataset_id, pipeline_config_id = pipeline.prepare(test_data)
-    assert pipeline_config_id == 1
-    categorical_config = pipeline.configs[pipeline_config_id].features["categorical"]
+    pipeline.shuffle_data = False
+    pipeline.dataset_split.train = 80
+    pipeline.dataset_split.val = 10
+    pipeline.dataset_split.test = 10
+    dataset, pipeline_config = pipeline.prepare(test_data)
+    assert pipeline_config.id == 0
+    categorical_config = pipeline_config.features["categorical"]
     assert categorical_config.name == "categorical"
     assert categorical_config.type == FeatureType.CATEGORICAL
     assert categorical_config.categories == test_categories
-    assert dataset_id == 1
-    assert pipeline.datasets[dataset_id].pipeline_config_id == pipeline_config_id
+    assert dataset.id == 0
+    assert dataset.pipeline_config_id == pipeline_config.id
     num_examples = len(test_data)
-    num_training_examples = int(
-        num_examples * pipeline.config.dataset_split.train / 100
-    )
-    num_val_examples = int(num_examples * pipeline.config.dataset_split.val / 100)
-    assert pipeline.datasets[dataset_id].prepared_data.train.equals(
-        test_data.iloc[:num_training_examples]
-    )
-    assert pipeline.datasets[dataset_id].prepared_data.val.equals(
+    num_training_examples = int(num_examples * pipeline.dataset_split.train / 100)
+    num_val_examples = int(num_examples * pipeline.dataset_split.val / 100)
+    assert dataset.prepared_data.train.equals(test_data.iloc[:num_training_examples])
+    assert dataset.prepared_data.val.equals(
         test_data.iloc[num_training_examples : num_training_examples + num_val_examples]
     )
-    assert pipeline.datasets[dataset_id].prepared_data.test.equals(
+    assert dataset.prepared_data.test.equals(
         test_data.iloc[num_training_examples + num_val_examples :]
     )
 
 
 @pytest.mark.parametrize(
-    "model_framework",
-    [(ModelFramework.TENSORFLOW), (ModelFramework.PYTORCH)],
+    "model_framework,target_type",
+    [
+        (ModelFramework.TENSORFLOW, TargetType.CLASSIFICATION),
+        (ModelFramework.TENSORFLOW, TargetType.REGRESSION),
+        (ModelFramework.PYTORCH, TargetType.CLASSIFICATION),
+        (ModelFramework.PYTORCH, TargetType.REGRESSION),
+    ],
 )
-def test_train_calibrated_linear_classification_model(
-    test_data, test_features, test_target, model_framework
-):
-    """Tests pipeline training for calibrated linear classficiation model."""
-    pipeline, trained_model_id = _create_pipeline_and_train_model(
-        test_data,
-        test_features,
-        test_target,
-        TargetType.CLASSIFICATION,
-        model_framework,
-    )
-    assert trained_model_id == 1
-    assert pipeline.models[trained_model_id]
-
-
-@pytest.mark.parametrize(
-    "model_framework",
-    [(ModelFramework.TENSORFLOW), (ModelFramework.PYTORCH)],
-)
-def test_train_calibrated_linear_regression_model(
-    test_data, test_features, test_target, model_framework
+def test_train_calibrated_linear_model(
+    test_data, test_features, test_target, model_framework, target_type
 ):
     """Tests pipeline training for calibrated linear regression model."""
-    pipeline, trained_model_id = _create_pipeline_and_train_model(
+    pipeline = Pipeline(test_features, test_target, target_type)
+    pipeline.shuffle_data = False
+    pipeline.dataset_split.train = 60
+    pipeline.dataset_split.val = 20
+    pipeline.dataset_split.test = 20
+    trained_model = pipeline.train(
         test_data,
-        test_features,
-        test_target,
-        TargetType.REGRESSION,
-        model_framework,
+        model_config=ModelConfig(framework=model_framework, options=LinearOptions()),
     )
-    assert trained_model_id == 1
-    assert pipeline.models[trained_model_id]
-
-
-@pytest.mark.parametrize(
-    "model_framework",
-    [(ModelFramework.TENSORFLOW), (ModelFramework.PYTORCH)],
-)
-def test_pipeline_classification_predict(
-    test_data, test_features, test_target, model_framework
-):
-    """Tests the pipeline predict function on a trained model."""
-    pipeline, trained_model_id = _create_pipeline_and_train_model(
-        test_data,
-        test_features,
-        test_target,
-        TargetType.CLASSIFICATION,
-        model_framework,
-    )
-    predictions, probabilities = pipeline.predict(test_data, trained_model_id)
-    assert isinstance(predictions, np.ndarray)
-    assert len(predictions) == len(test_data)
-    assert isinstance(probabilities, np.ndarray)
-    assert len(probabilities) == len(test_data)
-
-
-@pytest.mark.parametrize(
-    "model_framework",
-    [(ModelFramework.TENSORFLOW), (ModelFramework.PYTORCH)],
-)
-def test_pipeline_regression_predict(
-    test_data, test_features, test_target, model_framework
-):
-    """Tests the pipeline predict function on a trained model."""
-    pipeline, trained_model_id = _create_pipeline_and_train_model(
-        test_data,
-        test_features,
-        test_target,
-        TargetType.REGRESSION,
-        model_framework,
-    )
-    predictions = pipeline.predict(test_data, trained_model_id)
-    assert isinstance(predictions, np.ndarray)
-    assert len(predictions) == len(test_data)
+    assert len(pipeline.configs) == 1
+    assert len(pipeline.datasets) == 1
+    assert trained_model
+    assert trained_model.dataset_id == 0
+    assert pipeline.datasets[trained_model.dataset_id]
+    assert trained_model.pipeline_config.id == 0
+    assert pipeline.configs[trained_model.pipeline_config.id]

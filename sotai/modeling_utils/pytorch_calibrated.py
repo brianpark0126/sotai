@@ -22,13 +22,12 @@ from pydantic import BaseModel
 from ..constants import MISSING_CATEGORY_VALUE, MISSING_NUMERICAL_VALUE
 from ..enums import FeatureType, LossType, Metric
 from ..types import (
-    CategoricalFeatureConfig,
+    CategoricalFeature,
     Dataset,
     FeatureAnalysis,
     ModelConfig,
-    NumericalFeatureConfig,
+    NumericalFeature,
     PipelineConfig,
-    TrainedModel,
     TrainingConfig,
     TrainingResults,
 )
@@ -43,8 +42,8 @@ class PTCMPerEpochResults(BaseModel):
     val_primary_metric_by_epoch: List[float]
 
 
-def _create_ptcm_feature_configs(
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
+def create_ptcm_feature_configs(
+    features: Dict[str, Union[CategoricalFeature, NumericalFeature]],
     train_csv_data: ptcm.data.CSVData,
 ) -> List[
     Union[ptcm.configs.CategoricalFeatureConfig, ptcm.configs.NumericalFeatureConfig]
@@ -76,7 +75,7 @@ def _create_ptcm_feature_configs(
     return ptcm_feature_configs
 
 
-def _create_ptcm_loss(loss_type: LossType) -> torch.nn.Module:
+def create_ptcm_loss(loss_type: LossType) -> torch.nn.Module:
     """returns a Torch loss function from the given `LossType`."""
     if loss_type == LossType.BINARY_CROSSENTROPY:
         return torch.nn.BCEWithLogitsLoss()
@@ -92,7 +91,7 @@ def _create_ptcm_loss(loss_type: LossType) -> torch.nn.Module:
     raise ValueError(f"Unknown loss type: {loss_type}")
 
 
-def _create_ptcm_metric(metric: Metric) -> torchmetrics.Metric:
+def create_ptcm_metric(metric: Metric) -> torchmetrics.Metric:
     """Returns a torchmetric Metric for the given `Metric`."""
     if metric == Metric.AUC:
         return torchmetrics.AUROC("binary")
@@ -104,7 +103,27 @@ def _create_ptcm_metric(metric: Metric) -> torchmetrics.Metric:
     raise ValueError(f"Unknown metric: {metric}")
 
 
-def _train_ptcm_model(  # pylint: disable=too-many-locals
+def create_ptcm_model(
+    ptcm_feature_configs: List[
+        Union[
+            ptcm.configs.CategoricalFeatureConfig, ptcm.configs.NumericalFeatureConfig
+        ]
+    ],
+    model_config: ModelConfig,
+):
+    """Returns a PTCM model config constructed from the given `ModelConfig`."""
+    return ptcm.models.CalibratedLinear(
+        ptcm_feature_configs,
+        output_min=model_config.options.output_min,
+        output_max=model_config.options.output_max,
+        use_bias=model_config.options.use_bias,
+        output_calibration_num_keypoints=None
+        if not model_config.options.output_calibration
+        else model_config.options.output_calibration_num_keypoints,
+    )
+
+
+def train_ptcm_model(  # pylint: disable=too-many-locals
     target: str,
     primary_metric: Metric,
     train_csv_data: ptcm.data.CSVData,
@@ -119,24 +138,16 @@ def _train_ptcm_model(  # pylint: disable=too-many-locals
     torchmetrics.Metric,
 ]:
     """Trains a PyTorch Calibrated model according to the given config."""
-    ptcm_feature_configs = _create_ptcm_feature_configs(
+    ptcm_feature_configs = create_ptcm_feature_configs(
         pipeline_config.features, train_csv_data
     )
-    ptcm_model = ptcm.models.CalibratedLinear(
-        ptcm_feature_configs,
-        output_min=model_config.options.output_min,
-        output_max=model_config.options.output_max,
-        use_bias=model_config.options.use_bias,
-        output_calibration_num_keypoints=model_config.options.output_calibration_num_keypoints
-        if model_config.options.output_calibration
-        else None,
-    )
+    ptcm_model = create_ptcm_model(ptcm_feature_configs, model_config)
 
     optimizer = torch.optim.Adam(
         ptcm_model.parameters(recurse=True), training_config.learning_rate
     )
-    loss_fn = _create_ptcm_loss(training_config.loss_type)
-    metric_fn = _create_ptcm_metric(primary_metric)
+    loss_fn = create_ptcm_loss(training_config.loss_type)
+    metric_fn = create_ptcm_metric(primary_metric)
 
     train_loss_by_epoch = []
     train_primary_metric_by_epoch = []
@@ -182,9 +193,9 @@ def _train_ptcm_model(  # pylint: disable=too-many-locals
     return ptcm_model, ptcm_per_epoch_results, loss_fn, metric_fn
 
 
-def _extract_feature_analyses_from_ptcm_model(
+def extract_feature_analyses_from_ptcm_model(
     ptcm_model: ptcm.models.CalibratedLinear,
-    features: Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]],
+    features: Dict[str, Union[CategoricalFeature, NumericalFeature]],
     data: pd.DataFrame,
 ) -> Dict[str, FeatureAnalysis]:
     """Extracts feature statistics and calibration weights for each feature.
@@ -228,7 +239,7 @@ def _extract_feature_analyses_from_ptcm_model(
     return feature_analyses
 
 
-def _extract_feature_importances_from_ptcm_model(
+def extract_feature_importances_from_ptcm_model(
     ptcm_model: ptcm.models.CalibratedLinear,
     x_val: List[np.ndarray],
 ) -> Dict[str, float]:
@@ -278,21 +289,19 @@ def _extract_feature_importances_from_ptcm_model(
 
 
 def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
-    dataset_id: int,
     dataset: Dataset,
     target: str,
     primary_metric: Metric,
-    pipeline_config_id: int,
     pipeline_config: PipelineConfig,
     model_config: ModelConfig,
     training_config: TrainingConfig,
-) -> TrainedModel:
+) -> Tuple[ptcm.models.CalibratedLinear, TrainingResults]:
     """Trains a PyTorch Calibrated model according to the given config."""
     train_csv_data = ptcm.data.CSVData(dataset.prepared_data.train)
     val_csv_data = ptcm.data.CSVData(dataset.prepared_data.val)
 
     training_start_time = time.time()
-    trained_ptcm_model, per_epoch_results, loss_fn, metric_fn = _train_ptcm_model(
+    trained_ptcm_model, per_epoch_results, loss_fn, metric_fn = train_ptcm_model(
         target,
         primary_metric,
         train_csv_data,
@@ -314,7 +323,7 @@ def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
     evaluation_time = time.time() - evaluation_start_time
 
     feature_analyses_extraction_start_time = time.time()
-    feature_analyses = _extract_feature_analyses_from_ptcm_model(
+    feature_analyses = extract_feature_analyses_from_ptcm_model(
         trained_ptcm_model,
         pipeline_config.features,
         pd.concat([train_csv_data.prepared_data, val_csv_data.prepared_data]),
@@ -324,7 +333,7 @@ def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
     )
 
     feature_importance_extraction_start_time = time.time()
-    feature_importances = _extract_feature_importances_from_ptcm_model(
+    feature_importances = extract_feature_importances_from_ptcm_model(
         trained_ptcm_model, val_csv_data.prepared_data.values
     )
     feature_importance_extraction_time = (
@@ -346,22 +355,4 @@ def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
         feature_importances=feature_importances,
     )
 
-    return TrainedModel(
-        dataset_id=dataset_id,
-        pipeline_config_id=pipeline_config_id,
-        model_config=model_config,
-        training_config=training_config,
-        training_results=training_results,
-        model=trained_ptcm_model,
-    )
-
-
-def ptcm_model_predict(
-    ptcm_model: ptcm.models.CalibratedLinear, data: pd.DataFrame
-) -> np.ndarray:
-    """Returns predictions for the given input data using the given model."""
-    csv_data = ptcm.data.CSVData(data)
-    csv_data.prepare(ptcm_model.feature_configs, None)
-    inputs = list(csv_data.batch(csv_data.num_examples))[0]
-    with torch.no_grad():
-        return ptcm_model(inputs).numpy()
+    return trained_ptcm_model, training_results
