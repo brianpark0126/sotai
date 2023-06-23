@@ -1,11 +1,14 @@
 """A trained calibrated model."""
 from __future__ import annotations
 
+import os
+import pickle
 from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytorch_calibrated as ptcm
+import tensorflow as tf
 import tensorflow_lattice as tfl
 import torch
 from pydantic import BaseModel, Field
@@ -37,9 +40,11 @@ class TrainedModel(BaseModel):
     model_config: ModelConfig = Field(...)
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)
-    model: Union[tfl.premade.CalibratedLinear, ptcm.models.CalibratedLinear] = Field(
-        ...
-    )
+    model: Union[
+        tf.keras.models.Model,  # we need this because TF loading doesn't work properly.
+        tfl.premade.CalibratedLinear,
+        ptcm.models.CalibratedLinear,
+    ] = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True
@@ -86,14 +91,24 @@ class TrainedModel(BaseModel):
         raise NotImplementedError()
 
     def save(self, filepath: str):
-        """Saves the trained model to the specified filepath.
+        """Saves the trained model to the specified directory.
 
         Args:
-            filepath: The filepath to save the trained model to. If the filepath does
-                not exist, this function will attempt to create it. If the filepath
-                already exists, this function will overwrite it.
+            filepath: The directory to save the trained model to. If the directory does
+                not exist, this function will attempt to create it. If the directory
+                already exists, this function will overwrite any existing content with
+                conflicting filenames.
         """
-        raise NotImplementedError()
+        if not os.path.exists(filepath):
+            os.makedirs(filepath)
+        with open(os.path.join(filepath, "trained_model_metadata.pkl"), "wb") as file:
+            pickle.dump(self.dict(exclude={"model"}), file)
+        if self.model_config.framework == ModelFramework.TENSORFLOW:
+            model_path = f"{filepath}/trained_tfl_model"
+            self.model.save(model_path)
+        else:  # ModelFramework.PYTORCH
+            model_path = f"{filepath}/trained_ptcm_model.pt"
+            torch.save(self.model, model_path)
 
     @classmethod
     def load(cls, filepath: str) -> TrainedModel:
@@ -107,4 +122,15 @@ class TrainedModel(BaseModel):
         Returns:
             A `TrainedModel` instance.
         """
-        raise NotImplementedError()
+        with open(os.path.join(filepath, "trained_model_metadata.pkl"), "rb") as file:
+            trained_model_metadata = pickle.load(file)
+        model_framework = trained_model_metadata["model_config"]["framework"]
+        if model_framework == ModelFramework.TENSORFLOW:
+            model_path = f"{filepath}/trained_tfl_model"
+            model = tf.keras.models.load_model(model_path)
+        else:  # ModelFramework.PYTORCH
+            model_path = f"{filepath}/trained_ptcm_model.pt"
+            model = torch.load(model_path)
+            model.eval()
+
+        return TrainedModel(**trained_model_metadata, model=model)

@@ -138,3 +138,25 @@ def test_train_calibrated_linear_model(
     assert pipeline.datasets[trained_model.dataset_id]
     assert trained_model.pipeline_config.id == 0
     assert pipeline.configs[trained_model.pipeline_config.id]
+
+
+def test_pipeline_save_load(test_data, test_features, test_target, tmp_path):
+    """Tests that an instance of `Pipeline` can be successfully saved and loaded."""
+    pipeline = Pipeline(test_features, test_target, TargetType.CLASSIFICATION)
+    _ = pipeline.train(test_data)
+    pipeline.save(tmp_path)
+    loaded_pipeline = Pipeline.load(tmp_path)
+    assert isinstance(loaded_pipeline, Pipeline)
+    assert loaded_pipeline.name == pipeline.name
+    assert loaded_pipeline.target == pipeline.target
+    assert loaded_pipeline.target_type == pipeline.target_type
+    assert loaded_pipeline.primary_metric == pipeline.primary_metric
+    assert loaded_pipeline.features == pipeline.features
+    assert loaded_pipeline.configs == pipeline.configs
+    for dataset_id, loaded_dataset in loaded_pipeline.datasets.items():
+        dataset = pipeline.datasets[dataset_id]
+        assert loaded_dataset.id == dataset.id
+        assert loaded_dataset.pipeline_config_id == dataset.pipeline_config_id
+        assert loaded_dataset.prepared_data.train.equals(dataset.prepared_data.train)
+        assert loaded_dataset.prepared_data.val.equals(dataset.prepared_data.val)
+        assert loaded_dataset.prepared_data.test.equals(dataset.prepared_data.test)
