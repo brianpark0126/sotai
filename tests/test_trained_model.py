@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import pytorch_calibrated as ptcm
+import tensorflow as tf
 
 from sotai import (
     CategoricalFeature,
@@ -109,10 +110,8 @@ def _construct_trained_model(
             evaluation_time=1,
             test_loss=1,
             test_primary_metric=1,
-            feature_analyses_extraction_time=1,
             feature_analyses={},
-            feature_importance_extraction_time=1,
-            feature_importances={},
+            linear_coefficients={},
         ),
         model=model,
     )
@@ -144,3 +143,23 @@ def test_trained_regression_model_predict(data, features, model_framework):
     predictions = trained_model.predict(data)
     assert isinstance(predictions, np.ndarray)
     assert len(predictions) == len(data)
+
+
+@pytest.mark.parametrize(
+    "model_framework", [(ModelFramework.TENSORFLOW), (ModelFramework.PYTORCH)]
+)
+def test_trained_model_save_load(data, features, model_framework, tmp_path):
+    """Tests that a `TrainedModel` can be successfully saved and then loaded."""
+    trained_model = _construct_trained_model(
+        model_framework, TargetType.CLASSIFICATION, data, features
+    )
+    trained_model.save(tmp_path)
+    loaded_trained_model = TrainedModel.load(tmp_path)
+    assert isinstance(loaded_trained_model, TrainedModel)
+    assert loaded_trained_model.dict(exclude={"model"}) == trained_model.dict(
+        exclude={"model"}
+    )
+    if model_framework == ModelFramework.TENSORFLOW:
+        assert isinstance(loaded_trained_model.model, tf.keras.models.Model)
+    else:  # ModelFramework.PYTORCH
+        assert isinstance(loaded_trained_model.model, ptcm.models.CalibratedLinear)

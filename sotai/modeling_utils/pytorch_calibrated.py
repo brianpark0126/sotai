@@ -1,20 +1,10 @@
 """PyTorch Calibrated training utility functions."""
 import time
-import warnings
 from typing import Dict, List, Tuple, Union
-
-# pylint: disable=wrong-import-position
-warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
-warnings.filterwarnings("ignore", message=".*np.bool8` is a deprecated alias.*")
-warnings.filterwarnings(
-    "ignore", message=".*Importing display from IPython.core.display is deprecated.*"
-)
-# pylint: enable=wrong-import-position
 
 import numpy as np
 import pandas as pd
 import pytorch_calibrated as ptcm
-import shap
 import torch
 import torchmetrics
 from pydantic import BaseModel
@@ -239,53 +229,18 @@ def extract_feature_analyses_from_ptcm_model(
     return feature_analyses
 
 
-def extract_feature_importances_from_ptcm_model(
-    ptcm_model: ptcm.models.CalibratedLinear,
-    x_val: List[np.ndarray],
+def extract_coefficients_from_ptcm_linear_model(
+    ptcm_linear_model: ptcm.models.CalibratedLinear,
+    features: List[str],
 ) -> Dict[str, float]:
-    """Extracts the feature importances for each feature using validation samples.
-
-    The feature importances returned are simply the mean absolute value across each
-    individual example since shapley values are calculated at the individual example
-    level.
-
-    Args:
-        model: A PyTorch Calibrated model.
-        x_val: The validation data used for validating the model results. This is
-            what the explainer uses for producing sampled estimates.
-
-    Returns:
-        A dictionary mapping feature names to importances.
-    """
-    # Extract feature names from the calibration layers
-    feature_names = [
-        feature_config.feature_name for feature_config in ptcm_model.feature_configs
-    ]
-
-    # Restructure the data to be the correct shape and pull samples
-    num_examples = np.shape(x_val)[0]
-    sample_size = min(num_examples, 100)
-    formatted_samples = np.take(
-        x_val, np.random.choice(num_examples, sample_size), axis=0
+    """Extracts linear coefficients from a PyTorch `CalibratedLinear` model."""
+    linear_coefficients = dict(
+        zip(features, ptcm_linear_model.linear.kernel.detach().numpy().flatten())
     )
-    explanation_size = min(num_examples, 500)
-    formatted_explanations = np.take(
-        x_val, np.random.choice(num_examples, explanation_size), axis=0
-    )
+    if ptcm_linear_model.use_bias:
+        linear_coefficients["bias"] = ptcm_linear_model.linear.bias.detach().numpy()[0]
 
-    # Create our Explainer and determine our shapley values --> feature importances
-    def predict(examples: np.ndarray) -> np.ndarray:
-        with torch.no_grad():
-            return ptcm_model(torch.from_numpy(examples).double()).numpy()
-
-    explainer = shap.KernelExplainer(predict, formatted_samples)
-    shap_values = explainer.shap_values(formatted_explanations, nsamples=500)[0]
-    feature_importances = np.mean(np.absolute(shap_values), axis=0)
-
-    return {
-        feature_name: feature_importances[i]
-        for i, feature_name in enumerate(feature_names)
-    }
+    return linear_coefficients
 
 
 def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
@@ -322,22 +277,14 @@ def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
         evaluation_metric = metric_fn(evaluation_predictions, y_test)
     evaluation_time = time.time() - evaluation_start_time
 
-    feature_analyses_extraction_start_time = time.time()
     feature_analyses = extract_feature_analyses_from_ptcm_model(
         trained_ptcm_model,
         pipeline_config.features,
         pd.concat([train_csv_data.prepared_data, val_csv_data.prepared_data]),
     )
-    feature_analyses_extraction_time = (
-        time.time() - feature_analyses_extraction_start_time
-    )
 
-    feature_importance_extraction_start_time = time.time()
-    feature_importances = extract_feature_importances_from_ptcm_model(
-        trained_ptcm_model, val_csv_data.prepared_data.values
-    )
-    feature_importance_extraction_time = (
-        time.time() - feature_importance_extraction_start_time
+    linear_coefficients = extract_coefficients_from_ptcm_linear_model(
+        trained_ptcm_model, list(pipeline_config.features.keys())
     )
 
     training_results = TrainingResults(
@@ -349,10 +296,8 @@ def train_and_evaluate_ptcm_model(  # pylint: disable=too-many-locals
         evaluation_time=evaluation_time,
         test_loss=evaluation_loss.tolist(),
         test_primary_metric=evaluation_metric.tolist(),
-        feature_analyses_extraction_time=feature_analyses_extraction_time,
         feature_analyses=feature_analyses,
-        feature_importance_extraction_time=feature_importance_extraction_time,
-        feature_importances=feature_importances,
+        linear_coefficients=linear_coefficients,
     )
 
     return trained_ptcm_model, training_results

@@ -221,12 +221,13 @@ class TrainingResults(BaseModel):
         evaluation_time: The total time spent evaluating the model.
         test_loss: The test loss.
         test_primary_metric: The test primary metric.
-        feature_analysis_extraction_time: The total time spent extracting feature
-            analysis data from the model.
         feature_analyses: The feature analysis results for each feature.
-        feature_importance_extraction_time: The total time spent extracting feature
-            importance data from the model.
-        feature_importances: The feature importances for each feature.
+        linear_coefficients: A mapping from feature name to linear coefficient. These
+            coefficients are the coefficients of the linear combination of features
+            after they have been calibrated, so any analysis of the coefficients should
+            be done with the feature's calibrator in mind. If using a bias term, the
+            bias value will be stored under the key "bias". Note that there will be no
+            bias term if you set output bounds or use an output calibrator.
     """
 
     training_time: float = Field(...)
@@ -237,10 +238,8 @@ class TrainingResults(BaseModel):
     evaluation_time: float = Field(...)
     test_loss: float = Field(...)
     test_primary_metric: float = Field(...)
-    feature_analyses_extraction_time: float = Field(...)
     feature_analyses: Dict[str, FeatureAnalysis] = Field(...)
-    feature_importance_extraction_time: float = Field(...)
-    feature_importances: Dict[str, float] = Field(...)
+    linear_coefficients: Dict[str, float] = Field(...)
 
 
 class PipelineConfig(BaseModel):

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import pickle
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -239,11 +241,15 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         """Saves the pipeline to the specified filepath.
 
         Args:
-            filepath: The filepath to which the pipeline wil be saved. If the filepath
-                does not exist, this function will attempt to create it. If the filepath
-                already exists, this function will overwrite it.
+            filepath: The directory to which the pipeline wil be saved. If the directory
+                does not exist, this function will attempt to create it. If the
+                directory already exists, this function will overwrite any existing
+                content with conflicting filenames.
         """
-        raise NotImplementedError()
+        if not os.path.exists(filepath):
+            os.makedirs(filepath)
+        with open(os.path.join(filepath, "pipeline.pkl"), "wb") as file:
+            pickle.dump(self, file)
 
     @classmethod
     def load(cls, filepath: str) -> Pipeline:
@@ -257,7 +263,10 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         Returns:
             A `Pipeline` instance.
         """
-        raise NotImplementedError()
+        with open(os.path.join(filepath, "pipeline.pkl"), "rb") as file:
+            pipeline = pickle.load(file)
+
+        return pipeline
 
     ############################################################################
     #                            Private Methods                               #
