@@ -8,22 +8,24 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import torch
+from pydantic import BaseModel, Field
 
-from .enums import FeatureType, LossType, Metric, ModelFramework, TargetType
-from .modeling_utils import train_and_evaluate_ptcm_model, train_and_evaluate_tfl_model
-from .trained_model import TrainedModel
+from .data import CSVData, determine_feature_types, replace_missing_values
+from .enums import FeatureType, LossType, Metric, TargetType
+from .models import CalibratedLinear
+from .training import train_and_evaluate_model
 from .types import (
-    CategoricalFeature,
+    CategoricalFeatureConfig,
     Dataset,
     DatasetSplit,
-    LinearOptions,
-    ModelConfig,
-    NumericalFeature,
+    LinearConfig,
+    NumericalFeatureConfig,
     PipelineConfig,
     PreparedData,
     TrainingConfig,
+    TrainingResults,
 )
-from .utils import determine_feature_types, replace_missing_values
 
 
 class Pipeline:  # pylint: disable=too-many-instance-attributes
@@ -87,14 +89,16 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 else Metric.MSE
             )
         )
-        self.features: Dict[str, Union[CategoricalFeature, NumericalFeature]] = {
+        self.feature_configs: Dict[
+            str, Union[CategoricalFeatureConfig, NumericalFeatureConfig]
+        ] = {
             feature_name: (
-                CategoricalFeature(
+                CategoricalFeatureConfig(
                     name=feature_name,
                     categories=categories[feature_name],
                 )
                 if categories and feature_name in categories
-                else NumericalFeature(name=feature_name)
+                else NumericalFeatureConfig(name=feature_name)
             )
             for feature_name in features
         }
@@ -135,14 +139,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             pipeline_config = self.configs[pipeline_config_id]
 
         # Select only the features defined in the pipeline config.
-        data = data[list(pipeline_config.features.keys()) + [self.target]]
+        data = data[list(pipeline_config.feature_configs.keys()) + [self.target]]
         # Drop rows with too many missing values according to the drop empty percent.
         max_num_empty_columns = int(
             (pipeline_config.drop_empty_percentage * data.shape[1]) / 100
         )
         data = data[data.isnull().sum(axis=1) <= max_num_empty_columns]
         # Replace any missing values (i.e. NaN) with missing value constants.
-        data = replace_missing_values(data, pipeline_config.features)
+        data = replace_missing_values(data, pipeline_config.feature_configs)
         if pipeline_config.shuffle_data:
             data = data.sample(frac=1).reset_index(drop=True)
         train_percentage = pipeline_config.dataset_split.train / 100
@@ -169,7 +173,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self,
         data: Union[pd.DataFrame, int],
         pipeline_config_id: Optional[int] = None,
-        model_config: Optional[ModelConfig] = None,
+        model_config: Optional[LinearConfig] = None,
         training_config: Optional[TrainingConfig] = None,
     ) -> TrainedModel:
         """Returns a calibrated model trained according to the given configs.
@@ -197,9 +201,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             dataset, pipeline_config = self.prepare(data, pipeline_config_id)
 
         if model_config is None:
-            model_config = ModelConfig(
-                framework=ModelFramework.TENSORFLOW, options=LinearOptions()
-            )
+            model_config = LinearConfig()
 
         if training_config is None:
             training_config = TrainingConfig(
@@ -208,25 +210,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 else LossType.MSE
             )
 
-        if model_config.framework == ModelFramework.TENSORFLOW:
-            model, training_results = train_and_evaluate_tfl_model(
-                dataset,
-                self.target,
-                self.target_type,
-                self.primary_metric,
-                pipeline_config,
-                model_config,
-                training_config,
-            )
-        else:  # ModelFramework.PYTORCH
-            model, training_results = train_and_evaluate_ptcm_model(
-                dataset,
-                self.target,
-                self.primary_metric,
-                pipeline_config,
-                model_config,
-                training_config,
-            )
+        model, training_results = train_and_evaluate_model(
+            dataset,
+            self.target,
+            self.primary_metric,
+            pipeline_config,
+            model_config,
+            training_config,
+        )
 
         return TrainedModel(
             dataset_id=dataset.id,
@@ -279,17 +270,17 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             target=self.target,
             target_type=self.target_type,
             primary_metric=self.primary_metric,
-            features=self.features,
+            feature_configs=self.feature_configs,
             shuffle_data=self.shuffle_data,
             drop_empty_percentage=self.drop_empty_percentage,
             dataset_split=self.dataset_split,
         )
 
         feature_types = determine_feature_types(
-            data[list(pipeline_config.features.keys())]
+            data[list(pipeline_config.feature_configs.keys())]
         )
         for feature_name, feature_type in feature_types.items():
-            feature_config = pipeline_config.features[feature_name]
+            feature_config = pipeline_config.feature_configs[feature_name]
             if (
                 feature_type == FeatureType.NUMERICAL
                 or feature_config.type == FeatureType.CATEGORICAL
@@ -301,7 +292,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                     "default categorical config using unique values as categories",
                     feature_name,
                 )
-                pipeline_config.features[feature_name] = CategoricalFeature(
+                pipeline_config.feature_configs[
+                    feature_name
+                ] = CategoricalFeatureConfig(
                     name=feature_name,
                     categories=sorted(data[feature_name].dropna().unique().tolist()),
                 )
@@ -310,6 +303,106 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                     "Removing feature %s because its data type is not supported.",
                     feature_name,
                 )
-                pipeline_config.features.pop(feature_name)
+                pipeline_config.feature_configs.pop(feature_name)
 
         return pipeline_config
+
+
+class TrainedModel(BaseModel):
+    """A trained calibrated model.
+
+    This model is a container for a trained calibrated model that provides useful
+    methods for using the model. The trained calibrated model is the result of running
+    the `train` method of a `Pipeline` instance.
+
+    Example:
+
+    ```python
+    data = pd.read_csv("data.csv")
+    predictions = trained_model.predict(data)
+    trained_model.analyze()
+    ```
+    """
+
+    dataset_id: int = Field(...)
+    pipeline_config: PipelineConfig = Field(...)
+    model_config: LinearConfig = Field(...)
+    training_config: TrainingConfig = Field(...)
+    training_results: TrainingResults = Field(...)
+    model: CalibratedLinear = Field(...)
+
+    class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        arbitrary_types_allowed = True
+
+    def predict(self, data: pd.DataFrame) -> np.ndarray:
+        """Returns predictions for the given data.
+
+        Args:
+            data: The data to be used for prediction. Must have all columns used for
+                training the model to be used.
+
+        Returns:
+            If the target type is regression, a numpy array of predictions. If the
+            target type is classification, a tuple containing a numpy array of
+            predictions (logits) and a numpy array of probabilities.
+        """
+        data = data.loc[:, list(self.pipeline_config.feature_configs.keys())]
+        data = replace_missing_values(data, self.pipeline_config.feature_configs)
+
+        csv_data = CSVData(data)
+        csv_data.prepare(self.model.features, None)
+        inputs = list(csv_data.batch(csv_data.num_examples))[0]
+        with torch.no_grad():
+            predictions = self.model(inputs).numpy()
+
+        if self.pipeline_config.target_type == TargetType.REGRESSION:
+            return predictions
+
+        return predictions, 1.0 / (1.0 + np.exp(-predictions))
+
+    def analysis(self):
+        """Charts the results for the specified trained model in the SOTAI web client.
+
+        This function requires an internet connection and a SOTAI account. The trained
+        model will be uploaded to the SOTAI web client for analysis.
+
+        If you would like to analyze the results for a trained model without uploading
+        it to the SOTAI web client, the data is available in `training_results`.
+        """
+        raise NotImplementedError()
+
+    def save(self, filepath: str):
+        """Saves the trained model to the specified directory.
+
+        Args:
+            filepath: The directory to save the trained model to. If the directory does
+                not exist, this function will attempt to create it. If the directory
+                already exists, this function will overwrite any existing content with
+                conflicting filenames.
+        """
+        if not os.path.exists(filepath):
+            os.makedirs(filepath)
+        with open(os.path.join(filepath, "trained_model_metadata.pkl"), "wb") as file:
+            pickle.dump(self.dict(exclude={"model"}), file)
+        model_path = f"{filepath}/trained_ptcm_model.pt"
+        torch.save(self.model, model_path)
+
+    @classmethod
+    def load(cls, filepath: str) -> TrainedModel:
+        """Loads a trained model from the specified filepath.
+
+        Args:
+            filepath: The filepath to load the trained model from. The filepath should
+                point to a file created by the `save` method of a `TrainedModel`
+                instance.
+
+        Returns:
+            A `TrainedModel` instance.
+        """
+        with open(os.path.join(filepath, "trained_model_metadata.pkl"), "rb") as file:
+            trained_model_metadata = pickle.load(file)
+        model_path = f"{filepath}/trained_ptcm_model.pt"
+        model = torch.load(model_path)
+        model.eval()
+
+        return TrainedModel(**trained_model_metadata, model=model)

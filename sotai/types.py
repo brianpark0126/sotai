@@ -10,7 +10,6 @@ from .enums import (
     InputKeypointsType,
     LossType,
     Metric,
-    ModelFramework,
     Monotonicity,
     TargetType,
 )
@@ -72,46 +71,8 @@ class Dataset(BaseModel):
         arbitrary_types_allowed = True
 
 
-class NumericalFeature(BaseModel):
-    """Configuration for a numerical feature.
-
-    Attributes:
-        name: The name of the feature.
-        type: The type of the feature. Always `FeatureType.NUMERICAL`.
-        num_keypoints: The number of keypoints to use for the calibrator.
-        input_keypoints_init: The method for initializing the input keypoints.
-        input_keypoints_type: The type of input keypoints.
-        monotonicity: The monotonicity constraint, if any.
-    """
-
-    name: str = Field(...)
-    type: FeatureType = Field(FeatureType.NUMERICAL, const=True)
-    num_keypoints: int = 10
-    input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
-    input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
-    monotonicity: Monotonicity = Monotonicity.NONE
-
-
-class CategoricalFeature(BaseModel):
-    """Configuration for a categorical feature.
-
-    Attributes:
-        name: The name of the feature.
-        type: The type of the feature. Always `FeatureType.CATEGORICAL`.
-        categories: The categories for the feature.
-    """
-
-    name: str = Field(...)
-    type: FeatureType = Field(FeatureType.CATEGORICAL, const=True)
-    categories: Union[List[str], List[int]] = Field(...)
-    # TODO (will): add support for categorical monotonicity.
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
-class _ModelOptions(BaseModel):
-    """Base class for model options.
+class _BaseModelConfig(BaseModel):
+    """Configuration for a calibrated model.
 
     Attributes:
         output_min: The minimum output value for the model. If None, then it will be
@@ -125,6 +86,7 @@ class _ModelOptions(BaseModel):
             keypoints.
         output_calibration_input_keypoints_type: The type of output calibrator input
             keypoints.
+        advanced_options: Advanced options for the model.
     """
 
     output_min: Optional[float] = None
@@ -137,28 +99,14 @@ class _ModelOptions(BaseModel):
     )
 
 
-class LinearOptions(_ModelOptions):
-    """Calibrated Linear model options.
+class LinearConfig(_BaseModelConfig):
+    """Configuration for a calibrated linear model.
 
     Attributes:
         use_bias: Whether to use a bias term for the linear combination.
     """
 
     use_bias: bool = True
-
-
-class ModelConfig(BaseModel):
-    """Configuration for a calibrated model.
-
-    Attributes:
-        framework: The framework to use for the model (TensorFlow / PyTorch).
-        type: The type of model to use.
-        options: The configuration options for the model.
-    """
-
-    framework: ModelFramework = ModelFramework.TENSORFLOW
-    # TODO (will): Add support for Calibrated Lattice and Calibrated Lattice Ensemble.
-    options: LinearOptions = Field(...)
 
 
 class TrainingConfig(BaseModel):
@@ -242,6 +190,44 @@ class TrainingResults(BaseModel):
     linear_coefficients: Dict[str, float] = Field(...)
 
 
+class NumericalFeatureConfig(BaseModel):
+    """Configuration for a numerical feature.
+
+    Attributes:
+        name: The name of the feature.
+        type: The type of the feature. Always `FeatureType.NUMERICAL`.
+        num_keypoints: The number of keypoints to use for the calibrator.
+        input_keypoints_init: The method for initializing the input keypoints.
+        input_keypoints_type: The type of input keypoints.
+        monotonicity: The monotonicity constraint, if any.
+    """
+
+    name: str = Field(...)
+    type: FeatureType = Field(FeatureType.NUMERICAL, const=True)
+    num_keypoints: int = 10
+    input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
+    input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
+    monotonicity: Monotonicity = Monotonicity.NONE
+
+
+class CategoricalFeatureConfig(BaseModel):
+    """Configuration for a categorical feature.
+
+    Attributes:
+        name: The name of the feature.
+        type: The type of the feature. Always `FeatureType.CATEGORICAL`.
+        categories: The categories for the feature.
+    """
+
+    name: str = Field(...)
+    type: FeatureType = Field(FeatureType.CATEGORICAL, const=True)
+    categories: Union[List[str], List[int]] = Field(...)
+    # TODO (will): add support for categorical monotonicity.
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
 class PipelineConfig(BaseModel):
     """A configuration object for a `Pipeline`.
 
@@ -249,7 +235,8 @@ class PipelineConfig(BaseModel):
         target: The column name for the target.
         target_type: The type of the target.
         primary_metric: The primary metric to use for training and evaluation.
-        features: A dictionary mapping the column name for a feature to its config.
+        feature_configs: A dictionary mapping the column name for a feature to its
+            config.
         shuffle_data: Whether to shuffle the data before splitting it into train,
             validation, and test sets.
         drop_empty_percentage: Rows will be dropped if they are this percentage empty.
@@ -260,7 +247,9 @@ class PipelineConfig(BaseModel):
     target: str = Field(...)
     target_type: TargetType = Field(...)
     primary_metric: Metric = Field(...)
-    features: Dict[str, Union[NumericalFeature, CategoricalFeature]] = Field(...)
+    feature_configs: Dict[
+        str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]
+    ] = Field(...)
     shuffle_data: bool = Field(...)
     drop_empty_percentage: int = Field(...)
     dataset_split: DatasetSplit = Field(...)
