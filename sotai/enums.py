@@ -42,13 +42,6 @@ class Metric(_Enum):
     MSE = "mean_squared_error"
 
 
-class ModelFramework(_Enum):
-    """The type of model framework to use."""
-
-    TENSORFLOW = "tensorflow"
-    PYTORCH = "pytorch"
-
-
 class InputKeypointsInit(_Enum):
     """Type of initialization to use for NumericalCalibrator input keypoints.
 
