@@ -87,9 +87,11 @@ sotai/
 ├── ...
 ├── docs/  # All of the documentation here is synced with the online docs.
 │   ├── examples/  # Examples of how to use the library.
-│   ├── reference/  # Auto-generated docstring --> markdown detailed documentation.
+│   ├── notebooks/  # Jupyter Notebook examples.
 │   └── ...
 ├── sotai/  # SOTAI SDK.
+│   ├── layers/  # calibrated modeling layers
+│   └──
 │   ├── pipelines/  # Pipelines for calibrated.
 │   ├── enums.py  # SDK enums.
 │   └── ...
@@ -103,13 +105,3 @@ sotai/
 In an effort to keep the codebase clean and easy to work with, we use `black` formatting and `pylint` for linting. Before sending any PR for review, make sure to run both `black` and `pylint`.
 
 If you are using VS Code, then install the extensions in `.vscode/extensions.json` and the workspace settings should automatically run `black` formatting on save and show `pylint` errors.
-
-## Generating Reference Documentation
-
-If you make any changes to docstrings in the codebase, make sure to generate the markdown docs and include those updates in your PR. This will ensure that any changes will be properly reflected in the online docs as well.
-
-To generate the docs, from `sotai/` run:
-
-```bash
-sh generate_reference_docs.sh
-```
