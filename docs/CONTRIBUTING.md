@@ -91,9 +91,17 @@ sotai/
 │   └── ...
 ├── sotai/  # SOTAI SDK.
 │   ├── layers/  # calibrated modeling layers
-│   └──
-│   ├── pipelines/  # Pipelines for calibrated.
+│   │   ├── categorical_calibrator.py  # calibrator for categorical features
+│   │   ├── linear.py  # linear combination layer with constraints
+│   │   └── numerical_calibrator.py  # calibrator for numerical features
+│   ├── constants.py  # constants for the SDK.
+│   ├── data.py  # data utilities for handling data.
 │   ├── enums.py  # SDK enums.
+│   ├── features.py  # feature for calibrated modeling, defines how to create calibrator.
+│   ├── models.py  # premade calibrated model classes for easy modeling.
+│   ├── pipelines/  # Pipelines for calibrated.
+│   ├── training.py  # training utilities.
+│   ├── types.py  # type definitions for things like configs.
 │   └── ...
 ├── tests/  # The entire system should be unit tested. Files should have corresponding test_*.py files here.
 │   └── ...
