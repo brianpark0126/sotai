@@ -199,7 +199,7 @@ def extract_feature_analyses(
             keypoints_inputs_categorical = []
         else:
             keypoints_inputs_numerical = []
-            keypoints_inputs = [feature_config.categories] + [MISSING_CATEGORY_VALUE]
+            keypoints_inputs = feature_config.categories + [MISSING_CATEGORY_VALUE]
             keypoints_inputs_categorical = [str(ki) for ki in keypoints_inputs]
 
         feature_analyses[feature_name] = FeatureAnalysis(

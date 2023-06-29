@@ -87,11 +87,21 @@ sotai/
 ├── ...
 ├── docs/  # All of the documentation here is synced with the online docs.
 │   ├── examples/  # Examples of how to use the library.
-│   ├── reference/  # Auto-generated docstring --> markdown detailed documentation.
+│   ├── notebooks/  # Jupyter Notebook examples.
 │   └── ...
 ├── sotai/  # SOTAI SDK.
-│   ├── pipelines/  # Pipelines for calibrated.
+│   ├── layers/  # calibrated modeling layers
+│   │   ├── categorical_calibrator.py  # calibrator for categorical features
+│   │   ├── linear.py  # linear combination layer with constraints
+│   │   └── numerical_calibrator.py  # calibrator for numerical features
+│   ├── constants.py  # constants for the SDK.
+│   ├── data.py  # data utilities for handling data.
 │   ├── enums.py  # SDK enums.
+│   ├── features.py  # feature for calibrated modeling, defines how to create calibrator.
+│   ├── models.py  # premade calibrated model classes for easy modeling.
+│   ├── pipelines/  # Pipelines for calibrated.
+│   ├── training.py  # training utilities.
+│   ├── types.py  # type definitions for things like configs.
 │   └── ...
 ├── tests/  # The entire system should be unit tested. Files should have corresponding test_*.py files here.
 │   └── ...
@@ -103,13 +113,3 @@ sotai/
 In an effort to keep the codebase clean and easy to work with, we use `black` formatting and `pylint` for linting. Before sending any PR for review, make sure to run both `black` and `pylint`.
 
 If you are using VS Code, then install the extensions in `.vscode/extensions.json` and the workspace settings should automatically run `black` formatting on save and show `pylint` errors.
-
-## Generating Reference Documentation
-
-If you make any changes to docstrings in the codebase, make sure to generate the markdown docs and include those updates in your PR. This will ensure that any changes will be properly reflected in the online docs as well.
-
-To generate the docs, from `sotai/` run:
-
-```bash
-sh generate_reference_docs.sh
-```
