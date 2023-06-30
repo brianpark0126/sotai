@@ -41,11 +41,8 @@ def get_api_key() -> str:
 def get_auth_headers() -> Dict[str, str]:
     """Get the authentication headers for a pipeline.
 
-    Args:
-        pipeline (Pipeline): The pipeline to get the headers for.
-
     Returns:
-        dict: The authentication headers.
+    dict: The authentication headers.
     """
     return {
         "sotai-api-key": get_api_key(),
