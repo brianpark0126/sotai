@@ -19,9 +19,9 @@ Importing the package:
 import sotai
 ```
 
-## Documentation
+## SOTAI Web-App User Documentation
 
-All documentation is hosted at [https://docs.sotai.ai/sdk](https://docs.sotai.ai/sdk).
+You can find documentation for how to use the hosted web-app at [https://docs.sotai.ai/app](https://docs.sotai.ai/app)
 
 ## Contribution Guidelines
 
