@@ -15,55 +15,26 @@ from sotai import (
 )
 from sotai.models import CalibratedLinear
 
+from .fixtures import (
+    fixture_test_categories,
+    fixture_test_data,
+    fixture_test_feature_configs,
+    fixture_test_feature_names,
+    fixture_test_target,
+)
 from .utils import construct_trained_model
-
-
-@pytest.fixture(name="test_target")
-def fixture_test_target():
-    """Returns a test target."""
-    return "target"
-
-
-@pytest.fixture(name="test_categories")
-def fixture_test_categories():
-    """Returns a list of test categories."""
-    return ["a", "b", "c", "d"]
-
-
-@pytest.fixture(name="test_data")
-def fixture_test_data(test_categories, test_target):
-    """Returns a test dataset."""
-    return pd.DataFrame(
-        {
-            "numerical": np.random.rand(100),
-            "categorical": np.random.choice(test_categories, 100),
-            test_target: np.random.randint(0, 2, 100),
-        }
-    )
-
-
-@pytest.fixture(name="test_feature_names")
-def fixture_test_feature_names(test_data, test_target):
-    """Returns a list of test feature names."""
-    return test_data.columns.drop(test_target).to_list()
-
-
-@pytest.fixture(name="test_feature_configs")
-def fixture_test_feature_configs(test_categories):
-    """Returns a list of test features."""
-    return {
-        "numerical": NumericalFeatureConfig(name="numerical"),
-        "categorical": CategoricalFeatureConfig(
-            name="categorical", categories=test_categories
-        ),
-    }
 
 
 @pytest.mark.parametrize(
     "target_type,expected_primary_metric",
     [(TargetType.CLASSIFICATION, Metric.AUC), (TargetType.REGRESSION, Metric.MSE)],
 )
-def test_init(test_feature_names, test_target, target_type, expected_primary_metric):
+def test_init(
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+    target_type,
+    expected_primary_metric,
+):
     """Tests pipeline initialization for a classification target."""
     pipeline = Pipeline(test_feature_names, test_target, target_type)
     assert pipeline.name == f"{test_target}_{target_type}"
@@ -80,7 +51,11 @@ def test_init(test_feature_names, test_target, target_type, expected_primary_met
     assert categorical_config.type == FeatureType.NUMERICAL
 
 
-def test_init_with_categories(test_feature_names, test_target, test_categories):
+def test_init_with_categories(
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+    test_categories: fixture_test_categories,
+):
     """Tests pipeline initialization with specified categories."""
     pipeline = Pipeline(
         test_feature_names,
@@ -94,7 +69,12 @@ def test_init_with_categories(test_feature_names, test_target, test_categories):
     assert categorical_config.categories == test_categories
 
 
-def test_prepare(test_data, test_feature_names, test_target, test_categories):
+def test_prepare(
+    test_data: fixture_test_data,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+    test_categories: fixture_test_target,
+):
     """Tests the pipeline prepare function."""
     pipeline = Pipeline(
         test_feature_names, test_target, target_type=TargetType.CLASSIFICATION
@@ -132,7 +112,10 @@ def test_prepare(test_data, test_feature_names, test_target, test_categories):
     ],
 )
 def test_train_calibrated_linear_model(
-    test_data, test_feature_names, test_target, target_type
+    test_data,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+    target_type,
 ):
     """Tests pipeline training for calibrated linear regression model."""
     pipeline = Pipeline(test_feature_names, test_target, target_type)
@@ -150,7 +133,12 @@ def test_train_calibrated_linear_model(
     assert pipeline.configs[trained_model.pipeline_config.id]
 
 
-def test_pipeline_save_load(test_data, test_feature_names, test_target, tmp_path):
+def test_pipeline_save_load(
+    test_data: fixture_test_data,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+    tmp_path,
+):
     """Tests that an instance of `Pipeline` can be successfully saved and loaded."""
     pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
     _ = pipeline.train(test_data)
@@ -172,7 +160,9 @@ def test_pipeline_save_load(test_data, test_feature_names, test_target, tmp_path
         assert loaded_dataset.prepared_data.test.equals(dataset.prepared_data.test)
 
 
-def test_trained_classification_model_predict(test_data, test_feature_configs):
+def test_trained_classification_model_predict(
+    test_data: fixture_test_data, test_feature_configs: fixture_test_feature_configs
+):
     """Tests the predict function on a trained model."""
     trained_model = construct_trained_model(
         TargetType.CLASSIFICATION, test_data, test_feature_configs
@@ -184,7 +174,9 @@ def test_trained_classification_model_predict(test_data, test_feature_configs):
     assert len(probabilities) == len(test_data)
 
 
-def test_trained_regression_model_predict(test_data, test_feature_configs):
+def test_trained_regression_model_predict(
+    test_data: fixture_test_data, test_feature_configs: fixture_test_feature_configs
+):
     """Tests the predict function on a trained model."""
     trained_model = construct_trained_model(
         TargetType.REGRESSION, test_data, test_feature_configs
@@ -194,7 +186,11 @@ def test_trained_regression_model_predict(test_data, test_feature_configs):
     assert len(predictions) == len(test_data)
 
 
-def test_trained_model_save_load(test_data, test_feature_configs, tmp_path):
+def test_trained_model_save_load(
+    test_data: fixture_test_data,
+    test_feature_configs: fixture_test_feature_configs,
+    tmp_path,
+):
     """Tests that a `TrainedModel` can be successfully saved and then loaded."""
     trained_model = construct_trained_model(
         TargetType.CLASSIFICATION, test_data, test_feature_configs

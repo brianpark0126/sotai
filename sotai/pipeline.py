@@ -11,15 +11,28 @@ import pandas as pd
 import torch
 from pydantic import BaseModel, Field
 
-from .api import (post_pipeline, post_pipeline_config,
-                  post_pipeline_feature_configs, post_trained_model_analysis)
+from .api import (
+    get_api_key,
+    post_pipeline,
+    post_pipeline_config,
+    post_pipeline_feature_configs,
+    post_trained_model_analysis,
+)
 from .data import CSVData, determine_feature_types, replace_missing_values
 from .enums import FeatureType, LossType, Metric, TargetType
 from .models import CalibratedLinear
 from .training import train_and_evaluate_model
-from .types import (CategoricalFeatureConfig, Dataset, DatasetSplit,
-                    LinearConfig, NumericalFeatureConfig, PipelineConfig,
-                    PreparedData, TrainingConfig, TrainingResults)
+from .types import (
+    CategoricalFeatureConfig,
+    Dataset,
+    DatasetSplit,
+    LinearConfig,
+    NumericalFeatureConfig,
+    PipelineConfig,
+    PreparedData,
+    TrainingConfig,
+    TrainingResults,
+)
 
 
 class Pipeline:  # pylint: disable=too-many-instance-attributes
@@ -314,6 +327,35 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self.pipeline_uuid = post_pipeline(self)
         return self.pipeline_uuid
 
+    def analysis(self, trained_model: TrainedModel) -> str:
+        """Charts the results for the specified trained model in the SOTAI web client.
+
+        This function requires an internet connection and a SOTAI account. The trained
+        model will be uploaded to the SOTAI web client for analysis.
+
+        If you would like to analyze the results for a trained model without uploading
+        it to the SOTAI web client, the data is available in `training_results`.
+        """
+        if not get_api_key():
+            raise ValueError(
+                "You must have an API key to run analysis. Please visit app.sotai.ai to get an API key."
+            )
+
+        pipeline_config_uuid = post_pipeline_config(
+            self.pipeline_uuid, trained_model.pipeline_config
+        )
+        trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
+
+        post_pipeline_feature_configs(
+            pipeline_config_uuid, self.trained_model.pipeline_config.feature_configs
+        )
+
+        analysis_results = post_trained_model_analysis(
+            pipeline_config_uuid, trained_model
+        )
+
+        return analysis_results["analysisUrl"]
+
 
 class TrainedModel(BaseModel):
     """A trained calibrated model.
@@ -332,7 +374,7 @@ class TrainedModel(BaseModel):
     """
 
     dataset_id: int = Field(...)
-    pipeline_uuid: str = Field(nullable=True, default=None)
+    pipeline_uuid: Optional[str] = None
     pipeline_config: PipelineConfig = Field(...)
     model_config: LinearConfig = Field(...)
     training_config: TrainingConfig = Field(...)
@@ -367,33 +409,6 @@ class TrainedModel(BaseModel):
             return predictions
 
         return predictions, 1.0 / (1.0 + np.exp(-predictions))
-
-    def analysis(self, api_key: str):
-        """Charts the results for the specified trained model in the SOTAI web client.
-
-        This function requires an internet connection and a SOTAI account. The trained
-        model will be uploaded to the SOTAI web client for analysis.
-
-        If you would like to analyze the results for a trained model without uploading
-        it to the SOTAI web client, the data is available in `training_results`.
-        """
-        if not self.api_key:
-            raise ValueError(
-                "You must have an API key to run analysis. Please visit app.sotai.ai to get an API key."
-            )
-        if not self.training_results:
-            raise ValueError(
-                "The trained model must have training results to be analyzed."
-            )
-
-        self.pipeline_uuid = post_pipeline_config(
-            self.pipeline_uuid, self.pipeline_config
-        )
-
-        post_pipeline_feature_configs(self.pipeline_uuid, self.pipeline_config.feature_configs)
-        analysis_results = post_trained_model_analysis(self.pipeline_uuid, self)
-
-        return analysis_results["analysisUrl"]
 
     def save(self, filepath: str):
         """Saves the trained model to the specified directory.

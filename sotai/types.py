@@ -246,7 +246,7 @@ class PipelineConfig(BaseModel):
     """
 
     id: int = Field(...)
-    pipeline_config_uuid: Optional[str] = Field(nullable=True, default=None)
+    pipeline_config_uuid: Optional[str] = None
     target: str = Field(...)
     target_type: TargetType = Field(...)
     primary_metric: Metric = Field(...)
