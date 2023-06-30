@@ -5,10 +5,19 @@ import requests
 
 from .constants import SOTAI_API_ENDPOINT
 from .features import NumericalFeature
-from .types import (CategoricalFeatureConfig, DatasetSplit, FeatureAnalysis,
-                    FeatureType, LinearConfig, LossType,
-                    NumericalFeatureConfig, PipelineConfig, TargetType,
-                    TrainingConfig, TrainingResults)
+from .types import (
+    CategoricalFeatureConfig,
+    DatasetSplit,
+    FeatureAnalysis,
+    FeatureType,
+    LinearConfig,
+    LossType,
+    NumericalFeatureConfig,
+    PipelineConfig,
+    TargetType,
+    TrainingConfig,
+    TrainingResults,
+)
 
 
 def set_api_key(api_key: str):
@@ -160,8 +169,12 @@ def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
                 "epochs": trained_model.training_config.epochs,
                 "batch_size": trained_model.training_config.batch_size,
                 "learning_rate": trained_model.training_config.learning_rate,
-                "train_primary_metric": [trained_model.training_results.train_primary_metric_by_epoch[-1]],
-                "validation_primary_metric":[ trained_model.training_results.val_primary_metric_by_epoch[-1]],
+                "train_primary_metric": [
+                    trained_model.training_results.train_primary_metric_by_epoch[-1]
+                ],
+                "validation_primary_metric": [
+                    trained_model.training_results.val_primary_metric_by_epoch[-1]
+                ],
                 "test_primary_metric": trained_model.training_results.test_primary_metric,
             },
             "overall_model_results": {
