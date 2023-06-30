@@ -162,62 +162,6 @@ def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
         A dict containing the UUIDs of the resources created as well as a link that
         can be used to view the trained model analysis.
     """
-    from pprint import pprint
-
-    pprint(
-        {
-            "trained_model_metadata": {
-                "epochs": trained_model.training_config.epochs,
-                "batch_size": trained_model.training_config.batch_size,
-                "learning_rate": trained_model.training_config.learning_rate,
-            },
-            "overall_model_results": {
-                "epochs": trained_model.training_config.epochs,
-                "batch_size": trained_model.training_config.batch_size,
-                "learning_rate": trained_model.training_config.learning_rate,
-                "runtime_in_seconds": trained_model.training_results.training_time,
-                "train_loss_per_epoch": trained_model.training_results.train_loss_by_epoch,
-                "train_primary_metric_per_epoch": trained_model.training_results.train_primary_metric_by_epoch,
-                "validation_loss_per_epoch": trained_model.training_results.val_loss_by_epoch,
-                "validation_primary_metric_per_epoch": trained_model.training_results.val_primary_metric_by_epoch,
-                "test_loss": trained_model.training_results.test_loss,
-                "test_primary_metric": trained_model.training_results.test_primary_metric,
-                "feature_names": [
-                    feature.feature_name for feature in trained_model.model.features
-                ],
-                "linear_coefficients": [
-                    trained_model.training_results.linear_coefficients[
-                        feature.feature_name
-                    ]
-                    for feature in trained_model.model.features
-                ],
-            },
-            "model_config": {
-                "model_framework": "pytorch",
-                "model_type": "linear",
-                "loss_type": trained_model.training_config.loss_type.value,
-                "primary_metric": trained_model.pipeline_config.primary_metric.value,
-                "target_column_type": trained_model.pipeline_config.target_type.value,
-                "target_column": trained_model.pipeline_config.target,
-                "model_config_name": "Model 1",
-            },
-            "feature_analyses": [
-                {
-                    "feature_name": feature.feature_name,
-                    "feature_type": feature.feature_type.value,
-                    "statistic_min": feature.min,
-                    "statistic_max": feature.max,
-                    "statistic_mean": feature.mean,
-                    "statistic_median": feature.median,
-                    "statistic_std": feature.std,
-                    "keypoints_outputs": feature.keypoints_outputs,
-                    "keypoints_inputs_categorical": feature.keypoints_inputs_categorical,
-                    "keypoints_inputs_numerical": feature.keypoints_inputs_numerical,
-                }
-                for feature in trained_model.training_results.feature_analyses.values()
-            ],
-        }
-    )
     response = requests.post(
         f"{SOTAI_API_ENDPOINT}/api/v1/pipeline-configs/{pipeline_config_uuid}/analysis",
         json={

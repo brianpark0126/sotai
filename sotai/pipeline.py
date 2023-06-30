@@ -347,7 +347,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
 
         post_pipeline_feature_configs(
-            pipeline_config_uuid, self.trained_model.pipeline_config.feature_configs
+            pipeline_config_uuid, trained_model.pipeline_config.feature_configs
         )
 
         analysis_results = post_trained_model_analysis(
