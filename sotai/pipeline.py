@@ -330,7 +330,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     def analysis(self, trained_model: TrainedModel) -> str:
         """Charts the results for the specified trained model in the SOTAI web client.
 
-        This function requires an internet connection and a SOTAI account. The trained
+        This function requires an internet connection and a SOTAI 0account. The trained
         model will be uploaded to the SOTAI web client for analysis.
 
         If you would like to analyze the results for a trained model without uploading
