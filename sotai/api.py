@@ -1,3 +1,4 @@
+"""This module contains the API functions for interacting with the SOTAI API."""""
 import os
 from typing import Dict, Union
 
@@ -59,10 +60,12 @@ def post_pipeline(pipeline) -> str:
             "primary_metric": pipeline.primary_metric,
         },
         headers=get_auth_headers(),
+        timeout=10,
     )
 
     if response.status_code != 200:
-        raise Exception(response.json())
+        print("Failed to create pipeline")
+        return None
     return response.json()["uuid"]
 
 
@@ -87,9 +90,11 @@ def post_pipeline_config(pipeline_uuid: str, pipeline_config: PipelineConfig):
             "test_percentage": pipeline_config.dataset_split.test,
         },
         headers=get_auth_headers(),
+        timeout=10,
     )
     if response.status_code != 200:
-        raise Exception(response.json())
+        print("Failed to create pipeline config")
+        return None
     return response.json()["uuid"]
 
 
@@ -136,9 +141,11 @@ def post_pipeline_feature_configs(
         f"{SOTAI_API_ENDPOINT}/api/v1/pipeline-configs/{pipeline_config_uuid}/feature-configs",
         json=sotai_feature_configs,
         headers=get_auth_headers(),
+        timeout=10,
     )
     if response.status_code != 200:
-        raise Exception(response.json())
+        print("Failed to create pipeline feature configs")
+        return None
 
     return response.json()["uuid"]
 
@@ -220,8 +227,10 @@ def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
             "feature_analyses": feature_analyses_list,
         },
         headers=get_auth_headers(),
+        timeout=10,
     )
     if response.status_code != 200:
-        raise Exception(response.json())
+        print("Failed to create trained model analysis")
+        return None
 
     return response.json()

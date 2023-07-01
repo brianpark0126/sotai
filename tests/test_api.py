@@ -17,11 +17,14 @@ from .fixtures import (
 
 
 class MockResponse:
+    """Mock response class for testing."""
     def __init__(self, json_data, status_code=200):
+        """Mock response for testing."""
         self.json_data = json_data
         self.status_code = status_code
 
     def json(self):
+        """Return json data."""
         return self.json_data
 
 
@@ -77,7 +80,7 @@ def test_post_pipeline_config(
 def test_post_feature_configs(
     mock_get_api_key, mock_post, test_pipeline_config: fixture_test_pipeline_config
 ):
-
+    """Tests that feature configs are posted correctly."""
     pipeline_config_id = post_pipeline_feature_configs(
         "test_uuid", test_pipeline_config.feature_configs
     )

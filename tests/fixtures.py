@@ -22,8 +22,6 @@ from sotai.types import (
     FeatureType,
     LinearConfig,
     LossType,
-    TrainingConfig,
-    TrainingResults,
 )
 
 
