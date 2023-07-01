@@ -1,22 +1,14 @@
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Union
 
 import requests
 
 from .constants import SOTAI_API_ENDPOINT
-from .features import NumericalFeature
 from .types import (
     CategoricalFeatureConfig,
-    DatasetSplit,
-    FeatureAnalysis,
     FeatureType,
-    LinearConfig,
-    LossType,
     NumericalFeatureConfig,
     PipelineConfig,
-    TargetType,
-    TrainingConfig,
-    TrainingResults,
 )
 
 
@@ -155,73 +147,77 @@ def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
     """Create a new trained model analysis on the SOTAI API .
 
     Args:
-        pipeline_config_uuid: The pipeline config uuid to create the trained model analysis for.
+        pipeline_config_uuid: The pipeline config uuid to create the trained model
+            analysis for.
         trained_model: The trained model to create.
 
     Returns:
         A dict containing the UUIDs of the resources created as well as a link that
         can be used to view the trained model analysis.
     """
+    training_results = trained_model.training_results
+    train_primary_metrics = training_results.train_primary_metric_by_epoch[-1]
+    val_primary_metrics = training_results.val_primary_metric_by_epoch[-1]
+    overall_model_results_dict = {
+        "epochs": trained_model.training_config.epochs,
+        "batch_size": trained_model.training_config.batch_size,
+        "learning_rate": trained_model.training_config.learning_rate,
+        "runtime_in_seconds": training_results.training_time,
+        "train_loss_per_epoch": training_results.train_loss_by_epoch,
+        "train_primary_metric_per_epoch": train_primary_metrics,
+        "validation_loss_per_epoch": training_results.val_loss_by_epoch,
+        "validation_primary_metric_per_epoch": val_primary_metrics,
+        "test_loss": training_results.test_loss,
+        "test_primary_metric": training_results.test_primary_metric,
+        "feature_names": [
+            feature.feature_name for feature in trained_model.model.features
+        ],
+        "linear_coefficients": [
+            training_results.linear_coefficients[feature.feature_name]
+            for feature in trained_model.model.features
+        ],
+    }
+    feature_analyses_list = [
+        {
+            "feature_name": feature.feature_name,
+            "feature_type": feature.feature_type.value,
+            "statistic_min": feature.min,
+            "statistic_max": feature.max,
+            "statistic_mean": feature.mean,
+            "statistic_median": feature.median,
+            "statistic_std": feature.std,
+            "keypoints_outputs": feature.keypoints_outputs,
+            "keypoints_inputs_categorical": feature.keypoints_inputs_categorical,
+            "keypoints_inputs_numerical": feature.keypoints_inputs_numerical,
+        }
+        for feature in trained_model.training_results.feature_analyses.values()
+    ]
+    trained_model_metadata_dict = {
+        "epochs": trained_model.training_config.epochs,
+        "batch_size": trained_model.training_config.batch_size,
+        "learning_rate": trained_model.training_config.learning_rate,
+        "train_primary_metric": [training_results.train_primary_metric_by_epoch[-1]],
+        "validation_primary_metric": [training_results.val_primary_metric_by_epoch[-1]],
+        "test_primary_metric": training_results.test_primary_metric,
+    }
+
+    model_config_dict = {
+        "model_framework": "pytorch",
+        "model_type": "linear",
+        "loss_type": trained_model.training_config.loss_type.value,
+        "primary_metric": trained_model.pipeline_config.primary_metric.value,
+        "target_column_type": trained_model.pipeline_config.target_type.value,
+        "target_column": trained_model.pipeline_config.target,
+        "model_config_name": "Model 1",
+    }
+
     response = requests.post(
         f"{SOTAI_API_ENDPOINT}/api/v1/pipeline-configs/{pipeline_config_uuid}/analysis",
         json={
-            "trained_model_metadata": {
-                "epochs": trained_model.training_config.epochs,
-                "batch_size": trained_model.training_config.batch_size,
-                "learning_rate": trained_model.training_config.learning_rate,
-                "train_primary_metric": [
-                    trained_model.training_results.train_primary_metric_by_epoch[-1]
-                ],
-                "validation_primary_metric": [
-                    trained_model.training_results.val_primary_metric_by_epoch[-1]
-                ],
-                "test_primary_metric": trained_model.training_results.test_primary_metric,
-            },
-            "overall_model_results": {
-                "epochs": trained_model.training_config.epochs,
-                "batch_size": trained_model.training_config.batch_size,
-                "learning_rate": trained_model.training_config.learning_rate,
-                "runtime_in_seconds": trained_model.training_results.training_time,
-                "train_loss_per_epoch": trained_model.training_results.train_loss_by_epoch,
-                "train_primary_metric_per_epoch": trained_model.training_results.train_primary_metric_by_epoch,
-                "validation_loss_per_epoch": trained_model.training_results.val_loss_by_epoch,
-                "validation_primary_metric_per_epoch": trained_model.training_results.val_primary_metric_by_epoch,
-                "test_loss": trained_model.training_results.test_loss,
-                "test_primary_metric": trained_model.training_results.test_primary_metric,
-                "feature_names": [
-                    feature.feature_name for feature in trained_model.model.features
-                ],
-                "linear_coefficients": [
-                    trained_model.training_results.linear_coefficients[
-                        feature.feature_name
-                    ]
-                    for feature in trained_model.model.features
-                ],
-            },
-            "model_config": {
-                "model_framework": "pytorch",
-                "model_type": "linear",
-                "loss_type": trained_model.training_config.loss_type.value,
-                "primary_metric": trained_model.pipeline_config.primary_metric.value,
-                "target_column_type": trained_model.pipeline_config.target_type.value,
-                "target_column": trained_model.pipeline_config.target,
-                "model_config_name": "Model 1",
-            },
-            "feature_analyses": [
-                {
-                    "feature_name": feature.feature_name,
-                    "feature_type": feature.feature_type.value,
-                    "statistic_min": feature.min,
-                    "statistic_max": feature.max,
-                    "statistic_mean": feature.mean,
-                    "statistic_median": feature.median,
-                    "statistic_std": feature.std,
-                    "keypoints_outputs": feature.keypoints_outputs,
-                    "keypoints_inputs_categorical": feature.keypoints_inputs_categorical,
-                    "keypoints_inputs_numerical": feature.keypoints_inputs_numerical,
-                }
-                for feature in trained_model.training_results.feature_analyses.values()
-            ],
+            "trained_model_metadata": trained_model_metadata_dict,
+            "overall_model_results": overall_model_results_dict,
+            "model_config": model_config_dict,
+            "feature_analyses": feature_analyses_list,
         },
         headers=get_auth_headers(),
     )

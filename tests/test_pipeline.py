@@ -1,18 +1,9 @@
 """Tests for Pipeline."""
 
 import numpy as np
-import pandas as pd
 import pytest
 
-from sotai import (
-    CategoricalFeatureConfig,
-    FeatureType,
-    Metric,
-    NumericalFeatureConfig,
-    Pipeline,
-    TargetType,
-    TrainedModel,
-)
+from sotai import FeatureType, Metric, Pipeline, TargetType, TrainedModel
 from sotai.models import CalibratedLinear
 
 from .fixtures import (

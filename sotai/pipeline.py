@@ -338,7 +338,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         """
         if not get_api_key():
             raise ValueError(
-                "You must have an API key to run analysis. Please visit app.sotai.ai to get an API key."
+                "You must have an API key to run analysis."
+                + "Please visit app.sotai.ai to get an API key."
             )
 
         pipeline_config_uuid = post_pipeline_config(

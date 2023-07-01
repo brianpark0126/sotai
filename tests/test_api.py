@@ -1,11 +1,6 @@
+"""Tests for api."""
 from unittest.mock import patch
 
-import numpy as np
-import pandas as pd
-import pytest
-from requests import Response
-
-from sotai import CategoricalFeatureConfig, NumericalFeatureConfig, Pipeline, TargetType
 from sotai.api import (
     post_pipeline,
     post_pipeline_config,
@@ -13,19 +8,12 @@ from sotai.api import (
     post_trained_model_analysis,
 )
 from sotai.constants import SOTAI_API_ENDPOINT
-from sotai.types import PipelineConfig
 
 from .fixtures import (
-    fixture_test_categories,
-    fixture_test_data,
-    fixture_test_feature_configs,
-    fixture_test_feature_names,
     fixture_test_pipeline,
     fixture_test_pipeline_config,
-    fixture_test_target,
     fixture_test_trained_model,
 )
-from .utils import construct_trained_model
 
 
 class MockResponse:
@@ -56,6 +44,7 @@ def test_post_pipeline(
         headers={"sotai-api-key": "test_api_key"},
     )
 
+    mock_get_api_key.assert_called_once()
     assert pipeline_uuid == "test_uuid"
     assert mock_post.call_count == 1
 
@@ -79,7 +68,7 @@ def test_post_pipeline_config(
         },
         headers={"sotai-api-key": "test_api_key"},
     )
-
+    mock_get_api_key.assert_called_once()
     assert pipeline_config_uuid == "test_uuid"
 
 
@@ -112,6 +101,7 @@ def test_post_feature_configs(
         ],
         headers={"sotai-api-key": "test_api_key"},
     )
+    mock_get_api_key.assert_called_once()
 
     assert pipeline_config_id == "test_uuid"
 
@@ -173,3 +163,4 @@ def test_post_trained_model(
         },
         headers={"sotai-api-key": "test_api_key"},
     )
+    mock_get_api_key.assert_called_once()

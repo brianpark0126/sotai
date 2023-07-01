@@ -1,3 +1,4 @@
+"""Fixtures to help with testing."""
 from typing import Dict, Union
 
 import numpy as np
@@ -14,14 +15,13 @@ from sotai import (
     TrainingConfig,
     TrainingResults,
 )
-from sotai.features import CategoricalFeature, NumericalFeature
+from sotai.features import NumericalFeature
 from sotai.models import CalibratedLinear
 from sotai.types import (
     FeatureAnalysis,
     FeatureType,
     LinearConfig,
     LossType,
-    Metric,
     TrainingConfig,
     TrainingResults,
 )
