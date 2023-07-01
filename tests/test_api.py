@@ -9,14 +9,14 @@ from sotai.api import (
 )
 from sotai.constants import SOTAI_API_ENDPOINT
 
-from .fixtures import (
+from .fixtures import (  # pylint: disable=unused-import
     fixture_test_pipeline,
     fixture_test_pipeline_config,
     fixture_test_trained_model,
-    fixture_test_data,  # pylint: disable=unused-import
-    fixture_test_target,  # pylint: disable=unused-import
-    fixture_test_feature_names,  # pylint: disable=unused-import
-    fixture_test_categories,  # pylint: disable=unused-import
+    fixture_test_data,
+    fixture_test_target,
+    fixture_test_feature_names,
+    fixture_test_categories,
 )
 
 
