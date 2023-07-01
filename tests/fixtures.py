@@ -17,12 +17,7 @@ from sotai import (
 )
 from sotai.features import NumericalFeature
 from sotai.models import CalibratedLinear
-from sotai.types import (
-    FeatureAnalysis,
-    FeatureType,
-    LinearConfig,
-    LossType,
-)
+from sotai.types import FeatureAnalysis, FeatureType, LinearConfig, LossType
 
 
 @pytest.fixture(name="test_target")
@@ -69,7 +64,11 @@ def fixture_test_feature_configs(
 
 
 @pytest.fixture(name="test_pipeline")
-def fixture_test_pipeline(test_target, test_feature_names, test_categories) -> Pipeline:
+def fixture_test_pipeline(
+    test_target: fixture_test_target,
+    test_feature_names: fixture_test_feature_names,
+    test_categories: fixture_test_categories,
+) -> Pipeline:
 
     """Returns a list of test features."""
     return Pipeline(

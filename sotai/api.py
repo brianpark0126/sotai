@@ -1,4 +1,4 @@
-"""This module contains the API functions for interacting with the SOTAI API."""""
+"""This module contains the API functions for interacting with the SOTAI API.""" ""
 import os
 from typing import Dict, Union
 
@@ -163,8 +163,8 @@ def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
         can be used to view the trained model analysis.
     """
     training_results = trained_model.training_results
-    train_primary_metrics = training_results.train_primary_metric_by_epoch[-1]
-    val_primary_metrics = training_results.val_primary_metric_by_epoch[-1]
+    train_primary_metrics = training_results.train_primary_metric_by_epoch
+    val_primary_metrics = training_results.val_primary_metric_by_epoch
     overall_model_results_dict = {
         "epochs": trained_model.training_config.epochs,
         "batch_size": trained_model.training_config.batch_size,

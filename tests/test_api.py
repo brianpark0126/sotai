@@ -13,11 +13,16 @@ from .fixtures import (
     fixture_test_pipeline,
     fixture_test_pipeline_config,
     fixture_test_trained_model,
+    fixture_test_data,  # pylint: disable=unused-import
+    fixture_test_target,  # pylint: disable=unused-import
+    fixture_test_feature_names,  # pylint: disable=unused-import
+    fixture_test_categories,  # pylint: disable=unused-import
 )
 
 
 class MockResponse:
     """Mock response class for testing."""
+
     def __init__(self, json_data, status_code=200):
         """Mock response for testing."""
         self.json_data = json_data
@@ -45,6 +50,7 @@ def test_post_pipeline(
             "primary_metric": "auc",
         },
         headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
     )
 
     mock_get_api_key.assert_called_once()
@@ -70,6 +76,7 @@ def test_post_pipeline_config(
             "test_percentage": 20,
         },
         headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
     )
     mock_get_api_key.assert_called_once()
     assert pipeline_config_uuid == "test_uuid"
@@ -103,6 +110,7 @@ def test_post_feature_configs(
             },
         ],
         headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
     )
     mock_get_api_key.assert_called_once()
 
@@ -162,8 +170,12 @@ def test_post_trained_model(
                 "batch_size": 32,
                 "epochs": 100,
                 "learning_rate": 0.001,
+                "test_primary_metric": 1,
+                "validation_primary_metric": [3],
+                "train_primary_metric": [3],
             },
         },
         headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
     )
     mock_get_api_key.assert_called_once()
