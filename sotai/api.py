@@ -64,7 +64,7 @@ def post_pipeline(pipeline) -> Optional[str]:
 
     if response.status_code != 200:
         print("Failed to create pipeline")
-        logging.info("Failed to create pipeline")
+        logging.error("Failed to create pipeline")
         return None
 
     return response.json()["uuid"]
@@ -97,7 +97,7 @@ def post_pipeline_config(
 
     if response.status_code != 200:
         print("Failed to create pipeline config")
-        logging.info("Failed to create pipeline config")
+        logging.error("Failed to create pipeline config")
         return None
 
     return response.json()["uuid"]
@@ -150,7 +150,7 @@ def post_pipeline_feature_configs(
 
     if response.status_code != 200:
         print("Failed to create pipeline feature configs")
-        logging.info("Failed to create pipeline feature configs")
+        logging.error("Failed to create pipeline feature configs")
         return None
 
     return response.json()["uuid"]
@@ -247,7 +247,7 @@ def post_trained_model_analysis(
 
     if response.status_code != 200:
         print("Failed to create trained model analysis")
-        logging.info("Failed to create trained model analysis")
+        logging.error("Failed to create trained model analysis")
         return None
 
     return response.json()

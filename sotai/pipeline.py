@@ -346,11 +346,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if not self.pipeline_uuid:
             self.pipeline_uuid = self.publish()
 
+        if self.pipeline_uuid is None:
+            return None
+        
         pipeline_config_uuid = post_pipeline_config(
             self.pipeline_uuid, trained_model.pipeline_config
         )
 
-        if not pipeline_config_uuid:
+        if pipeline_config_uuid is None:
             return None
 
         trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
@@ -359,14 +362,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             pipeline_config_uuid, trained_model.pipeline_config.feature_configs
         )
 
-        if not feature_config_response:
+        if feature_config_response  is None:
             return None
 
         analysis_results = post_trained_model_analysis(
             pipeline_config_uuid, trained_model
         )
 
-        if not analysis_results:
+        if analysis_results  is None:
             return None
 
         return analysis_results["analysisUrl"]
