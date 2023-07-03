@@ -340,7 +340,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 " Please visit app.sotai.ai to get an API key."
             )
 
-        if not self.pipeline_uuid:
+        if self.pipeline_uuid is None:
             self.pipeline_uuid = self.publish()
 
         if self.pipeline_uuid is None:
