@@ -351,7 +351,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         )
 
         if not pipeline_config_uuid:
-            return
+            return None
 
         trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
 
@@ -360,14 +360,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         )
 
         if not feature_config_response:
-            return
+            return None
 
         analysis_results = post_trained_model_analysis(
             pipeline_config_uuid, trained_model
         )
 
         if not analysis_results:
-            return
+            return None
 
         return analysis_results["analysisUrl"]
 

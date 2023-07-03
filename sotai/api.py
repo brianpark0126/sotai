@@ -1,9 +1,8 @@
 """This module contains the API functions for interacting with the SOTAI API.""" ""
 import os
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 import logging
 import requests
-from typing import Optional
 from .constants import SOTAI_API_ENDPOINT
 from .types import (
     CategoricalFeatureConfig,
