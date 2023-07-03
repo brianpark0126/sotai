@@ -317,11 +317,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         return pipeline_config
 
-    def publish(self):
+    def publish(self) -> Optional[str]:
         """Uploads the pipeline to the SOTAI web client.
 
         Returns:
-            The UUID of the pipeline.
+            If the pipeline was successfully uploaded, the pipeline UUID.
+            Otherwise, None.
 
         """
         self.pipeline_uuid = post_pipeline(self)

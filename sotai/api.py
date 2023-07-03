@@ -107,7 +107,7 @@ def post_pipeline_config(
 def post_pipeline_feature_configs(
     pipeline_config_uuid: str,
     feature_configs: Dict[str, Union[CategoricalFeatureConfig, NumericalFeatureConfig]],
-):
+) -> Optional[str]:
     """Create a new pipeline feature configs on the SOTAI API .
 
     Args:
