@@ -1,9 +1,9 @@
 """This module contains the API functions for interacting with the SOTAI API.""" ""
 import os
 from typing import Dict, Union
-
+import logging
 import requests
-
+from typing import Optional
 from .constants import SOTAI_API_ENDPOINT
 from .types import (
     CategoricalFeatureConfig,
@@ -26,7 +26,7 @@ def get_api_key() -> str:
     """Get the SOTAI API key from the environment variables.
 
     Returns:
-        str: The API key retrieved from the environment variable.
+        The API key retrieved from the environment variable.
     """
     return os.environ["SOTAI_API_KEY"]
 
@@ -35,21 +35,21 @@ def get_auth_headers() -> Dict[str, str]:
     """Get the authentication headers for a pipeline.
 
     Returns:
-    dict: The authentication headers.
+        The authentication headers.
     """
     return {
         "sotai-api-key": get_api_key(),
     }
 
 
-def post_pipeline(pipeline) -> str:
+def post_pipeline(pipeline) -> Optional[str]:
     """Create a new pipeline on the SOTAI API .
 
     Args:
         pipeline: The pipeline to create.
 
     Returns:
-        Pipeline: The created pipeline.
+        If created, the UUID of the created pipeline. Otherwise None.
     """
     response = requests.post(
         f"{SOTAI_API_ENDPOINT}/api/v1/pipelines",
@@ -65,21 +65,24 @@ def post_pipeline(pipeline) -> str:
 
     if response.status_code != 200:
         print("Failed to create pipeline")
+        logging.info("Failed to create pipeline")
         return None
+
     return response.json()["uuid"]
 
 
-def post_pipeline_config(pipeline_uuid: str, pipeline_config: PipelineConfig):
+def post_pipeline_config(
+    pipeline_uuid: str, pipeline_config: PipelineConfig
+) -> Optional[str]:
     """Create a new pipeline config on the SOTAI API .
 
     Args:
         pipeline_uuid: The pipeline uuid to create the pipeline config for.
         pipeline_config : The pipeline config to create.
 
-        Returns:
-            PipelineConfig: The created pipeline config.
+    Returns:
+        If created, the UUID of the created pipeline config. Otherwise None.
     """
-
     response = requests.post(
         f"{SOTAI_API_ENDPOINT}/api/v1/pipelines/{pipeline_uuid}/pipeline-configs",
         json={
@@ -92,9 +95,12 @@ def post_pipeline_config(pipeline_uuid: str, pipeline_config: PipelineConfig):
         headers=get_auth_headers(),
         timeout=10,
     )
+
     if response.status_code != 200:
         print("Failed to create pipeline config")
+        logging.info("Failed to create pipeline config")
         return None
+
     return response.json()["uuid"]
 
 
@@ -109,10 +115,9 @@ def post_pipeline_feature_configs(
         feature_configs: The feature configs to create.
 
     Returns:
-        PipelineConfigUUID: The created pipeline config.
+        If created, the UUID of the pipeline config. Otherwise None.
 
     """
-
     sotai_feature_configs = []
 
     for feature_config in feature_configs.values():
@@ -143,14 +148,18 @@ def post_pipeline_feature_configs(
         headers=get_auth_headers(),
         timeout=10,
     )
+
     if response.status_code != 200:
         print("Failed to create pipeline feature configs")
+        logging.info("Failed to create pipeline feature configs")
         return None
 
     return response.json()["uuid"]
 
 
-def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
+def post_trained_model_analysis(
+    pipeline_config_uuid: str, trained_model
+) -> Dict[str, str]:
     """Create a new trained model analysis on the SOTAI API .
 
     Args:
@@ -161,6 +170,13 @@ def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
     Returns:
         A dict containing the UUIDs of the resources created as well as a link that
         can be used to view the trained model analysis.
+
+        Keys:
+            - `trainedModelMetadataUuid`: The UUID of the trained model.
+            - `modelConfigUuid`: The UUID of the model configuration.
+            - `pipelineConfigUuid`: The UUID of the pipeline configuration.
+            - `analysisUrl`: The URL of the trained model analysis.
+
     """
     training_results = trained_model.training_results
     train_primary_metrics = training_results.train_primary_metric_by_epoch
@@ -229,8 +245,10 @@ def post_trained_model_analysis(pipeline_config_uuid: str, trained_model):
         headers=get_auth_headers(),
         timeout=10,
     )
+
     if response.status_code != 200:
         print("Failed to create trained model analysis")
+        logging.info("Failed to create trained model analysis")
         return None
 
     return response.json()

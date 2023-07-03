@@ -327,7 +327,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self.pipeline_uuid = post_pipeline(self)
         return self.pipeline_uuid
 
-    def analysis(self, trained_model: TrainedModel) -> str:
+    def analysis(self, trained_model: TrainedModel) -> Optional[str]:
         """Charts the results for the specified trained model in the SOTAI web client.
 
         This function requires an internet connection and a SOTAI 0account. The trained
@@ -339,21 +339,34 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if not get_api_key():
             raise ValueError(
                 "You must have an API key to run analysis."
-                + "Please visit app.sotai.ai to get an API key."
+                " Please visit app.sotai.ai to get an API key."
             )
+
+        if not self.pipeline_uuid:
+            self.pipeline_uuid = self.publish()
 
         pipeline_config_uuid = post_pipeline_config(
             self.pipeline_uuid, trained_model.pipeline_config
         )
+
+        if not pipeline_config_uuid:
+            return
+
         trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
 
-        post_pipeline_feature_configs(
+        feature_config_response = post_pipeline_feature_configs(
             pipeline_config_uuid, trained_model.pipeline_config.feature_configs
         )
+
+        if not feature_config_response:
+            return
 
         analysis_results = post_trained_model_analysis(
             pipeline_config_uuid, trained_model
         )
+
+        if not analysis_results:
+            return
 
         return analysis_results["analysisUrl"]
 
