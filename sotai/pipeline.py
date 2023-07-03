@@ -8,12 +8,16 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import torch
-from pydantic import BaseModel, Field
 
-from .data import CSVData, determine_feature_types, replace_missing_values
+from .api import (
+    get_api_key,
+    post_pipeline,
+    post_pipeline_config,
+    post_pipeline_feature_configs,
+    post_trained_model_analysis,
+)
+from .data import determine_feature_types, replace_missing_values
 from .enums import FeatureType, LossType, Metric, TargetType
-from .models import CalibratedLinear
 from .training import train_and_evaluate_model
 from .types import (
     CategoricalFeatureConfig,
@@ -24,8 +28,8 @@ from .types import (
     PipelineConfig,
     PreparedData,
     TrainingConfig,
-    TrainingResults,
 )
+from .trained_model import TrainedModel
 
 
 class Pipeline:  # pylint: disable=too-many-instance-attributes
@@ -110,6 +114,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self.configs: Dict[int, PipelineConfig] = {}
         # Maps a dataset id to its corresponding `Dataset`` instance.
         self.datasets: Dict[int, Dataset] = {}
+
+        # Tracks
+        self.pipeline_uuid = None
 
     def prepare(  # pylint: disable=too-many-locals
         self,
@@ -307,102 +314,59 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         return pipeline_config
 
-
-class TrainedModel(BaseModel):
-    """A trained calibrated model.
-
-    This model is a container for a trained calibrated model that provides useful
-    methods for using the model. The trained calibrated model is the result of running
-    the `train` method of a `Pipeline` instance.
-
-    Example:
-
-    ```python
-    data = pd.read_csv("data.csv")
-    predictions = trained_model.predict(data)
-    trained_model.analyze()
-    ```
-    """
-
-    dataset_id: int = Field(...)
-    pipeline_config: PipelineConfig = Field(...)
-    model_config: LinearConfig = Field(...)
-    training_config: TrainingConfig = Field(...)
-    training_results: TrainingResults = Field(...)
-    model: CalibratedLinear = Field(...)
-
-    class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
-        arbitrary_types_allowed = True
-
-    def predict(self, data: pd.DataFrame) -> np.ndarray:
-        """Returns predictions for the given data.
-
-        Args:
-            data: The data to be used for prediction. Must have all columns used for
-                training the model to be used.
+    def publish(self) -> Optional[str]:
+        """Uploads the pipeline to the SOTAI web client.
 
         Returns:
-            If the target type is regression, a numpy array of predictions. If the
-            target type is classification, a tuple containing a numpy array of
-            predictions (logits) and a numpy array of probabilities.
+            If the pipeline was successfully uploaded, the pipeline UUID.
+            Otherwise, None.
+
         """
-        data = data.loc[:, list(self.pipeline_config.feature_configs.keys())]
-        data = replace_missing_values(data, self.pipeline_config.feature_configs)
+        self.pipeline_uuid = post_pipeline(self)
+        return self.pipeline_uuid
 
-        csv_data = CSVData(data)
-        csv_data.prepare(self.model.features, None)
-        inputs = list(csv_data.batch(csv_data.num_examples))[0]
-        with torch.no_grad():
-            predictions = self.model(inputs).numpy()
-
-        if self.pipeline_config.target_type == TargetType.REGRESSION:
-            return predictions
-
-        return predictions, 1.0 / (1.0 + np.exp(-predictions))
-
-    def analysis(self):
+    def analysis(self, trained_model: TrainedModel) -> Optional[str]:
         """Charts the results for the specified trained model in the SOTAI web client.
 
-        This function requires an internet connection and a SOTAI account. The trained
+        This function requires an internet connection and a SOTAI 0account. The trained
         model will be uploaded to the SOTAI web client for analysis.
 
         If you would like to analyze the results for a trained model without uploading
         it to the SOTAI web client, the data is available in `training_results`.
         """
-        raise NotImplementedError()
+        if not get_api_key():
+            raise ValueError(
+                "You must have an API key to run analysis."
+                " Please visit app.sotai.ai to get an API key."
+            )
 
-    def save(self, filepath: str):
-        """Saves the trained model to the specified directory.
+        if self.pipeline_uuid is None:
+            self.pipeline_uuid = self.publish()
 
-        Args:
-            filepath: The directory to save the trained model to. If the directory does
-                not exist, this function will attempt to create it. If the directory
-                already exists, this function will overwrite any existing content with
-                conflicting filenames.
-        """
-        if not os.path.exists(filepath):
-            os.makedirs(filepath)
-        with open(os.path.join(filepath, "trained_model_metadata.pkl"), "wb") as file:
-            pickle.dump(self.dict(exclude={"model"}), file)
-        model_path = f"{filepath}/trained_ptcm_model.pt"
-        torch.save(self.model, model_path)
+        if self.pipeline_uuid is None:
+            return None
 
-    @classmethod
-    def load(cls, filepath: str) -> TrainedModel:
-        """Loads a trained model from the specified filepath.
+        pipeline_config_uuid = post_pipeline_config(
+            self.pipeline_uuid, trained_model.pipeline_config
+        )
 
-        Args:
-            filepath: The filepath to load the trained model from. The filepath should
-                point to a file created by the `save` method of a `TrainedModel`
-                instance.
+        if pipeline_config_uuid is None:
+            return None
 
-        Returns:
-            A `TrainedModel` instance.
-        """
-        with open(os.path.join(filepath, "trained_model_metadata.pkl"), "rb") as file:
-            trained_model_metadata = pickle.load(file)
-        model_path = f"{filepath}/trained_ptcm_model.pt"
-        model = torch.load(model_path)
-        model.eval()
+        trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
 
-        return TrainedModel(**trained_model_metadata, model=model)
+        feature_config_response = post_pipeline_feature_configs(
+            pipeline_config_uuid, trained_model.pipeline_config.feature_configs
+        )
+
+        if feature_config_response is None:
+            return None
+
+        analysis_results = post_trained_model_analysis(
+            pipeline_config_uuid, trained_model
+        )
+
+        if analysis_results is None:
+            return None
+
+        return analysis_results["analysisUrl"]
