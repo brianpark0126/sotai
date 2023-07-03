@@ -10,6 +10,7 @@ from .types import (
     NumericalFeatureConfig,
     PipelineConfig,
 )
+from .trained_model import TrainedModel
 
 
 def set_api_key(api_key: str):
@@ -157,7 +158,7 @@ def post_pipeline_feature_configs(
 
 
 def post_trained_model_analysis(
-    pipeline_config_uuid: str, trained_model
+    pipeline_config_uuid: str, trained_model: TrainedModel
 ) -> Dict[str, str]:
     """Create a new trained model analysis on the SOTAI API .
 
