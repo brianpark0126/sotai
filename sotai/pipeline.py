@@ -18,6 +18,7 @@ from .api import (
 )
 from .data import determine_feature_types, replace_missing_values
 from .enums import FeatureType, LossType, Metric, TargetType
+from .trained_model import TrainedModel
 from .training import train_and_evaluate_model
 from .types import (
     CategoricalFeatureConfig,
@@ -29,7 +30,6 @@ from .types import (
     PreparedData,
     TrainingConfig,
 )
-from .trained_model import TrainedModel
 
 
 class Pipeline:  # pylint: disable=too-many-instance-attributes
@@ -266,6 +266,63 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         return pipeline
 
+    def publish(self) -> Optional[str]:
+        """Uploads the pipeline to the SOTAI web client.
+
+        Returns:
+            If the pipeline was successfully uploaded, the pipeline UUID.
+            Otherwise, None.
+
+        """
+        self.pipeline_uuid = post_pipeline(self)
+        return self.pipeline_uuid
+
+    def analysis(self, trained_model: TrainedModel) -> Optional[str]:
+        """Charts the results for the specified trained model in the SOTAI web client.
+
+        This function requires an internet connection and a SOTAI account. The trained
+        model will be uploaded to the SOTAI web client for analysis.
+
+        If you would like to analyze the results for a trained model without uploading
+        it to the SOTAI web client, the data is available in `training_results`.
+        """
+        if not get_api_key():
+            raise ValueError(
+                "You must have an API key to run analysis."
+                " Please visit app.sotai.ai to get an API key."
+            )
+
+        if self.pipeline_uuid is None:
+            self.pipeline_uuid = self.publish()
+
+        if self.pipeline_uuid is None:
+            return None
+
+        pipeline_config_uuid = post_pipeline_config(
+            self.pipeline_uuid, trained_model.pipeline_config
+        )
+
+        if pipeline_config_uuid is None:
+            return None
+
+        trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
+
+        feature_config_response = post_pipeline_feature_configs(
+            pipeline_config_uuid, trained_model.pipeline_config.feature_configs
+        )
+
+        if feature_config_response is None:
+            return None
+
+        analysis_results = post_trained_model_analysis(
+            pipeline_config_uuid, trained_model
+        )
+
+        if analysis_results is None:
+            return None
+
+        return analysis_results["analysisUrl"]
+
     ############################################################################
     #                            Private Methods                               #
     ############################################################################
@@ -313,60 +370,3 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 pipeline_config.feature_configs.pop(feature_name)
 
         return pipeline_config
-
-    def publish(self) -> Optional[str]:
-        """Uploads the pipeline to the SOTAI web client.
-
-        Returns:
-            If the pipeline was successfully uploaded, the pipeline UUID.
-            Otherwise, None.
-
-        """
-        self.pipeline_uuid = post_pipeline(self)
-        return self.pipeline_uuid
-
-    def analysis(self, trained_model: TrainedModel) -> Optional[str]:
-        """Charts the results for the specified trained model in the SOTAI web client.
-
-        This function requires an internet connection and a SOTAI 0account. The trained
-        model will be uploaded to the SOTAI web client for analysis.
-
-        If you would like to analyze the results for a trained model without uploading
-        it to the SOTAI web client, the data is available in `training_results`.
-        """
-        if not get_api_key():
-            raise ValueError(
-                "You must have an API key to run analysis."
-                " Please visit app.sotai.ai to get an API key."
-            )
-
-        if self.pipeline_uuid is None:
-            self.pipeline_uuid = self.publish()
-
-        if self.pipeline_uuid is None:
-            return None
-
-        pipeline_config_uuid = post_pipeline_config(
-            self.pipeline_uuid, trained_model.pipeline_config
-        )
-
-        if pipeline_config_uuid is None:
-            return None
-
-        trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
-
-        feature_config_response = post_pipeline_feature_configs(
-            pipeline_config_uuid, trained_model.pipeline_config.feature_configs
-        )
-
-        if feature_config_response is None:
-            return None
-
-        analysis_results = post_trained_model_analysis(
-            pipeline_config_uuid, trained_model
-        )
-
-        if analysis_results is None:
-            return None
-
-        return analysis_results["analysisUrl"]
