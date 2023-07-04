@@ -27,7 +27,7 @@ class TargetType(_Enum):
 class LossType(_Enum):
     """The type of loss function to use."""
 
-    BINARY_CROSSENTROPY = "binary_crossentropy"
+    BINARY_CROSSENTROPY = "binary"
     HINGE = "hinge"
     HUBER = "huber"
     MAE = "mae"
@@ -62,8 +62,8 @@ class InputKeypointsType(_Enum):
     """
 
     FIXED = "fixed"
-    # Note: learned is only available for TFL currently.
-    LEARNED = "learned_interior"
+    # TODO: add learned interior functionality
+    # LEARNED = "learned_interior"
 
 
 class FeatureType(_Enum):
