@@ -107,7 +107,6 @@ def test_replace_missing_values(data, feature_configs):
     """Tests that missing values are properly replaced."""
     data["numerical"].values[-1] = np.nan
     data = replace_missing_values(data, feature_configs)
-    print(data["categorical"])
     assert data["categorical"].values[-1] == MISSING_CATEGORY_VALUE
     assert data["numerical"].values[-1] == MISSING_NUMERICAL_VALUE
 
@@ -134,8 +133,6 @@ def test_initialization(from_filepath, tmp_path, data):
         csv_data = CSVData(data)
         assert csv_data.dataset.equals(data)
 
-    print(csv_data.data)
-    print(data)
     assert csv_data.data.equals(data)
     assert csv_data.headers == list(data.columns)
     assert csv_data.num_examples == len(data)
