@@ -16,6 +16,7 @@ from .api import (
     post_pipeline_feature_configs,
     post_trained_model_analysis,
 )
+from .constants import SOTAI_API_ENDPOINT
 from .data import determine_feature_types, replace_missing_values
 from .enums import FeatureType, LossType, Metric, TargetType
 from .trained_model import TrainedModel
@@ -286,6 +287,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         If you would like to analyze the results for a trained model without uploading
         it to the SOTAI web client, the data is available in `training_results`.
         """
+        if trained_model.analysis_url:  # early exit if analysis has already been run.
+            return trained_model.analysis_url
+
         if not get_api_key():
             raise ValueError(
                 "You must have an API key to run analysis."
@@ -321,7 +325,16 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if analysis_results is None:
             return None
 
-        return analysis_results["analysisUrl"]
+        trained_model.trained_model_uuid = analysis_results["trainedModelMetadataUuid"]
+
+        # TODO: update to use response analysisUrl once no longer broken.
+        analysis_url = (
+            f"{SOTAI_API_ENDPOINT}/pipelines/{self.pipeline_uuid}"
+            f"/trained-models/{trained_model.trained_model_uuid}"
+        )
+        trained_model.analysis_url = analysis_url
+
+        return analysis_url
 
     ############################################################################
     #                            Private Methods                               #

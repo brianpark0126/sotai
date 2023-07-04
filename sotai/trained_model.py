@@ -13,12 +13,7 @@ from pydantic import BaseModel, Field
 from .data import CSVData, replace_missing_values
 from .enums import TargetType
 from .models import CalibratedLinear
-from .types import (
-    LinearConfig,
-    PipelineConfig,
-    TrainingConfig,
-    TrainingResults,
-)
+from .types import LinearConfig, PipelineConfig, TrainingConfig, TrainingResults
 
 
 class TrainedModel(BaseModel):
@@ -44,6 +39,8 @@ class TrainedModel(BaseModel):
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)
     model: CalibratedLinear = Field(...)
+    trained_model_uuid: Optional[str] = None
+    analysis_url: Optional[str] = None
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True
