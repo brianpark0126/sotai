@@ -9,7 +9,7 @@ name = "sotai"
 # current release. Use Semantic Versioning.
 #
 # NOTE: as part of the release flow, update this version immediately after release.
-version = "0.0.0"
+version = "0.1.0"
 description = "A Python Library For Calibrated Modeling Built With PyTorch"
 readme = "docs/README.md"
 license = {text = "MIT"}
@@ -20,7 +20,7 @@ maintainers = [
   {name = "SOTAI", email = "support@sotai.ai"},
 ]
 classifiers=[
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
