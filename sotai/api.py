@@ -1,16 +1,14 @@
 """This module contains the API functions for interacting with the SOTAI API.""" ""
-import os
-from typing import Dict, Union, Optional
 import logging
+import os
+from typing import Dict, Optional, Union
+
 import requests
+
 from .constants import SOTAI_API_ENDPOINT
-from .types import (
-    CategoricalFeatureConfig,
-    FeatureType,
-    NumericalFeatureConfig,
-    PipelineConfig,
-)
 from .trained_model import TrainedModel
+from .types import (CategoricalFeatureConfig, FeatureType,
+                    NumericalFeatureConfig, PipelineConfig)
 
 
 def set_api_key(api_key: str):
@@ -249,6 +247,56 @@ def post_trained_model_analysis(
     if response.status_code != 200:
         print("Failed to create trained model analysis")
         logging.error("Failed to create trained model analysis")
+        return None
+
+    return response.json()
+
+def post_trained_model(trained_model_path: str, trained_model_uuid: str):
+    file_path = f"{trained_model_path}/trained_ptcm_model.pt"
+    with open(file_path, "rb") as data_file:
+        response = requests.post(
+            f"{SOTAI_API_ENDPOINT}/api/v1/models",
+            files={"file": data_file},
+            data = {"trained_model_metadata_uuid": trained_model_uuid},
+            headers=get_auth_headers(),
+            timeout=10,
+        )
+
+    if response.status_code != 200:
+        print("Failed to upload trained model")
+        logging.error("Failed to create trained model")
+        return None
+
+def post_inference(data_file_path: str , trained_model_uuid: str,  ):
+    """Create a new inference on the SOTAI API .
+
+    Args:
+        trained_model_uuid: The trained model uuid to create the inference for.
+        data_file_path: The path to the data file to create the inference for.
+
+    Returns:
+        A dict containing the UUIDs of the resources created as well as a link that
+        can be used to view the inference.
+
+        Keys:
+            - `inferenceUuid`: The UUID of the inference.
+            - `trainedModelUuid`: The UUID of the trained model.
+            - `dataFileUuid`: The UUID of the data file.
+            - `inferenceUrl`: The URL of the inference.
+
+    """
+    with open(data_file_path, "rb") as data_file:
+        response = requests.post(
+            f"{SOTAI_API_ENDPOINT}/api/v1/inferences",
+            files={"file": data_file},
+            data = {"trained_model_metadata_uuid": trained_model_uuid},
+            headers=get_auth_headers(),
+            timeout=10,
+        )
+
+    if response.status_code != 200:
+        print("Failed to create inference")
+        logging.error("Failed to create inference")
         return None
 
     return response.json()

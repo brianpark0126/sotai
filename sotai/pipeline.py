@@ -9,27 +9,15 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from .api import (
-    get_api_key,
-    post_pipeline,
-    post_pipeline_config,
-    post_pipeline_feature_configs,
-    post_trained_model_analysis,
-)
+from .api import (get_api_key, post_pipeline, post_pipeline_config,
+                  post_pipeline_feature_configs, post_trained_model_analysis)
 from .data import determine_feature_types, replace_missing_values
 from .enums import FeatureType, LossType, Metric, TargetType
-from .training import train_and_evaluate_model
-from .types import (
-    CategoricalFeatureConfig,
-    Dataset,
-    DatasetSplit,
-    LinearConfig,
-    NumericalFeatureConfig,
-    PipelineConfig,
-    PreparedData,
-    TrainingConfig,
-)
 from .trained_model import TrainedModel
+from .training import train_and_evaluate_model
+from .types import (CategoricalFeatureConfig, Dataset, DatasetSplit,
+                    LinearConfig, NumericalFeatureConfig, PipelineConfig,
+                    PreparedData, TrainingConfig)
 
 
 class Pipeline:  # pylint: disable=too-many-instance-attributes
@@ -370,3 +358,13 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             return None
 
         return analysis_results["analysisUrl"]
+
+    def inference(self, trained_model: TrainedModel, file_path: str):
+        """Runs inference on the specified file using the given trained model.
+
+        Args:
+            trained_model: The trained model to use for inference.
+            file_path: The path to the file to run inference on.
+        """
+        raise NotImplementedError()
+    
