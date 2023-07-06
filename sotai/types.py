@@ -233,7 +233,7 @@ class PipelineConfig(BaseModel):
 
     Attributes:
         id: The ID of the pipeline config.
-        pipeline_uuid: The UUID of the pipeline.
+        pipeline_config_uuid: The UUID of the pipeline.
         target: The column name for the target.
         target_type: The type of the target.
         primary_metric: The primary metric to use for training and evaluation.

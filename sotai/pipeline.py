@@ -336,6 +336,25 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         return analysis_url
 
+    @classmethod
+    def from_config(
+        cls, config: PipelineConfig, name: Optional[str] = None
+    ) -> Pipeline:
+        """Returns a new pipeline created from the specified config."""
+        pipeline = cls(
+            features=list(config.feature_configs.keys()),
+            target=config.target,
+            target_type=config.target_type,
+            primary_metric=config.primary_metric,
+            name=name,
+        )
+        pipeline.feature_configs = config.feature_configs
+        pipeline.shuffle_data = config.shuffle_data
+        pipeline.drop_empty_percentage = config.drop_empty_percentage
+        pipeline.dataset_split = config.dataset_split
+
+        return pipeline
+
     ############################################################################
     #                            Private Methods                               #
     ############################################################################

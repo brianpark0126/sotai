@@ -3,9 +3,7 @@
 # This version must always be one version ahead of the current release, so it
 # matches the current state of development, which will always be ahead of the
 # current release. Use Semantic Versioning.
-#
-# NOTE: as part of the release flow, update this version immediately after release.
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from . import layers
 from .enums import *

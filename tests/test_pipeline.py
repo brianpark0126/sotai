@@ -2,7 +2,14 @@
 
 import pytest
 
-from sotai import FeatureType, Metric, Pipeline, TargetType
+from sotai import (
+    DatasetSplit,
+    FeatureType,
+    Metric,
+    Pipeline,
+    PipelineConfig,
+    TargetType,
+)
 
 from .fixtures import (  # pylint: disable=unused-import
     fixture_test_categories,
@@ -55,6 +62,52 @@ def test_init_with_categories(
     assert categorical_config.name == "categorical"
     assert categorical_config.type == FeatureType.CATEGORICAL
     assert categorical_config.categories == test_categories
+
+
+@pytest.mark.parametrize(
+    "target_type", [TargetType.CLASSIFICATION, TargetType.REGRESSION]
+)
+@pytest.mark.parametrize("metric", [Metric.AUC, Metric.MSE, Metric.MAE])
+@pytest.mark.parametrize("shuffle_data", [True, False])
+@pytest.mark.parametrize("drop_empty_percentage", [30, 60, 80])
+@pytest.mark.parametrize(
+    "dataset_split",
+    [
+        DatasetSplit(train=80, val=10, test=10),
+        DatasetSplit(train=60, val=20, test=20),
+        DatasetSplit(train=70, val=20, test=10),
+    ],
+)
+def test_init_from_config(
+    test_target: fixture_test_target,
+    test_feature_configs: fixture_test_feature_configs,
+    target_type,
+    metric,
+    shuffle_data,
+    drop_empty_percentage,
+    dataset_split,
+):
+    """Tests pipeline initialization from a `PipelineConfig` instance."""
+    pipeline_config = PipelineConfig(
+        id=0,
+        target=test_target,
+        target_type=target_type,
+        primary_metric=metric,
+        feature_configs=test_feature_configs,
+        shuffle_data=shuffle_data,
+        drop_empty_percentage=drop_empty_percentage,
+        dataset_split=dataset_split,
+    )
+    name = "test_pipeline"
+    pipeline = Pipeline.from_config(pipeline_config, name=name)
+    assert pipeline.name == name
+    assert pipeline.target == test_target
+    assert pipeline.target_type == target_type
+    assert pipeline.primary_metric == metric
+    assert pipeline.feature_configs == test_feature_configs
+    assert pipeline.shuffle_data == shuffle_data
+    assert pipeline.drop_empty_percentage == drop_empty_percentage
+    assert pipeline.dataset_split == dataset_split
 
 
 def test_prepare(
