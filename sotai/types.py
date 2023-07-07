@@ -232,7 +232,8 @@ class PipelineConfig(BaseModel):
     """A configuration object for a `Pipeline`.
 
     Attributes:
-        id: The ID of the pipeline config.
+        id: The ID of the pipeline config. This will be set by the Pipeline when it
+            versions this config during preparation.
         uuid: The UUID of the pipeline.
         target: The column name for the target.
         target_type: The type of the target.
@@ -245,7 +246,7 @@ class PipelineConfig(BaseModel):
         dataset_split: The split of the dataset into train, validation, and test sets.
     """
 
-    id: int = Field(...)
+    id: Optional[int] = None
     uuid: Optional[str] = None
     target: str = Field(...)
     target_type: TargetType = Field(...)
