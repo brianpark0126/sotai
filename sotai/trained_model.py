@@ -39,7 +39,7 @@ class TrainedModel(BaseModel):
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)
     model: CalibratedLinear = Field(...)
-    trained_model_uuid: Optional[str] = None
+    metadata_uuid: Optional[str] = None
     analysis_url: Optional[str] = None
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods

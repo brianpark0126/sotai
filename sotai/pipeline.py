@@ -117,7 +117,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self.datasets: Dict[int, Dataset] = {}
 
         # Tracks
-        self.pipeline_uuid = None
+        self.uuid = None
 
     def prepare(  # pylint: disable=too-many-locals
         self,
@@ -275,8 +275,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             Otherwise, None.
 
         """
-        self.pipeline_uuid = post_pipeline(self)
-        return self.pipeline_uuid
+        self.uuid = post_pipeline(self)
+        return self.uuid
 
     def analysis(self, trained_model: TrainedModel) -> Optional[str]:
         """Charts the results for the specified trained model in the SOTAI web client.
@@ -296,20 +296,20 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 " Please visit app.sotai.ai to get an API key."
             )
 
-        if self.pipeline_uuid is None:
-            self.pipeline_uuid = self.publish()
+        if self.uuid is None:
+            self.uuid = self.publish()
 
-        if self.pipeline_uuid is None:
+        if self.uuid is None:
             return None
 
         pipeline_config_uuid = post_pipeline_config(
-            self.pipeline_uuid, trained_model.pipeline_config
+            self.uuid, trained_model.pipeline_config
         )
 
         if pipeline_config_uuid is None:
             return None
 
-        trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
+        trained_model.pipeline_config.uuid = pipeline_config_uuid
 
         feature_config_response = post_pipeline_feature_configs(
             pipeline_config_uuid, trained_model.pipeline_config.feature_configs
@@ -325,12 +325,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if analysis_results is None:
             return None
 
-        trained_model.trained_model_uuid = analysis_results["trainedModelMetadataUuid"]
+        trained_model.metadata_uuid = analysis_results["trainedModelMetadataUuid"]
 
         # TODO: update to use response analysisUrl once no longer broken.
         analysis_url = (
-            f"{SOTAI_API_ENDPOINT}/pipelines/{self.pipeline_uuid}"
-            f"/trained-models/{trained_model.trained_model_uuid}"
+            f"{SOTAI_API_ENDPOINT}/pipelines/{self.uuid}"
+            f"/trained-models/{trained_model.metadata_uuid}"
         )
         trained_model.analysis_url = analysis_url
 
