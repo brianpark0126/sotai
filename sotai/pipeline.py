@@ -301,7 +301,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         return APIStatus.SUCCESS
 
-    def analysis(
+    def analysis( # pylint: disable=too-many-return-statements
         self,
         trained_model: TrainedModel,
     ) -> Optional[str]:
