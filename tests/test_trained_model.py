@@ -5,7 +5,6 @@ import numpy as np
 from sotai import TargetType, TrainedModel
 from sotai.models import CalibratedLinear
 
-
 from .fixtures import (  # pylint: disable=unused-import
     fixture_test_categories,
     fixture_test_data,

@@ -39,7 +39,7 @@ class TrainedModel(BaseModel):
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)
     model: CalibratedLinear = Field(...)
-    metadata_uuid: Optional[str] = None
+    uuid: Optional[str] = None
     analysis_url: Optional[str] = None
     has_uploaded: bool = False
     saved_filepath: Optional[str] = None

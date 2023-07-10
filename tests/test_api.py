@@ -2,16 +2,16 @@
 from unittest.mock import MagicMock, patch
 
 from sotai.api import (
+    get_inference_results,
+    get_inference_status,
+    post_inference,
     post_pipeline,
     post_pipeline_config,
     post_pipeline_feature_configs,
-    post_trained_model_analysis,
     post_trained_model,
-    get_inference_status,
-    get_inference_results,
-    post_inference,
+    post_trained_model_analysis,
 )
-from sotai.constants import SOTAI_API_ENDPOINT
+from sotai.constants import SOTAI_API_ENDPOINT, SOTAI_BASE_URL
 
 from .fixtures import (  # pylint: disable=unused-import
     fixture_test_categories,
@@ -34,7 +34,7 @@ def test_post_pipeline(
     pipeline_response = post_pipeline(test_pipeline)
 
     mock_post.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipelines",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines",
         json={
             "name": "target_classification",
             "target": "target",
@@ -59,7 +59,7 @@ def test_post_pipeline_config(
     pipeline_config_response = post_pipeline_config("test_uuid", test_pipeline_config)
 
     mock_post.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipelines/test_uuid/pipeline-configs",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/test_uuid/pipeline-configs",
         json={
             "shuffle_data": False,
             "drop_empty_percentage": 80,
@@ -85,7 +85,7 @@ def test_post_feature_configs(
     )
 
     mock_post.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipeline-configs/test_uuid/feature-configs",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-configs/test_uuid/feature-configs",
         json=[
             {
                 "feature_name": "numerical",
@@ -119,7 +119,7 @@ def test_post_trained_model_analysis(
     post_trained_model_analysis("test_uuid", test_trained_model)
 
     mock_post.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipeline-configs/test_uuid/analysis",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-configs/test_uuid/analysis",
         json={
             "feature_analyses": [
                 {
@@ -187,9 +187,9 @@ def test_post_trained_model(
     pipeline_response = post_trained_model("/tmp/model", "test_uuid")
 
     mock_post.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/models",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/models",
         files={"file": "data"},
-        data={"trained_model_metadata_uuid": "test_uuid"},
+        data={"trained_model_uuid": "test_uuid"},
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
     )
@@ -214,9 +214,9 @@ def test_post_inferencel(
     pipeline_response = post_inference("/tmp/model", "test_uuid")
 
     mock_post.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/inferences",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences",
         files={"file": "data"},
-        data={"trained_model_metadata_uuid": "test_uuid"},
+        data={"trained_model_uuid": "test_uuid"},
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
     )
@@ -233,7 +233,7 @@ def test_get_inference_status(mock_get_api_key, mock_get):
     inference_status = get_inference_status("test_uuid")
 
     mock_get.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/inferences/test_uuid/status",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences/test_uuid/status",
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
     )
@@ -251,7 +251,7 @@ def test_get_inference_result(mock_get_api_key, mock_get, mock_urlretrieve):
     inference_status = get_inference_results("test_uuid", "/tmp")
 
     mock_get.assert_called_with(
-        f"{SOTAI_API_ENDPOINT}/api/v1/inferences/test_uuid/download",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences/test_uuid/download",
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
     )
