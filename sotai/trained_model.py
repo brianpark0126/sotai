@@ -39,7 +39,7 @@ class TrainedModel(BaseModel):
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)
     model: CalibratedLinear = Field(...)
-    trained_model_uuid: Optional[str] = None
+    metadata_uuid: Optional[str] = None
     analysis_url: Optional[str] = None
     has_uploaded: bool = False
     saved_filepath: Optional[str] = None
@@ -55,7 +55,7 @@ class TrainedModel(BaseModel):
                 training the model to be used.
 
         Returns:
-            A tuple containing an array of predictions and an array of logits. If the 
+            A tuple containing an array of predictions and an array of logits. If the
             target type is regression, then logits will be None.
         """
         data = data.loc[:, list(self.pipeline_config.feature_configs.keys())]

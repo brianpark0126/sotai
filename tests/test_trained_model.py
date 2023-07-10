@@ -37,7 +37,7 @@ def test_trained_regression_model_predict(
     trained_model = construct_trained_model(
         TargetType.REGRESSION, test_data, test_feature_configs
     )
-    predictions = trained_model.predict(test_data)
+    predictions, _ = trained_model.predict(test_data)
     assert isinstance(predictions, np.ndarray)
     assert len(predictions) == len(test_data)
 

@@ -128,7 +128,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self.datasets: Dict[int, Dataset] = {}
 
         # Tracks
-        self.pipeline_uuid = None
+        self.uuid = None
 
     def prepare(  # pylint: disable=too-many-locals
         self,
@@ -259,8 +259,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if pipeline_response[0] == APIStatus.ERROR:
             return None
 
-        self.pipeline_uuid = pipeline_response[1]
-        return self.pipeline_uuid
+        self.uuid = pipeline_response[1]
+        return self.uuid
 
     def analysis(self, trained_model: TrainedModel) -> Optional[str]:
         """Charts the results for the specified trained model in the SOTAI web client.
@@ -280,14 +280,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 " Please visit app.sotai.ai to get an API key."
             )
 
-        if self.pipeline_uuid is None:
-            self.pipeline_uuid = self.publish()
+        if self.uuid is None:
+            self.uuid = self.publish()
 
-        if self.pipeline_uuid is None:
+        if self.uuid is None:
             return None
 
         pipeline_config_response = post_pipeline_config(
-            self.pipeline_uuid, trained_model.pipeline_config
+            self.uuid, trained_model.pipeline_config
         )
 
         if pipeline_config_response[0] == APIStatus.ERROR:
@@ -295,7 +295,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         pipeline_config_uuid = pipeline_config_response[1]
 
-        trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
+        trained_model.pipeline_config.uuid = pipeline_config_uuid
 
         feature_config_response = post_pipeline_feature_configs(
             pipeline_config_uuid, trained_model.pipeline_config.feature_configs
@@ -312,12 +312,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             return None
 
         analysis_results = analysis_response[1]
-        trained_model.trained_model_uuid = analysis_results["trainedModelMetadataUUID"]
+        trained_model.metadata_uuid = analysis_results["trainedModelMetadataUUID"]
 
         # TODO: update to use response analysisUrl once no longer broken.
         analysis_url = (
-            f"{SOTAI_API_ENDPOINT}/pipelines/{self.pipeline_uuid}"
-            f"/trained-models/{trained_model.trained_model_uuid}"
+            f"{SOTAI_API_ENDPOINT}/pipelines/{self.uuid}"
+            f"/trained-models/{trained_model.metadata_uuid}"
         )
         trained_model.analysis_url = analysis_url
 
@@ -343,15 +343,15 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 " Please visit app.sotai.ai to get an API key."
             )
 
-        if trained_model.trained_model_uuid is None:
+        if trained_model.metadata_uuid is None:
             raise ValueError(
-                "Must run analysis to generate trained_model_uuid before uploading."
+                "Must run analysis to generate metadata_uuid before uploading."
             )
 
         if not trained_model.has_uploaded:
             trained_model.save(model_save_folder_path)
             trained_model_response = post_trained_model(
-                model_save_folder_path, trained_model.trained_model_uuid
+                model_save_folder_path, trained_model.metadata_uuid
             )
             trained_model.has_uploaded = True
             return trained_model_response
@@ -390,7 +390,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             return None
 
         inference_response = post_inference(
-            inference_dataset_file_path, trained_model.trained_model_uuid
+            inference_dataset_file_path, trained_model.metadata_uuid
         )
         if inference_response[0] == APIStatus.ERROR:
             return None
@@ -442,6 +442,25 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         """
         with open(os.path.join(filepath, "pipeline.pkl"), "rb") as file:
             pipeline = pickle.load(file)
+
+        return pipeline
+
+    @classmethod
+    def from_config(
+        cls, config: PipelineConfig, name: Optional[str] = None
+    ) -> Pipeline:
+        """Returns a new pipeline created from the specified config."""
+        pipeline = cls(
+            features=list(config.feature_configs.keys()),
+            target=config.target,
+            target_type=config.target_type,
+            primary_metric=config.primary_metric,
+            name=name,
+        )
+        pipeline.feature_configs = config.feature_configs
+        pipeline.shuffle_data = config.shuffle_data
+        pipeline.drop_empty_percentage = config.drop_empty_percentage
+        pipeline.dataset_split = config.dataset_split
 
         return pipeline
 

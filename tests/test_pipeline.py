@@ -3,9 +3,11 @@ from unittest.mock import patch
 import pytest
 
 from sotai import (
+    DatasetSplit,
     FeatureType,
     Metric,
     Pipeline,
+    PipelineConfig,
     TargetType,
     APIStatus,
     InferenceConfigStatus,
@@ -62,6 +64,52 @@ def test_init_with_categories(
     assert categorical_config.name == "categorical"
     assert categorical_config.type == FeatureType.CATEGORICAL
     assert categorical_config.categories == test_categories
+
+
+@pytest.mark.parametrize(
+    "target_type", [TargetType.CLASSIFICATION, TargetType.REGRESSION]
+)
+@pytest.mark.parametrize("metric", [Metric.AUC, Metric.MSE, Metric.MAE])
+@pytest.mark.parametrize("shuffle_data", [True, False])
+@pytest.mark.parametrize("drop_empty_percentage", [30, 60, 80])
+@pytest.mark.parametrize(
+    "dataset_split",
+    [
+        DatasetSplit(train=80, val=10, test=10),
+        DatasetSplit(train=60, val=20, test=20),
+        DatasetSplit(train=70, val=20, test=10),
+    ],
+)
+def test_init_from_config(
+    test_target: fixture_test_target,
+    test_feature_configs: fixture_test_feature_configs,
+    target_type,
+    metric,
+    shuffle_data,
+    drop_empty_percentage,
+    dataset_split,
+):
+    """Tests pipeline initialization from a `PipelineConfig` instance."""
+    pipeline_config = PipelineConfig(
+        id=0,
+        target=test_target,
+        target_type=target_type,
+        primary_metric=metric,
+        feature_configs=test_feature_configs,
+        shuffle_data=shuffle_data,
+        drop_empty_percentage=drop_empty_percentage,
+        dataset_split=dataset_split,
+    )
+    name = "test_pipeline"
+    pipeline = Pipeline.from_config(pipeline_config, name=name)
+    assert pipeline.name == name
+    assert pipeline.target == test_target
+    assert pipeline.target_type == target_type
+    assert pipeline.primary_metric == metric
+    assert pipeline.feature_configs == test_feature_configs
+    assert pipeline.shuffle_data == shuffle_data
+    assert pipeline.drop_empty_percentage == drop_empty_percentage
+    assert pipeline.dataset_split == dataset_split
 
 
 def test_prepare(
@@ -174,7 +222,7 @@ def test_publish(
     "sotai.pipeline.post_trained_model_analysis",
     return_value=(
         APIStatus.SUCCESS,
-        {"trainedModelMetadataUUID": "test_trained_model_uuid"},
+        {"trainedModelMetadataUUID": "test_metadata_uuid"},
     ),
 )
 @patch("sotai.pipeline.post_pipeline_feature_configs", return_value=APIStatus.SUCCESS)
@@ -215,7 +263,7 @@ def test_analysis(
 
     assert (
         analysis_response
-        == "https://app.sotai.ai/pipelines/test_pipeline_id/trained-models/test_trained_model_uuid"
+        == "https://app.sotai.ai/pipelines/test_pipeline_id/trained-models/test_metadata_uuid"
     )
 
 
@@ -235,7 +283,7 @@ def test_upload_model(
     """Tests that a pipeline can be uploaded to the API."""
     pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
     trained_model = pipeline.train(test_data)
-    trained_model.trained_model_uuid = "test_trained_model_uuid"
+    trained_model.metadata_uuid = "test_metadata_uuid"
     upload_model_response = pipeline.upload_model(trained_model, tmp_path)
 
     get_api_key.assert_called_once()
@@ -273,13 +321,11 @@ def test_run_inference(
     """Tests that a pipeline can run inference on a dataset."""
     pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
     trained_model = pipeline.train(test_data)
-    trained_model.trained_model_uuid = "test_trained_model_uuid"
-    pipeline.run_inference(
-        "/tmp/data.csv", trained_model, tmp_path
-    )
+    trained_model.metadata_uuid = "test_metadata_uuid"
+    pipeline.run_inference("/tmp/data.csv", trained_model, tmp_path)
 
     get_api_key.assert_called_once()
     upload_model.assert_called_once_with(trained_model, "/tmp/sotai/model")
-    post_inference.assert_called_once_with("/tmp/data.csv", "test_trained_model_uuid")
+    post_inference.assert_called_once_with("/tmp/data.csv", "test_metadata_uuid")
     get_inference_status.assert_called()
     get_inference_results.assert_called_once()
