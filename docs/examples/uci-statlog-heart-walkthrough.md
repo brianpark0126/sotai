@@ -134,3 +134,5 @@ fig.show(renderer="notebook")
 ```
 
 <figure><img src="../.gitbook/assets/heart_feature_calibrators.png" alt=""><figcaption><p>Now we can see beyond importance into how the model handles each feature before combining them. This is particularly useful for categorical variables.</p></figcaption></figure>
+
+Taking a further look at the calibrator for thal confirms how we would expect the model to understand that feature. A normal value decreases the risk of heart disease, a defect that is reversible but has not been fixed increases the risk, and a defect that has been fixed increases the risk but not as much as one that hasn't been fixed.
