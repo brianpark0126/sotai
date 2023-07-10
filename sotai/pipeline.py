@@ -20,9 +20,16 @@ from .api import (
     get_inference_results,
     get_inference_status,
 )
-from .constants import SOTAI_API_ENDPOINT
+from .constants import SOTAI_API_ENDPOINT, INFERENCE_POLLING_INTERVAL
 from .data import determine_feature_types, replace_missing_values
-from .enums import APIStatus, FeatureType, LossType, Metric, TargetType
+from .enums import (
+    APIStatus,
+    FeatureType,
+    LossType,
+    Metric,
+    TargetType,
+    InferenceConfigStatus,
+)
 from .trained_model import TrainedModel
 from .training import train_and_evaluate_model
 from .types import (
@@ -240,37 +247,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             model=model,
         )
 
-    def save(self, filepath: str):
-        """Saves the pipeline to the specified filepath.
-
-        Args:
-            filepath: The directory to which the pipeline wil be saved. If the directory
-                does not exist, this function will attempt to create it. If the
-                directory already exists, this function will overwrite any existing
-                content with conflicting filenames.
-        """
-        if not os.path.exists(filepath):
-            os.makedirs(filepath)
-        with open(os.path.join(filepath, "pipeline.pkl"), "wb") as file:
-            pickle.dump(self, file)
-
-    @classmethod
-    def load(cls, filepath: str) -> Pipeline:
-        """Loads the pipeline from the specified filepath.
-
-        Args:
-            filepath: The filepath from which to load the pipeline. The filepath should
-                point to a file created by the `save` method of a `TrainedModel`
-                instance.
-
-        Returns:
-            A `Pipeline` instance.
-        """
-        with open(os.path.join(filepath, "pipeline.pkl"), "rb") as file:
-            pipeline = pickle.load(file)
-
-        return pipeline
-
     def publish(self) -> Optional[str]:
         """Uploads the pipeline to the SOTAI web client.
 
@@ -325,7 +301,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             pipeline_config_uuid, trained_model.pipeline_config.feature_configs
         )
 
-        if feature_config_response[0] == APIStatus.ERROR:
+        if feature_config_response == APIStatus.ERROR:
             return None
 
         analysis_response = post_trained_model_analysis(
@@ -378,7 +354,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 model_save_folder_path, trained_model.trained_model_uuid
             )
             trained_model.has_uploaded = True
-            return trained_model_response[0]
+            return trained_model_response
         else:
             return APIStatus.SUCCESS
 
@@ -423,9 +399,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         while True:
             inference_job_status = get_inference_status(inference_uuid)
-            logging.info(f"Current inference job status: {inference_job_status}")
-
-            if inference_job_status[1] == "success":
+            logging.info("Current inference job status: %s", inference_job_status[1])
+            if inference_job_status[1] == InferenceConfigStatus.SUCCESS:
                 get_inference_response = get_inference_results(
                     inference_uuid, inference_results_folder_path
                 )
@@ -433,11 +408,42 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                     logging.info("Error getting inference results")
                 else:
                     logging.info(
-                        "Inference results saved to: ", inference_results_folder_path
+                        "Inference results saved to: %s ", inference_results_folder_path
                     )
                 return inference_results_folder_path
             else:
-                sleep(5)
+                sleep(INFERENCE_POLLING_INTERVAL)
+
+    def save(self, filepath: str):
+        """Saves the pipeline to the specified filepath.
+
+        Args:
+            filepath: The directory to which the pipeline wil be saved. If the directory
+                does not exist, this function will attempt to create it. If the
+                directory already exists, this function will overwrite any existing
+                content with conflicting filenames.
+        """
+        if not os.path.exists(filepath):
+            os.makedirs(filepath)
+        with open(os.path.join(filepath, "pipeline.pkl"), "wb") as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls, filepath: str) -> Pipeline:
+        """Loads the pipeline from the specified filepath.
+
+        Args:
+            filepath: The filepath from which to load the pipeline. The filepath should
+                point to a file created by the `save` method of a `TrainedModel`
+                instance.
+
+        Returns:
+            A `Pipeline` instance.
+        """
+        with open(os.path.join(filepath, "pipeline.pkl"), "rb") as file:
+            pipeline = pickle.load(file)
+
+        return pipeline
 
     ############################################################################
     #                            Private Methods                               #

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 import pickle
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -47,7 +47,7 @@ class TrainedModel(BaseModel):
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True
 
-    def predict(self, data: pd.DataFrame) -> np.ndarray:
+    def predict(self, data: pd.DataFrame) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """Returns predictions for the given data.
 
         Args:
@@ -55,9 +55,8 @@ class TrainedModel(BaseModel):
                 training the model to be used.
 
         Returns:
-            If the target type is regression, a numpy array of predictions. If the
-            target type is classification, a tuple containing a numpy array of
-            predictions (logits) and a numpy array of probabilities.
+            A tuple containing an array of predictions and an array of logits. If the 
+            target type is regression, then logits will be None.
         """
         data = data.loc[:, list(self.pipeline_config.feature_configs.keys())]
         data = replace_missing_values(data, self.pipeline_config.feature_configs)
@@ -69,7 +68,7 @@ class TrainedModel(BaseModel):
             predictions = self.model(inputs).numpy()
 
         if self.pipeline_config.target_type == TargetType.REGRESSION:
-            return predictions
+            return predictions, None
 
         return predictions, 1.0 / (1.0 + np.exp(-predictions))
 
