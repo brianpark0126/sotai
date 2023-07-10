@@ -1,8 +1,9 @@
 """Tests for Pipeline."""
 
 import pytest
+from unittest.mock import MagicMock, patch
 
-from sotai import FeatureType, Metric, Pipeline, TargetType
+from sotai import FeatureType, Metric, Pipeline, TargetType, APIStatus
 
 from .fixtures import (  # pylint: disable=unused-import
     fixture_test_categories,
@@ -11,6 +12,7 @@ from .fixtures import (  # pylint: disable=unused-import
     fixture_test_feature_names,
     fixture_test_target,
 )
+from .utils import MockResponse
 
 
 @pytest.mark.parametrize(
@@ -146,3 +148,58 @@ def test_pipeline_save_load(
         assert loaded_dataset.prepared_data.train.equals(dataset.prepared_data.train)
         assert loaded_dataset.prepared_data.val.equals(dataset.prepared_data.val)
         assert loaded_dataset.prepared_data.test.equals(dataset.prepared_data.test)
+
+
+@patch(
+    "sotai.api.post_pipeline", response_value=(APIStatus.SUCCESS, "test_pipeline_id")
+)
+@patch("sotai.api.get_api_key", response_value="test_sapi_kywy")
+def test_publish(
+    post_pipeline,
+    get_api_key,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+):
+    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+    pipeline_uuid = pipeline.publish()
+    post_pipeline.assert_called_once()
+
+    assert pipeline_uuid == "test_pipeline_id"
+
+
+# def test_upload_model(
+#     test_data: fixture_test_data,
+#     test_feature_names: fixture_test_feature_names,s
+#     test_target: fixture_test_target,
+#     tmp_path
+#     ):
+#     """Tests that a pipeline can be uploaded to the API."""
+#     pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+#     trained_model = pipeline.train(test_data)
+
+
+# # @patch("sotai.api.upload_model", response_value=APIStatus.SUCCESS)
+# # @patch("sotai.pipeline.upload_model", response_value=APIStatus.SUCCESS)
+# # def test_run_inference():
+# #     """Tests that a pipeline can run inference on a dataset."""
+
+
+# @patch("sotai.api.post_pipeline", response_value=(APIStatus.SUCCESS, "test_pipeline_id"))
+# @patch("sotai.api.post_pipeline_config", response_value=(APIStatus.SUCCESS, "test_pipeline_config_id"))
+# @patch("sotai.api.post_pipeline_feature_configs", response_value=APIStatus.SUCCESS)
+# def test_analysis(
+#     test_data: fixture_test_data,
+#     test_feature_names: fixture_test_feature_names,
+#     test_target: fixture_test_target,
+#     tmp_path,
+# ):
+#     """Tests that a pipeline can run inference on a dataset."""
+#     pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+#     trained_model = pipeline.train(test_data)
+#     analysis = pipeline.analyze(trained_model)
+#     assert analysis
+#     assert analysis.dataset_id == trained_model.dataset_id
+#     assert analysis.pipeline_config_id == trained_model.pipeline_config.id
+#     assert analysis.trained_model_id == trained_model.id
+#     assert analysis.metrics == trained_model.metrics
+# )

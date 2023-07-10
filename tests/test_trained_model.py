@@ -54,7 +54,7 @@ def test_trained_model_save_load(
     trained_model.save(tmp_path)
     loaded_trained_model = TrainedModel.load(tmp_path)
     assert isinstance(loaded_trained_model, TrainedModel)
-    assert loaded_trained_model.dict(exclude={"model"}) == trained_model.dict(
-        exclude={"model"}
-    )
+    assert loaded_trained_model.dict(
+        exclude={"model", "saved_filepath"}
+    ) == trained_model.dict(exclude={"model", "saved_filepath"})
     assert isinstance(loaded_trained_model.model, CalibratedLinear)

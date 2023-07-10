@@ -91,4 +91,18 @@ def construct_trained_model(
             linear_coefficients={},
         ),
         model=model,
+        has_uploaded=False,
     )
+
+
+class MockResponse:
+    """Mock response class for testing."""
+
+    def __init__(self, json_data, status_code=200):
+        """Mock response for testing."""
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def json(self):
+        """Return json data."""
+        return self.json_data

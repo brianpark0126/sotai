@@ -5,20 +5,24 @@ import logging
 import os
 import pickle
 from typing import Dict, List, Optional, Tuple, Union
+from time import sleep
 
 import numpy as np
 import pandas as pd
-
 from .api import (
     get_api_key,
     post_pipeline,
     post_pipeline_config,
     post_pipeline_feature_configs,
     post_trained_model_analysis,
+    post_trained_model,
+    post_inference,
+    get_inference_results,
+    get_inference_status,
 )
 from .constants import SOTAI_API_ENDPOINT
 from .data import determine_feature_types, replace_missing_values
-from .enums import FeatureType, LossType, Metric, TargetType
+from .enums import APIStatus, FeatureType, LossType, Metric, TargetType
 from .trained_model import TrainedModel
 from .training import train_and_evaluate_model
 from .types import (
@@ -275,7 +279,11 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             Otherwise, None.
 
         """
-        self.pipeline_uuid = post_pipeline(self)
+        pipeline_response = post_pipeline(self)
+        if pipeline_response[0] == APIStatus.ERROR:
+            return None
+
+        self.pipeline_uuid = pipeline_response[1]
         return self.pipeline_uuid
 
     def analysis(self, trained_model: TrainedModel) -> Optional[str]:
@@ -302,12 +310,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if self.pipeline_uuid is None:
             return None
 
-        pipeline_config_uuid = post_pipeline_config(
+        pipeline_config_response = post_pipeline_config(
             self.pipeline_uuid, trained_model.pipeline_config
         )
 
-        if pipeline_config_uuid is None:
+        if pipeline_config_response[0] == APIStatus.ERROR:
             return None
+
+        pipeline_config_uuid = pipeline_config_response[1]
 
         trained_model.pipeline_config.pipeline_config_uuid = pipeline_config_uuid
 
@@ -315,17 +325,18 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             pipeline_config_uuid, trained_model.pipeline_config.feature_configs
         )
 
-        if feature_config_response is None:
+        if feature_config_response[0] == APIStatus.ERROR:
             return None
 
-        analysis_results = post_trained_model_analysis(
+        analysis_response = post_trained_model_analysis(
             pipeline_config_uuid, trained_model
         )
 
-        if analysis_results is None:
+        if analysis_response[0] == APIStatus.ERROR:
             return None
 
-        trained_model.trained_model_uuid = analysis_results["trainedModelMetadataUuid"]
+        analysis_results = analysis_response[1]
+        trained_model.trained_model_uuid = analysis_results["trainedModelMetadataUUID"]
 
         # TODO: update to use response analysisUrl once no longer broken.
         analysis_url = (
@@ -335,6 +346,98 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         trained_model.analysis_url = analysis_url
 
         return analysis_url
+
+    def upload_model(
+        self, trained_model: TrainedModel, model_save_folder_path: str
+    ) -> APIStatus:
+        """Uploads the trained model to the SOTAI web client. If a model has already
+        been uploaded, this function will return without uploading the model again.
+
+        This function requires an internet connection and a SOTAI account. The trained
+        model will be uploaded to the SOTAI web client for inference.
+
+        Args:
+            trained_model: The trained model to upload.
+            model_save_folder_path: The path to save the trained model to.
+        """
+
+        if not get_api_key():
+            raise ValueError(
+                "You must have an API key to upload a model."
+                " Please visit app.sotai.ai to get an API key."
+            )
+
+        if trained_model.trained_model_uuid is None:
+            raise ValueError(
+                "Must run analysis to generate trained_model_uuid before uploading."
+            )
+
+        if not trained_model.has_uploaded:
+            trained_model.save(model_save_folder_path)
+            trained_model_response = post_trained_model(
+                model_save_folder_path, trained_model.trained_model_uuid
+            )
+            trained_model.has_uploaded = True
+            return trained_model_response[0]
+        else:
+            return APIStatus.SUCCESS
+
+    def run_inference(
+        self,
+        inference_dataset_file_path: str,
+        trained_model: TrainedModel,
+        inference_results_folder_path: str = "/tmp/sotai/inference_results",
+        model_save_folder_path: str = "/tmp/sotai/model",
+    ) -> Optional[str]:
+        """Runs inference on the specified dataset using the specified trained model
+        in the SOTAI cloud.
+
+        Args:
+            inference_dataset_path: The path to the dataset to run inference on.
+            trained_model: The trained model to use for inference.
+            inference_results_path: The path to save the inference results to.
+            model_save_folder_path: The path to save the trained model to.
+
+        Returns:
+            If the inference job was successfully run, the path to the inference results.
+        """
+
+        if not get_api_key():
+            raise ValueError(
+                "You must have an API key to run inference."
+                " Please visit app.sotai.ai to get an API key."
+            )
+
+        upload_response = self.upload_model(trained_model, model_save_folder_path)
+
+        if upload_response == APIStatus.ERROR:
+            return None
+
+        inference_response = post_inference(
+            inference_dataset_file_path, trained_model.trained_model_uuid
+        )
+        if inference_response[0] == APIStatus.ERROR:
+            return None
+
+        inference_uuid = inference_response[1]
+
+        while True:
+            inference_job_status = get_inference_status(inference_uuid)
+            logging.info(f"Current inference job status: {inference_job_status}")
+
+            if inference_job_status[1] == "success":
+                get_inference_response = get_inference_results(
+                    inference_uuid, inference_results_folder_path
+                )
+                if get_inference_response == APIStatus.ERROR:
+                    logging.info("Error getting inference results")
+                else:
+                    logging.info(
+                        "Inference results saved to: ", inference_results_folder_path
+                    )
+                return inference_results_folder_path
+            else:
+                sleep(5)
 
     ############################################################################
     #                            Private Methods                               #
