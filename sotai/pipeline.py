@@ -355,8 +355,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             )
             trained_model.has_uploaded = True
             return trained_model_response
-        else:
-            return APIStatus.SUCCESS
+
+        return APIStatus.SUCCESS
 
     def run_inference(
         self,
@@ -411,8 +411,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                         "Inference results saved to: %s ", inference_results_folder_path
                     )
                 return inference_results_folder_path
-            else:
-                sleep(INFERENCE_POLLING_INTERVAL)
+
+            sleep(INFERENCE_POLLING_INTERVAL)
 
     def save(self, filepath: str):
         """Saves the pipeline to the specified filepath.
