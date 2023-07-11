@@ -221,7 +221,7 @@ class CategoricalFeatureConfig(BaseModel):
 
     name: str = Field(...)
     type: FeatureType = Field(FeatureType.CATEGORICAL, const=True)
-    categories: Union[List[str], List[int]] = Field(...)
+    categories: Union[List[int], List[str]] = Field(...)
     # TODO (will): add support for categorical monotonicity.
 
     def __init__(self, **kwargs):
@@ -252,7 +252,7 @@ class PipelineConfig(BaseModel):
     target_type: TargetType = Field(...)
     primary_metric: Metric = Field(...)
     feature_configs: Dict[
-        str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]
+        str, Union[CategoricalFeatureConfig, NumericalFeatureConfig]
     ] = Field(...)
     shuffle_data: bool = Field(...)
     drop_empty_percentage: int = Field(...)
