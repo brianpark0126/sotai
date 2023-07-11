@@ -1,11 +1,14 @@
 """This module contains the API functions for interacting with the SOTAI API.""" ""
 import logging
 import os
-from typing import Dict, Optional, Union
+import tarfile
+import urllib
+from typing import Dict, Optional, Tuple, Union
 
 import requests
 
-from .constants import SOTAI_API_ENDPOINT
+from .constants import SOTAI_API_ENDPOINT, SOTAI_BASE_URL, SOTAI_API_TIMEOUT
+from .enums import APIStatus, InferenceConfigStatus
 from .trained_model import TrainedModel
 from .types import (
     CategoricalFeatureConfig,
@@ -44,17 +47,18 @@ def get_auth_headers() -> Dict[str, str]:
     }
 
 
-def post_pipeline(pipeline) -> Optional[str]:
+def post_pipeline(pipeline) -> Tuple[APIStatus, Optional[str]]:
     """Create a new pipeline on the SOTAI API .
 
     Args:
         pipeline: The pipeline to create.
 
     Returns:
-        If created, the UUID of the created pipeline. Otherwise None.
+        A tuple containing the status of the API call and the UUID of the created
+        pipeline. If unsuccessful, the UUID will be None.
     """
     response = requests.post(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipelines",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines",
         json={
             "name": pipeline.name,
             "target": pipeline.target,
@@ -62,19 +66,18 @@ def post_pipeline(pipeline) -> Optional[str]:
             "primary_metric": pipeline.primary_metric,
         },
         headers=get_auth_headers(),
-        timeout=10,
+        timeout=SOTAI_API_TIMEOUT,
     )
-
     if response.status_code != 200:
         logging.error("Failed to create pipeline")
-        return None
+        return APIStatus.ERROR, None
 
-    return response.json()["uuid"]
+    return APIStatus.SUCCESS, response.json()["uuid"]
 
 
 def post_pipeline_config(
     pipeline_uuid: str, pipeline_config: PipelineConfig
-) -> Optional[str]:
+) -> Tuple[APIStatus, Optional[str]]:
     """Create a new pipeline config on the SOTAI API .
 
     Args:
@@ -82,10 +85,11 @@ def post_pipeline_config(
         pipeline_config : The pipeline config to create.
 
     Returns:
-        If created, the UUID of the created pipeline config. Otherwise None.
+        A tuple containing the status of the API call and the UUID of the created
+        pipeline. If unsuccessful, the UUID will be None.
     """
     response = requests.post(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipelines/{pipeline_uuid}/pipeline-configs",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}/pipeline-configs",
         json={
             "shuffle_data": pipeline_config.shuffle_data,
             "drop_empty_percentage": pipeline_config.drop_empty_percentage,
@@ -94,28 +98,29 @@ def post_pipeline_config(
             "test_percentage": pipeline_config.dataset_split.test,
         },
         headers=get_auth_headers(),
-        timeout=10,
+        timeout=SOTAI_API_TIMEOUT,
     )
 
     if response.status_code != 200:
         logging.error("Failed to create pipeline config")
-        return None
+        return APIStatus.ERROR, None
 
-    return response.json()["uuid"]
+    return APIStatus.SUCCESS, response.json()["uuid"]
 
 
 def post_pipeline_feature_configs(
     pipeline_config_uuid: str,
     feature_configs: Dict[str, Union[CategoricalFeatureConfig, NumericalFeatureConfig]],
-) -> Optional[str]:
+) -> APIStatus:
     """Create a new pipeline feature configs on the SOTAI API .
 
     Args:
-        pipeline_config_uuid: The pipeline config uuid to create the pipeline feature configs for.
+        pipeline_config_uuid: The pipeline config uuid to create the pipeline
+            feature configs for.
         feature_configs: The feature configs to create.
 
     Returns:
-        If created, the UUID of the pipeline config. Otherwise None.
+        The status of the API call.
 
     """
     sotai_feature_configs = []
@@ -143,22 +148,23 @@ def post_pipeline_feature_configs(
         sotai_feature_configs.append(sotai_feature_config)
 
     response = requests.post(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipeline-configs/{pipeline_config_uuid}/feature-configs",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-configs/"
+        f"{pipeline_config_uuid}/feature-configs",
         json=sotai_feature_configs,
         headers=get_auth_headers(),
-        timeout=10,
+        timeout=SOTAI_API_TIMEOUT,
     )
 
     if response.status_code != 200:
         logging.error("Failed to create pipeline feature configs")
-        return None
+        return APIStatus.ERROR
 
-    return response.json()["uuid"]
+    return APIStatus.SUCCESS
 
 
 def post_trained_model_analysis(
     pipeline_config_uuid: str, trained_model: TrainedModel
-) -> Dict[str, str]:
+) -> Tuple[APIStatus, Optional[Dict[str, str]]]:
     """Create a new trained model analysis on the SOTAI API .
 
     Args:
@@ -167,14 +173,15 @@ def post_trained_model_analysis(
         trained_model: The trained model to create.
 
     Returns:
-        A dict containing the UUIDs of the resources created as well as a link that
-        can be used to view the trained model analysis.
+        A tuple containing the status of the API call and a dict containing the UUIDs
+        of the resources created as well as a link that can be used to view the trained
+        model analysis. If unsuccessful, the UUID will be None.
 
         Keys:
-            - `trainedModelMetadataUuid`: The UUID of the trained model.
-            - `modelConfigUuid`: The UUID of the model configuration.
-            - `pipelineConfigUuid`: The UUID of the pipeline configuration.
-            - `analysisUrl`: The URL of the trained model analysis.
+            - `trainedModelMetadataUUID`: The UUID of the trained model.
+            - `modelConfigUUID`: The UUID of the model configuration.
+            - `pipelineConfigUUID`: The UUID of the pipeline configuration.
+            - `analysisURL`: The URL of the trained model analysis.
 
     """
     training_results = trained_model.training_results
@@ -234,7 +241,7 @@ def post_trained_model_analysis(
     }
 
     response = requests.post(
-        f"{SOTAI_API_ENDPOINT}/api/v1/pipeline-configs/{pipeline_config_uuid}/analysis",
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-configs/{pipeline_config_uuid}/analysis",
         json={
             "trained_model_metadata": trained_model_metadata_dict,
             "overall_model_results": overall_model_results_dict,
@@ -242,11 +249,125 @@ def post_trained_model_analysis(
             "feature_analyses": feature_analyses_list,
         },
         headers=get_auth_headers(),
-        timeout=10,
+        timeout=SOTAI_API_TIMEOUT,
     )
 
     if response.status_code != 200:
         logging.error("Failed to create trained model analysis")
-        return None
+        return APIStatus.ERROR, None
 
-    return response.json()
+    return APIStatus.SUCCESS, response.json()
+
+
+def post_trained_model(trained_model_path: str, trained_model_uuid: str) -> APIStatus:
+    """Create a new trained model on the SOTAI API .
+
+    Args:
+        trained_model_path: The path to the trained model file to post.
+        trained_model_uuid: The UUID of the trained model.
+
+    Returns:
+        The status of the API call.
+    """
+    original_filepath = f"{trained_model_path}/trained_ptcm_model.pt"
+    tar_filepath = f"{trained_model_path}/model.tar.gz"
+    with tarfile.open(tar_filepath, "w:gz") as tar:
+        tar.add(original_filepath, arcname="model.pt")
+
+    with open(tar_filepath, "rb") as data_file:
+        response = requests.post(
+            f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/models",
+            files={"file": data_file},
+            data={"trained_model_uuid": trained_model_uuid},
+            headers=get_auth_headers(),
+            timeout=SOTAI_API_TIMEOUT,
+        )
+
+    if response.status_code != 200:
+        logging.error("Failed to create trained model")
+        return APIStatus.ERROR
+
+    return APIStatus.SUCCESS
+
+
+def post_inference(
+    data_filepath: str,
+    trained_model_uuid: str,
+) -> Tuple[APIStatus, Optional[str]]:
+    """Create a new inference on the SOTAI API .
+
+    Args:
+        data_filepath: The path to the data file to create the inference for.
+        trained_model_uuid: The trained model uuid to create the inference for.
+
+    Returns:
+        A tuple containing the status of the API call and the UUID of the created
+        inference job. If unsuccessful, the UUID will be None.
+    """
+    with open(data_filepath, "rb") as data_file:
+        response = requests.post(
+            f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences",
+            files={"file": data_file},
+            data={"trained_model_uuid": trained_model_uuid},
+            headers=get_auth_headers(),
+            timeout=SOTAI_API_TIMEOUT,
+        )
+
+    if response.status_code != 200:
+        logging.error("Failed to create inference")
+        return APIStatus.ERROR, None
+
+    return APIStatus.SUCCESS, response.json()["inferenceConfigUUID"]
+
+
+def get_inference_status(
+    inference_uuid: str,
+) -> Tuple[APIStatus, Optional[InferenceConfigStatus]]:
+    """Get an inference from the SOTAI API .
+
+    Args:
+        inference_uuid: The UUID of the inference to get.
+
+    Returns:
+       A tuple containing the status of the API call and the status of the inference job
+       if the API call is successful. If unsuccessful, the UUID will be None.
+
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences/{inference_uuid}/status",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    if response.status_code != 200:
+        logging.error("Failed to get inference")
+        return APIStatus.ERROR, None
+
+    return APIStatus.SUCCESS, response.json()
+
+
+def get_inference_results(inference_uuid: str, download_folder: str) -> APIStatus:
+    """Get an inference from the SOTAI API .
+
+    Args:
+        inference_uuid: The UUID of the inference to get.
+
+    Returns:
+        The status of the API call.
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences/{inference_uuid}/download",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    if response.status_code != 200:
+        print("Failed to get inference")
+        logging.error("Failed to get inference")
+        return APIStatus.ERROR
+
+    urllib.request.urlretrieve(
+        response.json(), f"{download_folder}/inference_results.csv"
+    )
+
+    return APIStatus.SUCCESS

@@ -116,3 +116,23 @@ class Monotonicity(_Enum):
     NONE = "none"
     INCREASING = "increasing"
     DECREASING = "decreasing"
+
+
+class APIStatus(_Enum):
+    """Status of API
+    - SUCCESS: API call was successful
+    - ERROR: API call was unsuccessful
+    """
+
+    SUCCESS = "success"
+    ERROR = "error"
+
+
+class InferenceConfigStatus(_Enum):
+    """Enum for InferenceConfig status"""
+
+    FAILED = "failed"
+    INITIALIZING = "initializing"
+    PREPARING = "preparing"
+    RUNNING = "running"
+    SUCCESS = "success"

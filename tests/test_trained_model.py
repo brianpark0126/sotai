@@ -5,7 +5,6 @@ import numpy as np
 from sotai import TargetType, TrainedModel
 from sotai.models import CalibratedLinear
 
-
 from .fixtures import (  # pylint: disable=unused-import
     fixture_test_categories,
     fixture_test_data,
@@ -37,7 +36,7 @@ def test_trained_regression_model_predict(
     trained_model = construct_trained_model(
         TargetType.REGRESSION, test_data, test_feature_configs
     )
-    predictions = trained_model.predict(test_data)
+    predictions, _ = trained_model.predict(test_data)
     assert isinstance(predictions, np.ndarray)
     assert len(predictions) == len(test_data)
 
@@ -54,7 +53,7 @@ def test_trained_model_save_load(
     trained_model.save(tmp_path)
     loaded_trained_model = TrainedModel.load(tmp_path)
     assert isinstance(loaded_trained_model, TrainedModel)
-    assert loaded_trained_model.dict(exclude={"model"}) == trained_model.dict(
-        exclude={"model"}
-    )
+    assert loaded_trained_model.dict(
+        exclude={"model", "saved_filepath"}
+    ) == trained_model.dict(exclude={"model", "saved_filepath"})
     assert isinstance(loaded_trained_model.model, CalibratedLinear)

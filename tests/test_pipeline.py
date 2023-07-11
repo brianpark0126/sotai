@@ -1,8 +1,10 @@
 """Tests for Pipeline."""
+from unittest.mock import patch
 
 import pytest
 
 from sotai import (
+    APIStatus,
     DatasetSplit,
     FeatureType,
     Metric,
@@ -10,6 +12,7 @@ from sotai import (
     PipelineConfig,
     TargetType,
 )
+from sotai.enums import InferenceConfigStatus
 
 from .fixtures import (  # pylint: disable=unused-import
     fixture_test_categories,
@@ -199,3 +202,118 @@ def test_pipeline_save_load(
         assert loaded_dataset.prepared_data.train.equals(dataset.prepared_data.train)
         assert loaded_dataset.prepared_data.val.equals(dataset.prepared_data.val)
         assert loaded_dataset.prepared_data.test.equals(dataset.prepared_data.test)
+
+
+@patch(
+    "sotai.pipeline.post_pipeline", return_value=(APIStatus.SUCCESS, "test_pipeline_id")
+)
+def test_publish(
+    post_pipeline,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+):
+    """Tests that a pipeline can be published to the API."""
+    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+    pipeline_uuid = pipeline.publish()
+    post_pipeline.assert_called_once()
+    assert pipeline_uuid == "test_pipeline_id"
+
+
+@patch("sotai.pipeline.Pipeline._upload_model", return_value=APIStatus.SUCCESS)
+@patch(
+    "sotai.pipeline.post_trained_model_analysis",
+    return_value=(
+        APIStatus.SUCCESS,
+        {"trainedModelMetadataUUID": "test_uuid"},
+    ),
+)
+@patch("sotai.pipeline.post_pipeline_feature_configs", return_value=APIStatus.SUCCESS)
+@patch(
+    "sotai.pipeline.post_pipeline_config",
+    return_value=(APIStatus.SUCCESS, "test_pipeline_config_id"),
+)
+@patch(
+    "sotai.pipeline.post_pipeline", return_value=(APIStatus.SUCCESS, "test_pipeline_id")
+)
+@patch("sotai.pipeline.get_api_key", return_value="test_api_key")
+def test_analysis(
+    get_api_key,
+    post_pipeline,
+    post_pipeline_config,
+    post_pipeline_feature_configs,
+    post_trained_model_analysis,
+    upload_model,
+    test_data,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+):
+    """Tests that pipeline analysis works as expected."""
+    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+    trained_model = pipeline.train(test_data)
+    analysis_response = pipeline.analysis(trained_model)
+
+    get_api_key.assert_called()
+    upload_model.assert_called_once()
+    post_pipeline.assert_called_once()
+    post_pipeline_config.assert_called_once_with(
+        "test_pipeline_id", trained_model.pipeline_config
+    )
+    post_pipeline_feature_configs.assert_called_once_with(
+        "test_pipeline_config_id", trained_model.pipeline_config.feature_configs
+    )
+    post_trained_model_analysis.assert_called_once_with(
+        "test_pipeline_config_id", trained_model
+    )
+
+    assert (
+        analysis_response
+        == "https://app.sotai.ai/pipelines/test_pipeline_id/trained-models/test_uuid"
+    )
+
+
+@patch(
+    "sotai.pipeline.post_inference",
+    return_value=(APIStatus.SUCCESS, "test_inference_uuid"),
+)
+@patch("sotai.pipeline.get_api_key", return_value="test_api_key")
+def test_run_inference(
+    get_api_key,
+    post_inference,
+    test_data: fixture_test_data,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+):
+    """Tests that a pipeline can run inference on a dataset."""
+    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+    trained_model = pipeline.train(test_data)
+    trained_model.uuid = "test_uuid"
+
+    pipeline.inference("/tmp/data.csv", trained_model.uuid)
+
+    get_api_key.assert_called_once()
+    post_inference.assert_called_once_with("/tmp/data.csv", "test_uuid")
+
+
+@patch("sotai.pipeline.INFERENCE_POLLING_INTERVAL", 1)
+@patch("sotai.pipeline.get_inference_results", response_value=APIStatus.SUCCESS)
+@patch(
+    "sotai.pipeline.get_inference_status",
+    side_effect=[
+        (APIStatus.SUCCESS, InferenceConfigStatus.INITIALIZING),
+        (APIStatus.SUCCESS, InferenceConfigStatus.SUCCESS),
+    ],
+)
+def test_await_inference_results(
+    get_inference_status,
+    get_inference_results,
+    test_data: fixture_test_data,
+    test_feature_names: fixture_test_feature_names,
+    test_target: fixture_test_target,
+):
+    """Tests that a pipeline can await inference results."""
+    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+    pipeline.train(test_data)
+
+    pipeline.await_inference("test_uuid", "/tmp/predictions")
+    get_inference_status.assert_called_with("test_uuid")
+    get_inference_results.assert_called_once()
