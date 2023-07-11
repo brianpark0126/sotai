@@ -258,50 +258,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             Otherwise, None.
 
         """
-        pipeline_response = post_pipeline(self)
-        if pipeline_response[0] == APIStatus.ERROR:
+        pipeline_response_status, pipeline_uuid = post_pipeline(self)
+        if pipeline_response_status == APIStatus.ERROR:
             return None
 
-        self.uuid = pipeline_response[1]
+        self.uuid = pipeline_uuid
         return self.uuid
 
-    def upload_model(
-        self,
-        trained_model: TrainedModel,
-        model_save_folder_path: str = "/tmp/sotai/model",
-    ) -> APIStatus:
-        """Uploads the trained model to the SOTAI web client. If a model has already
-        been uploaded, this function will return without uploading the model again.
-
-        This function requires an internet connection and a SOTAI account. The trained
-        model will be uploaded to the SOTAI web client for inference.
-
-        Args:
-            trained_model: The trained model to upload.
-            model_save_folder_path: The path to save the trained model to.
-        """
-
-        if not get_api_key():
-            raise ValueError(
-                "You must have an API key to upload a model."
-                " Please visit app.sotai.ai to get an API key."
-            )
-
-        if trained_model.uuid is None:
-            raise ValueError("Must run analysis to generate uuid before uploading.")
-
-        if not trained_model.has_uploaded:
-            trained_model.save(model_save_folder_path)
-            trained_model_response = post_trained_model(
-                model_save_folder_path, trained_model.uuid
-            )
-            trained_model.has_uploaded = True
-            self.trained_models[trained_model.uuid] = trained_model
-            return trained_model_response
-
-        return APIStatus.SUCCESS
-
-    def analysis( # pylint: disable=too-many-return-statements
+    def analysis(  # pylint: disable=too-many-return-statements
         self,
         trained_model: TrainedModel,
     ) -> Optional[str]:
@@ -353,8 +317,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         trained_model.uuid = analysis_results["trainedModelMetadataUUID"]
 
-        model_save_folder_path = f"/tmp/sotai/model/{trained_model.uuid}"
-        upload_response = self.upload_model(trained_model, model_save_folder_path)
+        upload_response = self._upload_model(trained_model)
         if upload_response == APIStatus.ERROR:
             return None
 
@@ -378,11 +341,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         Args:
             inference_dataset_path: The path to the dataset to run inference on.
             trained_model: The trained model to use for inference.
-            inference_results_path: The path to save the inference results to.
-            model_save_folder_path: The path to save the trained model to.
 
         Returns:
-            If the inference job was successfully run, the path to the inference results.
+            If UUID of the inference run, if unsuccessful, None.
         """
 
         if not get_api_key():
@@ -401,6 +362,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     def await_inference(
         self,
         inference_uuid: str,
+        inference_results_folder_path: str,
     ):
         """Polls the SOTAI cloud for the results of the specified inference job.
 
@@ -411,7 +373,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         Returns:
             If the inference job was successfully run, the path to the inference results.
         """
-        inference_results_folder_path = f"/tmp/sotai/inference_results/{inference_uuid}"
         while True:
             inference_response_status, inference_job_status = get_inference_status(
                 inference_uuid
@@ -531,3 +492,34 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 pipeline_config.feature_configs.pop(feature_name)
 
         return pipeline_config
+
+    def _upload_model(
+        self,
+        trained_model: TrainedModel,
+    ) -> APIStatus:
+        """Uploads the trained model to the SOTAI web client. If a model has already
+        been uploaded, this function will return without uploading the model again.
+
+        This function requires an internet connection and a SOTAI account. The trained
+        model will be uploaded to the SOTAI web client for inference.
+
+        Args:
+            trained_model: The trained model to upload.
+        """
+
+        if not get_api_key():
+            raise ValueError(
+                "You must have an API key to upload a model."
+                " Please visit app.sotai.ai to get an API key."
+            )
+        model_save_folder_path = f"/tmp/sotai/model/{trained_model.uuid}"
+
+        if trained_model.uuid is None:
+            raise ValueError("Must run analysis to generate uuid before uploading.")
+
+        trained_model.save(model_save_folder_path)
+        trained_model_response = post_trained_model(
+            model_save_folder_path, trained_model.uuid
+        )
+        self.trained_models[trained_model.uuid] = trained_model
+        return trained_model_response

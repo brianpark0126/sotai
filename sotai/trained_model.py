@@ -41,8 +41,6 @@ class TrainedModel(BaseModel):
     model: CalibratedLinear = Field(...)
     uuid: Optional[str] = None
     analysis_url: Optional[str] = None
-    has_uploaded: bool = False
-    saved_filepath: Optional[str] = None
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True
@@ -87,7 +85,6 @@ class TrainedModel(BaseModel):
             pickle.dump(self.dict(exclude={"model"}), file)
         model_path = f"{filepath}/trained_ptcm_model.pt"
         torch.save(self.model, model_path)
-        self.saved_filepath = filepath
 
     @classmethod
     def load(cls, filepath: str) -> TrainedModel:

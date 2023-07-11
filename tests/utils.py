@@ -91,7 +91,6 @@ def construct_trained_model(
             linear_coefficients={},
         ),
         model=model,
-        has_uploaded=False,
     )
 
 

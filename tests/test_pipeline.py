@@ -219,7 +219,7 @@ def test_publish(
     assert pipeline_uuid == "test_pipeline_id"
 
 
-@patch("sotai.pipeline.Pipeline.upload_model", return_value=APIStatus.SUCCESS)
+@patch("sotai.pipeline.Pipeline._upload_model", return_value=APIStatus.SUCCESS)
 @patch(
     "sotai.pipeline.post_trained_model_analysis",
     return_value=(
@@ -272,31 +272,6 @@ def test_analysis(
 
 
 @patch(
-    "sotai.pipeline.post_trained_model",
-    return_value=APIStatus.SUCCESS,
-)
-@patch("sotai.pipeline.get_api_key", return_value="test_api_key")
-def test_upload_model(
-    get_api_key,
-    post_trained_model,
-    test_data: fixture_test_data,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
-    tmp_path,
-):
-    """Tests that a pipeline can be uploaded to the API."""
-    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
-    trained_model = pipeline.train(test_data)
-    trained_model.uuid = "test_uuid"
-    upload_model_response = pipeline.upload_model(trained_model, tmp_path)
-
-    get_api_key.assert_called_once()
-    post_trained_model.assert_called_once()
-    assert trained_model.has_uploaded
-    assert upload_model_response == APIStatus.SUCCESS
-
-
-@patch(
     "sotai.pipeline.post_inference",
     return_value=(APIStatus.SUCCESS, "test_inference_uuid"),
 )
@@ -320,7 +295,7 @@ def test_run_inference(
 
 
 @patch("sotai.pipeline.INFERENCE_POLLING_INTERVAL", 1)
-@patch("sotai.pipeline.get_inference_results", return_value=APIStatus.SUCCESS)
+@patch("sotai.pipeline.get_inference_results", response_value=APIStatus.SUCCESS)
 @patch(
     "sotai.pipeline.get_inference_status",
     side_effect=[
@@ -339,6 +314,6 @@ def test_await_inference_results(
     pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
     pipeline.train(test_data)
 
-    pipeline.await_inference("test_uuid")
+    pipeline.await_inference("test_uuid", "/tmp/predictions")
     get_inference_status.assert_called_with("test_uuid")
     get_inference_results.assert_called_once()

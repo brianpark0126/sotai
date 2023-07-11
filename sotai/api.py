@@ -47,7 +47,7 @@ def get_auth_headers() -> Dict[str, str]:
     }
 
 
-def post_pipeline(pipeline) -> Optional[str]:
+def post_pipeline(pipeline) -> Tuple[APIStatus, Optional[str]]:
     """Create a new pipeline on the SOTAI API .
 
     Args:
@@ -55,7 +55,7 @@ def post_pipeline(pipeline) -> Optional[str]:
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        pipeline if successful If unsuccessful, the UUID will be None.
+        pipeline. If unsuccessful, the UUID will be None.
     """
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines",
@@ -77,7 +77,7 @@ def post_pipeline(pipeline) -> Optional[str]:
 
 def post_pipeline_config(
     pipeline_uuid: str, pipeline_config: PipelineConfig
-) -> Optional[str]:
+) -> Tuple[APIStatus, Optional[str]]:
     """Create a new pipeline config on the SOTAI API .
 
     Args:
@@ -86,7 +86,7 @@ def post_pipeline_config(
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        pipeline if successful If unsuccessful, the UUID will be None.
+        pipeline. If unsuccessful, the UUID will be None.
     """
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}/pipeline-configs",
@@ -175,7 +175,7 @@ def post_trained_model_analysis(
     Returns:
         A tuple containing the status of the API call and a dict containing the UUIDs
         of the resources created as well as a link that can be used to view the trained
-        model analysis if successful If unsuccessful, the UUID will be None.
+        model analysis. If unsuccessful, the UUID will be None.
 
         Keys:
             - `trainedModelMetadataUUID`: The UUID of the trained model.
@@ -293,7 +293,7 @@ def post_trained_model(trained_model_path: str, trained_model_uuid: str) -> APIS
 def post_inference(
     data_filepath: str,
     trained_model_uuid: str,
-) -> Tuple[APIStatus, str]:
+) -> Tuple[APIStatus, Optional[str]]:
     """Create a new inference on the SOTAI API .
 
     Args:
@@ -302,7 +302,7 @@ def post_inference(
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        inference job if successful If unsuccessful, the UUID will be None.
+        inference job. If unsuccessful, the UUID will be None.
     """
     with open(data_filepath, "rb") as data_file:
         response = requests.post(
@@ -322,7 +322,7 @@ def post_inference(
 
 def get_inference_status(
     inference_uuid: str,
-) -> Tuple[APIStatus, InferenceConfigStatus]:
+) -> Tuple[APIStatus, Optional[InferenceConfigStatus]]:
     """Get an inference from the SOTAI API .
 
     Args:
@@ -330,7 +330,7 @@ def get_inference_status(
 
     Returns:
        A tuple containing the status of the API call and the status of the inference job
-       if the API call is successful If unsuccessful, the UUID will be None.
+       if the API call is successful. If unsuccessful, the UUID will be None.
 
     """
     response = requests.get(
