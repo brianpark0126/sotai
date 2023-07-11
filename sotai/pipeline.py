@@ -4,33 +4,32 @@ from __future__ import annotations
 import logging
 import os
 import pickle
-from typing import Dict, List, Optional, Tuple, Union
 from time import sleep
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from .api import (
     get_api_key,
+    get_inference_results,
+    get_inference_status,
+    post_inference,
     post_pipeline,
     post_pipeline_config,
     post_pipeline_feature_configs,
     post_trained_model,
     post_trained_model_analysis,
-    get_inference_results,
-    get_inference_status,
-    post_inference,
 )
-
 from .constants import INFERENCE_POLLING_INTERVAL, SOTAI_BASE_URL
 from .data import determine_feature_types, replace_missing_values
 from .enums import (
     APIStatus,
     FeatureType,
+    InferenceConfigStatus,
     LossType,
     Metric,
     TargetType,
-    InferenceConfigStatus,
 )
 from .trained_model import TrainedModel
 from .training import train_and_evaluate_model
@@ -74,7 +73,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         features: List[str],
         target: str,
         target_type: TargetType,
-        categories: Optional[Dict[str, List[str]]] = None,
+        categories: Optional[Dict[str, Union[List[int], List[str]]]] = None,
         primary_metric: Optional[Metric] = None,
         name: Optional[str] = None,
     ):

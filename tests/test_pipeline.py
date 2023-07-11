@@ -14,57 +14,61 @@ from sotai import (
 )
 from sotai.enums import InferenceConfigStatus
 
-from .fixtures import (  # pylint: disable=unused-import
-    fixture_test_categories,
-    fixture_test_data,
-    fixture_test_feature_configs,
-    fixture_test_feature_names,
-    fixture_test_target,
-)
-
 
 @pytest.mark.parametrize(
     "target_type,expected_primary_metric",
     [(TargetType.CLASSIFICATION, Metric.AUC), (TargetType.REGRESSION, Metric.MSE)],
 )
 def test_init(
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
+    fixture_feature_names,
+    fixture_target,
     target_type,
     expected_primary_metric,
 ):
     """Tests pipeline initialization for a classification target."""
-    pipeline = Pipeline(test_feature_names, test_target, target_type)
-    assert pipeline.name == f"{test_target}_{target_type}"
-    assert pipeline.target == test_target
+    pipeline = Pipeline(fixture_feature_names, fixture_target, target_type)
+    assert pipeline.name == f"{fixture_target}_{target_type}"
+    assert pipeline.target == fixture_target
     assert pipeline.target_type == target_type
     assert pipeline.primary_metric == expected_primary_metric
-    assert len(pipeline.feature_configs) == 2
+    assert len(pipeline.feature_configs) == 3
     numerical_config = pipeline.feature_configs["numerical"]
     assert numerical_config.name == "numerical"
     assert numerical_config.type == FeatureType.NUMERICAL
-    categorical_config = pipeline.feature_configs["categorical"]
-    assert categorical_config.name == "categorical"
+    categorical_strs_config = pipeline.feature_configs["categorical_strs"]
+    assert categorical_strs_config.name == "categorical_strs"
     # Note: we expect the default config to be numerical if not specified.
-    assert categorical_config.type == FeatureType.NUMERICAL
+    assert categorical_strs_config.type == FeatureType.NUMERICAL
+    categorical_ints_config = pipeline.feature_configs["categorical_ints"]
+    assert categorical_ints_config.name == "categorical_ints"
+    # Note: we expect the default config to be numerical if not specified.
+    assert categorical_ints_config.type == FeatureType.NUMERICAL
 
 
 def test_init_with_categories(
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
-    test_categories: fixture_test_categories,
+    fixture_feature_names,
+    fixture_target,
+    fixture_categories_strs,
+    fixture_categories_ints,
 ):
     """Tests pipeline initialization with specified categories."""
     pipeline = Pipeline(
-        test_feature_names,
-        test_target,
+        fixture_feature_names,
+        fixture_target,
         TargetType.CLASSIFICATION,
-        categories={"categorical": test_categories},
+        categories={
+            "categorical_strs": fixture_categories_strs,
+            "categorical_ints": fixture_categories_ints,
+        },
     )
-    categorical_config = pipeline.feature_configs["categorical"]
-    assert categorical_config.name == "categorical"
-    assert categorical_config.type == FeatureType.CATEGORICAL
-    assert categorical_config.categories == test_categories
+    categorical_strs_config = pipeline.feature_configs["categorical_strs"]
+    assert categorical_strs_config.name == "categorical_strs"
+    assert categorical_strs_config.type == FeatureType.CATEGORICAL
+    assert categorical_strs_config.categories == fixture_categories_strs
+    categorical_ints_config = pipeline.feature_configs["categorical_ints"]
+    assert categorical_ints_config.name == "categorical_ints"
+    assert categorical_ints_config.type == FeatureType.CATEGORICAL
+    assert categorical_ints_config.categories == fixture_categories_ints
 
 
 @pytest.mark.parametrize(
@@ -82,8 +86,8 @@ def test_init_with_categories(
     ],
 )
 def test_init_from_config(
-    test_target: fixture_test_target,
-    test_feature_configs: fixture_test_feature_configs,
+    fixture_target,
+    fixture_feature_configs,
     target_type,
     metric,
     shuffle_data,
@@ -93,10 +97,10 @@ def test_init_from_config(
     """Tests pipeline initialization from a `PipelineConfig` instance."""
     pipeline_config = PipelineConfig(
         id=0,
-        target=test_target,
+        target=fixture_target,
         target_type=target_type,
         primary_metric=metric,
-        feature_configs=test_feature_configs,
+        feature_configs=fixture_feature_configs,
         shuffle_data=shuffle_data,
         drop_empty_percentage=drop_empty_percentage,
         dataset_split=dataset_split,
@@ -104,47 +108,53 @@ def test_init_from_config(
     name = "test_pipeline"
     pipeline = Pipeline.from_config(pipeline_config, name=name)
     assert pipeline.name == name
-    assert pipeline.target == test_target
+    assert pipeline.target == fixture_target
     assert pipeline.target_type == target_type
     assert pipeline.primary_metric == metric
-    assert pipeline.feature_configs == test_feature_configs
+    assert pipeline.feature_configs == fixture_feature_configs
     assert pipeline.shuffle_data == shuffle_data
     assert pipeline.drop_empty_percentage == drop_empty_percentage
     assert pipeline.dataset_split == dataset_split
 
 
 def test_prepare(
-    test_data: fixture_test_data,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
-    test_categories: fixture_test_target,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
+    fixture_categories_strs,
 ):
     """Tests the pipeline prepare function."""
     pipeline = Pipeline(
-        test_feature_names, test_target, target_type=TargetType.CLASSIFICATION
+        fixture_feature_names, fixture_target, target_type=TargetType.CLASSIFICATION
     )
     # We set shuffle to false to ensure the data is split in the same way.
     pipeline.shuffle_data = False
     pipeline.dataset_split.train = 80
     pipeline.dataset_split.val = 10
     pipeline.dataset_split.test = 10
-    dataset, pipeline_config = pipeline.prepare(test_data)
+    dataset, pipeline_config = pipeline.prepare(fixture_data)
     assert pipeline_config.id == 0
-    categorical_config = pipeline_config.feature_configs["categorical"]
-    assert categorical_config.name == "categorical"
-    assert categorical_config.type == FeatureType.CATEGORICAL
-    assert categorical_config.categories == test_categories
+    categorical_strs_config = pipeline_config.feature_configs["categorical_strs"]
+    assert categorical_strs_config.name == "categorical_strs"
+    assert categorical_strs_config.type == FeatureType.CATEGORICAL
+    assert categorical_strs_config.categories == fixture_categories_strs
+    categorical_ints_config = pipeline_config.feature_configs["categorical_ints"]
+    assert categorical_ints_config.name == "categorical_ints"
+    # Note: integer categories will be detected as numerical if not specified.
+    assert categorical_ints_config.type == FeatureType.NUMERICAL
     assert dataset.id == 0
     assert dataset.pipeline_config_id == pipeline_config.id
-    num_examples = len(test_data)
+    num_examples = len(fixture_data)
     num_training_examples = int(num_examples * pipeline.dataset_split.train / 100)
     num_val_examples = int(num_examples * pipeline.dataset_split.val / 100)
-    assert dataset.prepared_data.train.equals(test_data.iloc[:num_training_examples])
+    assert dataset.prepared_data.train.equals(fixture_data.iloc[:num_training_examples])
     assert dataset.prepared_data.val.equals(
-        test_data.iloc[num_training_examples : num_training_examples + num_val_examples]
+        fixture_data.iloc[
+            num_training_examples : num_training_examples + num_val_examples
+        ]
     )
     assert dataset.prepared_data.test.equals(
-        test_data.iloc[num_training_examples + num_val_examples :]
+        fixture_data.iloc[num_training_examples + num_val_examples :]
     )
 
 
@@ -156,18 +166,18 @@ def test_prepare(
     ],
 )
 def test_train_calibrated_linear_model(
-    test_data,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
     target_type,
 ):
     """Tests pipeline training for calibrated linear regression model."""
-    pipeline = Pipeline(test_feature_names, test_target, target_type)
+    pipeline = Pipeline(fixture_feature_names, fixture_target, target_type)
     pipeline.shuffle_data = False
     pipeline.dataset_split.train = 60
     pipeline.dataset_split.val = 20
     pipeline.dataset_split.test = 20
-    trained_model = pipeline.train(test_data)
+    trained_model = pipeline.train(fixture_data)
     assert len(pipeline.configs) == 1
     assert len(pipeline.datasets) == 1
     assert trained_model
@@ -178,14 +188,16 @@ def test_train_calibrated_linear_model(
 
 
 def test_pipeline_save_load(
-    test_data: fixture_test_data,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
     tmp_path,
 ):
     """Tests that an instance of `Pipeline` can be successfully saved and loaded."""
-    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
-    _ = pipeline.train(test_data)
+    pipeline = Pipeline(
+        fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
+    )
+    _ = pipeline.train(fixture_data)
     pipeline.save(tmp_path)
     loaded_pipeline = Pipeline.load(tmp_path)
     assert isinstance(loaded_pipeline, Pipeline)
@@ -209,11 +221,13 @@ def test_pipeline_save_load(
 )
 def test_publish(
     post_pipeline,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
+    fixture_feature_names,
+    fixture_target,
 ):
     """Tests that a pipeline can be published to the API."""
-    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
+    pipeline = Pipeline(
+        fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
+    )
     pipeline_uuid = pipeline.publish()
     post_pipeline.assert_called_once()
     assert pipeline_uuid == "test_pipeline_id"
@@ -243,13 +257,15 @@ def test_analysis(
     post_pipeline_feature_configs,
     post_trained_model_analysis,
     upload_model,
-    test_data,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
 ):
     """Tests that pipeline analysis works as expected."""
-    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
-    trained_model = pipeline.train(test_data)
+    pipeline = Pipeline(
+        fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
+    )
+    trained_model = pipeline.train(fixture_data)
     analysis_response = pipeline.analysis(trained_model)
 
     get_api_key.assert_called()
@@ -279,13 +295,15 @@ def test_analysis(
 def test_run_inference(
     get_api_key,
     post_inference,
-    test_data: fixture_test_data,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
 ):
     """Tests that a pipeline can run inference on a dataset."""
-    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
-    trained_model = pipeline.train(test_data)
+    pipeline = Pipeline(
+        fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
+    )
+    trained_model = pipeline.train(fixture_data)
     trained_model.uuid = "test_uuid"
 
     pipeline.inference("/tmp/data.csv", trained_model.uuid)
@@ -306,13 +324,15 @@ def test_run_inference(
 def test_await_inference_results(
     get_inference_status,
     get_inference_results,
-    test_data: fixture_test_data,
-    test_feature_names: fixture_test_feature_names,
-    test_target: fixture_test_target,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
 ):
     """Tests that a pipeline can await inference results."""
-    pipeline = Pipeline(test_feature_names, test_target, TargetType.CLASSIFICATION)
-    pipeline.train(test_data)
+    pipeline = Pipeline(
+        fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
+    )
+    pipeline.train(fixture_data)
 
     pipeline.await_inference("test_uuid", "/tmp/predictions")
     get_inference_status.assert_called_with("test_uuid")
