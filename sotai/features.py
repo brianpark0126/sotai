@@ -126,7 +126,7 @@ class CategoricalFeature(_Feature):
     def __init__(
         self,
         feature_name: str,
-        categories: Union[List[str], List[int]],
+        categories: Union[List[int], List[str]],
         missing_input_value: Optional[float] = None,
         monotonicity_pairs: Optional[List[Tuple[str, str]]] = None,
     ) -> None:

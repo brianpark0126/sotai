@@ -13,25 +13,14 @@ from sotai.api import (
 )
 from sotai.constants import SOTAI_API_ENDPOINT, SOTAI_BASE_URL
 
-from .fixtures import (  # pylint: disable=unused-import
-    fixture_test_categories,
-    fixture_test_data,
-    fixture_test_feature_names,
-    fixture_test_pipeline,
-    fixture_test_pipeline_config,
-    fixture_test_target,
-    fixture_test_trained_model,
-)
 from .utils import MockResponse
 
 
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_post_pipeline(
-    mock_get_api_key, mock_post, test_pipeline: fixture_test_pipeline
-):
+def test_post_pipeline(mock_get_api_key, mock_post, fixture_pipeline):
     """Tests that a pipeline is posted correctly.""" ""
-    pipeline_response = post_pipeline(test_pipeline)
+    pipeline_response = post_pipeline(fixture_pipeline)
 
     mock_post.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines",
@@ -52,11 +41,11 @@ def test_post_pipeline(
 
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_post_pipeline_config(
-    mock_get_api_key, mock_post, test_pipeline_config: fixture_test_pipeline_config
-):
+def test_post_pipeline_config(mock_get_api_key, mock_post, fixture_pipeline_config):
     """Tests that a pipeline config is posted correctly."""
-    pipeline_config_response = post_pipeline_config("test_uuid", test_pipeline_config)
+    pipeline_config_response = post_pipeline_config(
+        "test_uuid", fixture_pipeline_config
+    )
 
     mock_post.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/test_uuid/pipeline-configs",
@@ -77,11 +66,15 @@ def test_post_pipeline_config(
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
 def test_post_feature_configs(
-    mock_get_api_key, mock_post, test_pipeline_config: fixture_test_pipeline_config
+    mock_get_api_key,
+    mock_post,
+    fixture_pipeline_config,
+    fixture_categories_strs,
+    fixture_categories_ints,
 ):
     """Tests that feature configs are posted correctly."""
     pipeline_config_response = post_pipeline_feature_configs(
-        "test_uuid", test_pipeline_config.feature_configs
+        "test_uuid", fixture_pipeline_config.feature_configs
     )
 
     mock_post.assert_called_with(
@@ -96,9 +89,14 @@ def test_post_feature_configs(
                 "input_keypoints_type": "fixed",
             },
             {
-                "feature_name": "categorical",
+                "feature_name": "categorical_strs",
                 "feature_type": "categorical",
-                "categories_str": ["a", "b", "c", "d"],
+                "categories_str": fixture_categories_strs,
+            },
+            {
+                "feature_name": "categorical_ints",
+                "feature_type": "categorical",
+                "categories_int": fixture_categories_ints,
             },
         ],
         headers={"sotai-api-key": "test_api_key"},
@@ -112,11 +110,11 @@ def test_post_feature_configs(
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
 def test_post_trained_model_analysis(
-    mock_get_api_key, mock_post, test_trained_model: fixture_test_trained_model
+    mock_get_api_key, mock_post, fixture_trained_model
 ):
     """Tests that a trained model is posted correctly."""
 
-    post_trained_model_analysis("test_uuid", test_trained_model)
+    post_trained_model_analysis("test_uuid", fixture_trained_model)
 
     mock_post.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-configs/test_uuid/analysis",

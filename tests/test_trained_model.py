@@ -1,54 +1,42 @@
 """Tests for Trained Model."""
 
 import numpy as np
-
 from sotai import TargetType, TrainedModel
 from sotai.models import CalibratedLinear
 
-from .fixtures import (  # pylint: disable=unused-import
-    fixture_test_categories,
-    fixture_test_data,
-    fixture_test_feature_configs,
-    fixture_test_feature_names,
-    fixture_test_target,
-)
 from .utils import construct_trained_model
 
 
-def test_trained_classification_model_predict(
-    test_data: fixture_test_data, test_feature_configs: fixture_test_feature_configs
-):
+def test_trained_classification_model_predict(fixture_data, fixture_feature_configs):
     """Tests the predict function on a trained model."""
     trained_model = construct_trained_model(
-        TargetType.CLASSIFICATION, test_data, test_feature_configs
+        TargetType.CLASSIFICATION, fixture_data, fixture_feature_configs
     )
-    predictions, probabilities = trained_model.predict(test_data)
+    predictions, probabilities = trained_model.predict(fixture_data)
     assert isinstance(predictions, np.ndarray)
-    assert len(predictions) == len(test_data)
+    assert len(predictions) == len(fixture_data)
     assert isinstance(probabilities, np.ndarray)
-    assert len(probabilities) == len(test_data)
+    assert len(probabilities) == len(fixture_data)
 
 
-def test_trained_regression_model_predict(
-    test_data: fixture_test_data, test_feature_configs: fixture_test_feature_configs
-):
+def test_trained_regression_model_predict(fixture_data, fixture_feature_configs):
     """Tests the predict function on a trained model."""
     trained_model = construct_trained_model(
-        TargetType.REGRESSION, test_data, test_feature_configs
+        TargetType.REGRESSION, fixture_data, fixture_feature_configs
     )
-    predictions, _ = trained_model.predict(test_data)
+    predictions, _ = trained_model.predict(fixture_data)
     assert isinstance(predictions, np.ndarray)
-    assert len(predictions) == len(test_data)
+    assert len(predictions) == len(fixture_data)
 
 
 def test_trained_model_save_load(
-    test_data: fixture_test_data,
-    test_feature_configs: fixture_test_feature_configs,
+    fixture_data,
+    fixture_feature_configs,
     tmp_path,
 ):
     """Tests that a `TrainedModel` can be successfully saved and then loaded."""
     trained_model = construct_trained_model(
-        TargetType.CLASSIFICATION, test_data, test_feature_configs
+        TargetType.CLASSIFICATION, fixture_data, fixture_feature_configs
     )
     trained_model.save(tmp_path)
     loaded_trained_model = TrainedModel.load(tmp_path)

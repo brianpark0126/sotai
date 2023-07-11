@@ -1,4 +1,5 @@
 """Fixtures to help with testing."""
+# pylint: disable=redefined-outer-name
 from typing import Dict, Union
 
 import numpy as np
@@ -20,92 +21,116 @@ from sotai.models import CalibratedLinear
 from sotai.types import FeatureAnalysis, FeatureType, LinearConfig, LossType
 
 
-@pytest.fixture(name="test_target")
-def fixture_test_target():
+@pytest.fixture(scope="session")
+def fixture_target():
     """Returns a test target."""
     return "target"
 
 
-@pytest.fixture(name="test_categories")
-def fixture_test_categories():
-    """Returns a list of test categories."""
+@pytest.fixture(scope="session")
+def fixture_categories_strs():
+    """Returns a list of test string categories."""
     return ["a", "b", "c", "d"]
 
 
-@pytest.fixture(name="test_data")
-def fixture_test_data(test_categories, test_target):
+@pytest.fixture(scope="session")
+def fixture_categories_ints():
+    """Returns of a list of test integer categories."""
+    return [0, 1, 2, 3]
+
+
+@pytest.fixture(scope="function")
+def fixture_data(
+    fixture_categories_strs,
+    fixture_categories_ints,
+    fixture_target,
+):
     """Returns a test dataset."""
     return pd.DataFrame(
         {
             "numerical": np.random.rand(100),
-            "categorical": np.random.choice(test_categories, 100),
-            test_target: np.random.randint(0, 2, 100),
+            "categorical_strs": np.random.choice(fixture_categories_strs, 100),
+            "categorical_ints": np.random.choice(fixture_categories_ints, 100),
+            fixture_target: np.random.randint(0, 2, 100),
         }
     )
 
 
-@pytest.fixture(name="test_feature_names")
-def fixture_test_feature_names(test_data, test_target):
+@pytest.fixture(scope="function")
+def fixture_feature_names(fixture_data, fixture_target):
     """Returns a list of test feature names."""
-    return test_data.columns.drop(test_target).to_list()
+    return fixture_data.columns.drop(fixture_target).to_list()
 
 
-@pytest.fixture(name="test_feature_configs")
-def fixture_test_feature_configs(
-    test_categories,
+@pytest.fixture(scope="session")
+def fixture_feature_configs(
+    fixture_categories_strs,
+    fixture_categories_ints,
 ) -> Dict[str, Union[NumericalFeatureConfig, CategoricalFeatureConfig]]:
     """Returns a list of test features."""
     return {
         "numerical": NumericalFeatureConfig(name="numerical"),
-        "categorical": CategoricalFeatureConfig(
-            name="categorical", categories=test_categories
+        "categorical_strs": CategoricalFeatureConfig(
+            name="categorical_strs", categories=fixture_categories_strs
+        ),
+        "categorical_ints": CategoricalFeatureConfig(
+            name="categorical_ints", categories=fixture_categories_ints
         ),
     }
 
 
-@pytest.fixture(name="test_pipeline")
-def fixture_test_pipeline(
-    test_target: fixture_test_target,
-    test_feature_names: fixture_test_feature_names,
-    test_categories: fixture_test_categories,
+@pytest.fixture(scope="function")
+def fixture_pipeline(
+    fixture_target,
+    fixture_feature_names,
+    fixture_categories_strs,
+    fixture_categories_ints,
 ) -> Pipeline:
-
     """Returns a list of test features."""
     return Pipeline(
-        test_feature_names,
-        test_target,
+        fixture_feature_names,
+        fixture_target,
         TargetType.CLASSIFICATION,
-        categories={"categorical": test_categories},
+        categories={
+            "categorical_strs": fixture_categories_strs,
+            "categorical_ints": fixture_categories_ints,
+        },
     )
 
 
-@pytest.fixture(name="test_pipeline_config")
-def fixture_test_pipeline_config() -> PipelineConfig:
+@pytest.fixture(scope="function")
+def fixture_pipeline_config(
+    fixture_target,
+    fixture_categories_strs,
+    fixture_categories_ints,
+) -> PipelineConfig:
     """Returns a pipeline config that can be used for testing"""
     pipeline_config = PipelineConfig(
         id=1,
         shuffle_data=False,
         drop_empty_percentage=80,
         dataset_split={"train": 60, "val": 20, "test": 20},
-        target="target",
+        target=fixture_target,
         target_type="classification",
         primary_metric="auc",
         feature_configs={
             "numerical": NumericalFeatureConfig(
                 name="numerical", monotonicity="increasing"
             ),
-            "categorical": CategoricalFeatureConfig(
-                name="categorical", categories=["a", "b", "c", "d"]
+            "categorical_strs": CategoricalFeatureConfig(
+                name="categorical_strs", categories=fixture_categories_strs
+            ),
+            "categorical_ints": CategoricalFeatureConfig(
+                name="categorical_ints", categories=fixture_categories_ints
             ),
         },
     )
     return pipeline_config
 
 
-@pytest.fixture(name="test_trained_model")
-def fixture_test_trained_model(test_pipeline_config) -> TrainedModel:
+@pytest.fixture(scope="function")
+def fixture_trained_model(fixture_pipeline_config) -> TrainedModel:
     """Returns a trained model that can be used for testing."""
-
     trained_model = TrainedModel(
         dataset_id=1,
         model=CalibratedLinear(
@@ -116,7 +141,7 @@ def fixture_test_trained_model(test_pipeline_config) -> TrainedModel:
         model_config=LinearConfig(
             use_bias=True,
         ),
-        pipeline_config=test_pipeline_config,
+        pipeline_config=fixture_pipeline_config,
         training_config=TrainingConfig(
             loss_type=LossType.MSE,
             epochs=100,
