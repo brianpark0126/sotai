@@ -278,7 +278,7 @@ def post_trained_model(trained_model_path: str, trained_model_uuid: str) -> APIS
         response = requests.post(
             f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/models",
             files={"file": data_file},
-            data={"trained_model_uuid": trained_model_uuid},
+            data={"trained_model_metadata_uuid": trained_model_uuid},
             headers=get_auth_headers(),
             timeout=SOTAI_API_TIMEOUT,
         )
@@ -308,7 +308,7 @@ def post_inference(
         response = requests.post(
             f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences",
             files={"file": data_file},
-            data={"trained_model_uuid": trained_model_uuid},
+            data={"trained_model_metadata_uuid": trained_model_uuid},
             headers=get_auth_headers(),
             timeout=SOTAI_API_TIMEOUT,
         )

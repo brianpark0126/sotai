@@ -187,7 +187,7 @@ def test_post_trained_model(
     mock_post.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/models",
         files={"file": "data"},
-        data={"trained_model_uuid": "test_uuid"},
+        data={"trained_model_metadata_uuid": "test_uuid"},
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
     )
@@ -214,7 +214,7 @@ def test_post_inferencel(
     mock_post.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences",
         files={"file": "data"},
-        data={"trained_model_uuid": "test_uuid"},
+        data={"trained_model_metadata_uuid": "test_uuid"},
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
     )
