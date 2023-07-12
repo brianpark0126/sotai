@@ -53,8 +53,9 @@ class TrainedModel(BaseModel):
                 training the model to be used.
 
         Returns:
-            A tuple containing an array of predictions and an array of logits. If the
-            target type is regression, then logits will be None.
+            A tuple containing an array of predictions and an array of probabilities.
+            If the target type is regression, then logits will be None. If the target
+            type is classification, then the predictions will be logits.
         """
         data = data.loc[:, list(self.pipeline_config.feature_configs.keys())]
         data = replace_missing_values(data, self.pipeline_config.feature_configs)
