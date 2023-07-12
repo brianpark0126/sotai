@@ -202,18 +202,26 @@ def extract_feature_analyses(
             keypoints_inputs = feature_config.categories + [MISSING_CATEGORY_VALUE]
             keypoints_inputs_categorical = [str(ki) for ki in keypoints_inputs]
 
-        feature_analyses[feature_name] = FeatureAnalysis(
-            feature_name=feature_name,
-            feature_type=feature_config.type,
-            min=float(np.min(data[feature_name].values)),
-            max=float(np.max(data[feature_name].values)),
-            mean=float(np.mean(data[feature_name].values)),
-            median=float(np.median(data[feature_name].values)),
-            std=float(np.std(data[feature_name].values)),
-            keypoints_inputs_numerical=keypoints_inputs_numerical,
-            keypoints_inputs_categorical=keypoints_inputs_categorical,
-            keypoints_outputs=[float(x) for x in calibrator.keypoints_outputs()],
-        )
+        fa_dict = {
+            "feature_name": feature_name,
+            "feature_type": feature_config.type,
+            "keypoints_inputs_numerical": keypoints_inputs_numerical,
+            "keypoints_inputs_categorical": keypoints_inputs_categorical,
+            "keypoints_outputs": [float(x) for x in calibrator.keypoints_outputs()],
+        }
+
+        if feature_config.type == FeatureType.NUMERICAL:
+            fa_dict.update(
+                {
+                    "min": float(np.min(data[feature_name].values)),
+                    "max": float(np.max(data[feature_name].values)),
+                    "mean": float(np.mean(data[feature_name].values)),
+                    "median": float(np.median(data[feature_name].values)),
+                    "std": float(np.std(data[feature_name].values)),
+                }
+            )
+
+        feature_analyses[feature_name] = FeatureAnalysis(**fa_dict)
 
     return feature_analyses
 

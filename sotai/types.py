@@ -145,11 +145,11 @@ class FeatureAnalysis(BaseModel):
 
     feature_name: str = Field(...)
     feature_type: FeatureType = Field(...)
-    min: float = Field(...)
-    max: float = Field(...)
-    mean: float = Field(...)
-    median: float = Field(...)
-    std: float = Field(...)
+    min: Optional[float] = None
+    max: Optional[float] = None
+    mean: Optional[float] = None
+    median: Optional[float] = None
+    std: Optional[float] = None
     # One of the keypoint inputs must exist, which one depends on feature_type.
     keypoints_inputs_numerical: Optional[List[float]] = Field(...)
     keypoints_inputs_categorical: Optional[List[str]] = Field(...)
