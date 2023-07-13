@@ -3,7 +3,7 @@
 <a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 # <kbd>module</kbd> `sotai.enums`
-Enum Classes for SOTAI SDK 
+Enum Classes for SOTAI SDK. 
 
 
 
@@ -137,7 +137,9 @@ Type of monotonicity constraint.
 <a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L121"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `APIStatus`
-Status of API 
+Status of API. 
+
+
 - SUCCESS: API call was successful 
 - ERROR: API call was unsuccessful 
 
@@ -147,10 +149,10 @@ Status of API
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L131"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `InferenceConfigStatus`
-Enum for InferenceConfig status 
+Enum for InferenceConfig status. 
 
 
 

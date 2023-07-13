@@ -10,9 +10,7 @@ To construct a calibrated model, create the calibrated model configuration and p
 
 
 **Example:**
- 
-
-```python
+ ```python
 feature_configs = [...]
 linear_config = CalibratedLinearConfig(feature_configs, ...)
 linear_model = CalibratedLinear(linear_config)
@@ -22,7 +20,7 @@ linear_model = CalibratedLinear(linear_config)
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L37"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L36"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `NumericalFeature`
 Feature configuration for numerical features. 
@@ -35,7 +33,7 @@ Feature configuration for numerical features.
  - <b>`feature_type`</b>:  The type of this feature. Always `FeatureType.NUMERICAL`. 
  - <b>`input_keypoints`</b>:  The input keypoints used for this feature's calibrator. These  keypoints will be initialized using the given `data` under the desired  `input_keypoints_init` scheme. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L48"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L47"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -76,7 +74,7 @@ Initializes a `NumericalFeatureConfig` instance.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L114"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L113"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CategoricalFeature`
 Feature configuration for categorical features. 
@@ -90,7 +88,7 @@ Feature configuration for categorical features.
  - <b>`category_indices`</b>:  A dictionary mapping string categories to their index. 
  - <b>`monotonicity_index_pairs`</b>:  A conversion of `monotonicity_pairs` from string  categories to category indices. Only available if `monotonicity_pairs` are  provided. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L126"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L125"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 

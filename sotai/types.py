@@ -52,6 +52,8 @@ class PreparedData(BaseModel):
     test: pd.DataFrame = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        """Standard Pydantic BaseModel Config."""
+
         arbitrary_types_allowed = True
 
 
@@ -68,6 +70,8 @@ class Dataset(BaseModel):
     prepared_data: PreparedData = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        """Standard Pydantic BaseModel Config."""
+
         arbitrary_types_allowed = True
 
 

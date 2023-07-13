@@ -87,7 +87,7 @@ If you would like to analyze the results for a trained model without uploading i
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L361"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L360"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `await_inference`
 
@@ -111,7 +111,7 @@ Polls the SOTAI cloud for the results of the specified inference job.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L428"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L427"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_config`
 
@@ -131,7 +131,7 @@ Returns a new pipeline created from the specified config.
 inference(filepath: 'str', trained_model_uuid: 'str') → Optional[str]
 ```
 
-Runs inference on the specified dataset using the specified trained model in the SOTAI cloud. 
+Runs inference on a dataset with a trained model in the SOTAI cloud. 
 
 
 
@@ -147,7 +147,7 @@ Runs inference on the specified dataset using the specified trained model in the
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L411"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L410"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `load`
 
@@ -216,7 +216,7 @@ Uploads the pipeline to the SOTAI web client.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L397"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L396"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `save`
 

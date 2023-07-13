@@ -36,7 +36,7 @@ Returns a list of PyTorch Calibrated feature configs.
 create_loss(loss_type: LossType) → Module
 ```
 
-returns a Torch loss function from the given `LossType`. 
+Returns a Torch loss function from the given `LossType`. 
 
 
 ---

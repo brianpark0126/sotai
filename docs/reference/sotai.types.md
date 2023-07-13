@@ -59,7 +59,7 @@ A train, val, and test set of data that's been cleaned.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L58"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L60"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `Dataset`
 A class for managing data. 
@@ -77,7 +77,7 @@ A class for managing data.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L102"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L106"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `LinearConfig`
 Configuration for a calibrated linear model. 
@@ -94,7 +94,7 @@ Configuration for a calibrated linear model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L112"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L116"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `TrainingConfig`
 Configuration for training a single model. 
@@ -114,7 +114,7 @@ Configuration for training a single model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L128"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `FeatureAnalysis`
 Feature analysis results for a single feature of a trained model. 
@@ -140,7 +140,7 @@ Feature analysis results for a single feature of a trained model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L159"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L163"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `TrainingResults`
 Training results for a single calibrated model. 
@@ -166,7 +166,7 @@ Training results for a single calibrated model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L193"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L197"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `NumericalFeatureConfig`
 Configuration for a numerical feature. 
@@ -188,7 +188,7 @@ Configuration for a numerical feature.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L213"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L217"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CategoricalFeatureConfig`
 Configuration for a categorical feature. 
@@ -201,7 +201,7 @@ Configuration for a categorical feature.
  - <b>`type`</b>:  The type of the feature. Always `FeatureType.CATEGORICAL`. 
  - <b>`categories`</b>:  The categories for the feature. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L227"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L231"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -219,7 +219,7 @@ __init__(**kwargs)
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L231"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L235"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `PipelineConfig`
 A configuration object for a `Pipeline`. 

@@ -19,9 +19,7 @@ This model is a container for a trained calibrated model that provides useful me
 
 
 **Example:**
- 
-
-```python
+ ```python
 data = pd.read_csv("data.csv")
 predictions = trained_model.predict(data)
 trained_model.analyze()
@@ -32,7 +30,7 @@ trained_model.analyze()
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L89"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L90"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `load`
 
@@ -55,7 +53,7 @@ Loads a trained model from the specified filepath.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L48"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L49"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `predict`
 
@@ -78,7 +76,7 @@ Returns predictions for the given data.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L73"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L74"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `save`
 

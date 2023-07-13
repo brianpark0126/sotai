@@ -4,7 +4,6 @@ To construct a calibrated model, create the calibrated model configuration and p
 in to the corresponding calibrated model constructor.
 
 Example:
-
 ```python
 feature_configs = [...]
 linear_config = CalibratedLinearConfig(feature_configs, ...)

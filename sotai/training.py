@@ -66,7 +66,7 @@ def create_features(
 
 
 def create_loss(loss_type: LossType) -> torch.nn.Module:
-    """returns a Torch loss function from the given `LossType`."""
+    """Returns a Torch loss function from the given `LossType`."""
     if loss_type == LossType.BINARY_CROSSENTROPY:
         return torch.nn.BCEWithLogitsLoss()
     if loss_type == LossType.HINGE:

@@ -334,8 +334,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         filepath: str,
         trained_model_uuid: str,
     ) -> Optional[str]:
-        """Runs inference on the specified dataset using the specified trained model
-        in the SOTAI cloud.
+        """Runs inference on a dataset with a trained model in the SOTAI cloud.
 
         Args:
             inference_dataset_path: The path to the dataset to run inference on.
@@ -496,11 +495,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self,
         trained_model: TrainedModel,
     ) -> APIStatus:
-        """Uploads the trained model to the SOTAI web client. If a model has already
-        been uploaded, this function will return without uploading the model again.
+        """Uploads the trained model to the SOTAI web client.
 
-        This function requires an internet connection and a SOTAI account. The trained
-        model will be uploaded to the SOTAI web client for inference.
+        If a model has already been uploaded, this function will return without
+        uploading the model again. This function requires an internet connection and a
+        SOTAI account. The trained model will be uploaded to the SOTAI web client for
+        inference.
 
         Args:
             trained_model: The trained model to upload.

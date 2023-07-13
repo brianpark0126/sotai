@@ -1,4 +1,4 @@
-"""Enum Classes for SOTAI SDK"""
+"""Enum Classes for SOTAI SDK."""
 from enum import Enum, EnumMeta
 from typing import Any
 
@@ -14,7 +14,7 @@ class _Metaclass(EnumMeta):
 
 
 class _Enum(str, Enum, metaclass=_Metaclass):
-    """Base Enum Class"""
+    """Base Enum Class."""
 
 
 class TargetType(_Enum):
@@ -119,7 +119,8 @@ class Monotonicity(_Enum):
 
 
 class APIStatus(_Enum):
-    """Status of API
+    """Status of API.
+
     - SUCCESS: API call was successful
     - ERROR: API call was unsuccessful
     """
@@ -129,7 +130,7 @@ class APIStatus(_Enum):
 
 
 class InferenceConfigStatus(_Enum):
-    """Enum for InferenceConfig status"""
+    """Enum for InferenceConfig status."""
 
     FAILED = "failed"
     INITIALIZING = "initializing"
