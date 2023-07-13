@@ -104,7 +104,7 @@ def fixture_pipeline_config(
     fixture_categories_strs,
     fixture_categories_ints,
 ) -> PipelineConfig:
-    """Returns a pipeline config that can be used for testing"""
+    """Returns a pipeline config that can be used for testing."""
     pipeline_config = PipelineConfig(
         id=1,
         shuffle_data=False,

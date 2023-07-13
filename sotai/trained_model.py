@@ -24,7 +24,6 @@ class TrainedModel(BaseModel):
     the `train` method of a `Pipeline` instance.
 
     Example:
-
     ```python
     data = pd.read_csv("data.csv")
     predictions = trained_model.predict(data)
@@ -43,6 +42,8 @@ class TrainedModel(BaseModel):
     analysis_url: Optional[str] = None
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        """Standard Pydantic BaseModel Config."""
+
         arbitrary_types_allowed = True
 
     def predict(self, data: pd.DataFrame) -> Tuple[np.ndarray, Optional[np.ndarray]]:
