@@ -2,6 +2,7 @@ black==23.1.0
 build==0.10.0
 graphlib-backport==1.0.3
 jupyter==1.0.0
+lazydocs==0.4.8
 llvmlite==0.39.1
 numpy==1.23.5
 pandas==1.5.3
