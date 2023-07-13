@@ -10,7 +10,7 @@
   - [Data](reference/sotai.data.md)
   - [Enums](reference/sotai.enums.md)
   - [Features](reference/sotai.features.md)
-  - [Layers](reference/sotai.api.md)
+  - [Layers](reference/sotai.layers.md)
     - [Categorical Calibrator](reference/sotai.layers.categorical_calibrator.md)
     - [Linear](reference/sotai.layers.linear.md)
     - [Numerical Calibrator](reference/sotai.layers.numerical_calibrator.md)
