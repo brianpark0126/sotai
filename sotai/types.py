@@ -52,6 +52,8 @@ class PreparedData(BaseModel):
     test: pd.DataFrame = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        """Standard Pydantic BaseModel Config."""
+
         arbitrary_types_allowed = True
 
 
@@ -59,6 +61,7 @@ class Dataset(BaseModel):
     """A class for managing data.
 
     Attributes:
+        id: The ID of the dataset used by the pipeline that prepared it.
         pipeline_config_id: The ID of the pipeline config used to create this dataset.
         prepared_data: The prepared data ready for training.
     """
@@ -68,6 +71,8 @@ class Dataset(BaseModel):
     prepared_data: PreparedData = Field(...)
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
+        """Standard Pydantic BaseModel Config."""
+
         arbitrary_types_allowed = True
 
 
@@ -86,7 +91,6 @@ class _BaseModelConfig(BaseModel):
             keypoints.
         output_calibration_input_keypoints_type: The type of output calibrator input
             keypoints.
-        advanced_options: Advanced options for the model.
     """
 
     output_min: Optional[float] = None
@@ -137,9 +141,9 @@ class FeatureAnalysis(BaseModel):
         median: The median value of the feature.
         std: The standard deviation of the feature.
         keypoints_inputs_numerical: The input keypoints for the feature if the feature
-            is numerical.
+            is numerical. Otherwise this should be `None`.
         keypoints_inputs_categorical: The input keypoints for the feature if the feature
-            is categorical.
+            is categorical. Otherwise this should be `None`.
         keypoints_outputs: The output keypoints for each input keypoint.
     """
 
@@ -200,6 +204,8 @@ class NumericalFeatureConfig(BaseModel):
         input_keypoints_init: The method for initializing the input keypoints.
         input_keypoints_type: The type of input keypoints.
         monotonicity: The monotonicity constraint, if any.
+        projection_iterations: Number of times to run Dykstra's projection algorithm
+            when applying constraints.
     """
 
     name: str = Field(...)
@@ -208,6 +214,7 @@ class NumericalFeatureConfig(BaseModel):
     input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
     input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
     monotonicity: Monotonicity = Monotonicity.NONE
+    projection_iterations: int = 8
 
 
 class CategoricalFeatureConfig(BaseModel):

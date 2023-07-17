@@ -1,4 +1,4 @@
-"""Enum Classes for SOTAI SDK"""
+"""Enum Classes for SOTAI SDK."""
 from enum import Enum, EnumMeta
 from typing import Any
 
@@ -14,18 +14,29 @@ class _Metaclass(EnumMeta):
 
 
 class _Enum(str, Enum, metaclass=_Metaclass):
-    """Base Enum Class"""
+    """Base Enum Class."""
 
 
 class TargetType(_Enum):
-    """The type of target to predict."""
+    """The type of target to predict.
+
+    - CLASSIFICATION: classification target i.e. binary 0/1.
+    - REGRESSION: regression target i.e. continuous float.
+    """
 
     CLASSIFICATION = "classification"
     REGRESSION = "regression"
 
 
 class LossType(_Enum):
-    """The type of loss function to use."""
+    """The type of loss function to use.
+
+    - BINARY_CROSSENTROPY: binary cross entropy loss.
+    - HINGE: hinge loss.
+    - HUBER: huber loss.
+    - MAE: mean absolute error loss.
+    - MSE: mean squared error loss.
+    """
 
     BINARY_CROSSENTROPY = "binary"
     HINGE = "hinge"
@@ -35,7 +46,12 @@ class LossType(_Enum):
 
 
 class Metric(_Enum):
-    """The type of metric to use."""
+    """The type of metric to use.
+
+    - AUC: area under the ROC curve.
+    - MAE: mean absolute error.
+    - MSE: mean squared error.
+    """
 
     AUC = "auc"
     MAE = "mean_absolute_error"
@@ -58,7 +74,6 @@ class InputKeypointsType(_Enum):
     """The type of input keypoints to use.
 
     - FIXED: the input keypoints will be fixed during initialization.
-    - LEARNED: the input keypoints will be learned during training after initialization.
     """
 
     FIXED = "fixed"
@@ -119,7 +134,8 @@ class Monotonicity(_Enum):
 
 
 class APIStatus(_Enum):
-    """Status of API
+    """Status of API.
+
     - SUCCESS: API call was successful
     - ERROR: API call was unsuccessful
     """
@@ -129,7 +145,14 @@ class APIStatus(_Enum):
 
 
 class InferenceConfigStatus(_Enum):
-    """Enum for InferenceConfig status"""
+    """Enum for InferenceConfig status.
+
+    - FAILED: inference job failed.
+    - INITIALIZING: inference job is initializing.
+    - PREPARING: inference job is preparing to run.
+    - RUNNING: inference job is running.
+    - SUCCESS: inference job completed successfully.
+    """
 
     FAILED = "failed"
     INITIALIZING = "initializing"

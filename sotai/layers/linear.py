@@ -24,7 +24,6 @@ class Linear(torch.nn.Module):
         is true.
 
     Example:
-
     ```python
     input_dim = 3
     inputs = torch.tensor(...)  # shape: (batch_size, input_dim)

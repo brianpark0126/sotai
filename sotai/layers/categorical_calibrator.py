@@ -26,7 +26,6 @@ class CategoricalCalibrator(torch.nn.Module):
         kernel: `torch.nn.Parameter` that stores the categorical mapping weights.
 
     Example:
-
     ```python
     inputs = torch.tensor(...)  # shape: (batch_size, 1)
     calibrator = CategoricalCalibrator(
@@ -191,7 +190,7 @@ class CategoricalCalibrator(torch.nn.Module):
     ################################################################################
 
     def _approximately_project_monotonicity_pairs(self, kernel_data) -> torch.Tensor:
-        """Projects kernel such that
+        """Projects kernel such that the monotonicity pairs are satisfied.
 
         The kernel will be projected such that `kernel_data[i] <= kernel_data[j]`. This
         results in calibrated outputs that adhere to the desired constraints.
