@@ -71,7 +71,7 @@ The pipeline is initialized with a default config, which can be modified later. 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L267"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L266"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `analysis`
 
@@ -85,9 +85,20 @@ This function requires an internet connection and a SOTAI account. The trained m
 
 If you would like to analyze the results for a trained model without uploading it to the SOTAI web client, the data is available in `training_results`. 
 
+
+
+**Args:**
+ 
+ - <b>`trained_model`</b>:  The trained model to be analyzed. 
+
+
+
+**Returns:**
+ If the analysis was successfully run, the analysis URL. Otherwise `None`. 
+
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L360"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L365"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `await_inference`
 
@@ -107,11 +118,11 @@ Polls the SOTAI cloud for the results of the specified inference job.
 
 
 **Returns:**
- If the inference job was successfully run, the path to the inference results. 
+ If inference was successfully run, the path to the inference results. 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L427"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L432"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_config`
 
@@ -123,7 +134,7 @@ Returns a new pipeline created from the specified config.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L332"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L337"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `inference`
 
@@ -143,11 +154,11 @@ Runs inference on a dataset with a trained model in the SOTAI cloud.
 
 
 **Returns:**
- If UUID of the inference run, if unsuccessful, None. 
+ If UUID of the inference run. If unsuccessful, `None`. 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L410"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L415"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `load`
 
@@ -216,7 +227,7 @@ Uploads the pipeline to the SOTAI web client.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L396"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L401"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `save`
 

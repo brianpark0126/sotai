@@ -7,7 +7,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import requests
 
-from .constants import SOTAI_API_ENDPOINT, SOTAI_BASE_URL, SOTAI_API_TIMEOUT
+from .constants import SOTAI_API_ENDPOINT, SOTAI_API_TIMEOUT, SOTAI_BASE_URL
 from .enums import APIStatus, InferenceConfigStatus
 from .trained_model import TrainedModel
 from .types import (
@@ -28,34 +28,26 @@ def set_api_key(api_key: str):
 
 
 def get_api_key() -> str:
-    """Get the SOTAI API key from the environment variables.
-
-    Returns:
-        The API key retrieved from the environment variable.
-    """
+    """Returns the SOTAI API key from the environment variables."""
     return os.environ["SOTAI_API_KEY"]
 
 
 def get_auth_headers() -> Dict[str, str]:
-    """Get the authentication headers for a pipeline.
-
-    Returns:
-        The authentication headers.
-    """
+    """Returns the authentication headers for a pipeline."""
     return {
         "sotai-api-key": get_api_key(),
     }
 
 
 def post_pipeline(pipeline) -> Tuple[APIStatus, Optional[str]]:
-    """Create a new pipeline on the SOTAI API .
+    """Create a new pipeline on the SOTAI API.
 
     Args:
         pipeline: The pipeline to create.
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        pipeline. If unsuccessful, the UUID will be None.
+        pipeline. If unsuccessful, the UUID will be `None`.
     """
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines",
@@ -78,7 +70,7 @@ def post_pipeline(pipeline) -> Tuple[APIStatus, Optional[str]]:
 def post_pipeline_config(
     pipeline_uuid: str, pipeline_config: PipelineConfig
 ) -> Tuple[APIStatus, Optional[str]]:
-    """Create a new pipeline config on the SOTAI API .
+    """Create a new pipeline config on the SOTAI API.
 
     Args:
         pipeline_uuid: The pipeline uuid to create the pipeline config for.
@@ -86,7 +78,7 @@ def post_pipeline_config(
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        pipeline. If unsuccessful, the UUID will be None.
+        pipeline. If unsuccessful, the UUID will be `None`.
     """
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}/pipeline-configs",
@@ -112,7 +104,7 @@ def post_pipeline_feature_configs(
     pipeline_config_uuid: str,
     feature_configs: Dict[str, Union[CategoricalFeatureConfig, NumericalFeatureConfig]],
 ) -> APIStatus:
-    """Create a new pipeline feature configs on the SOTAI API .
+    """Create a new pipeline feature configs on the SOTAI API.
 
     Args:
         pipeline_config_uuid: The pipeline config uuid to create the pipeline
@@ -121,7 +113,6 @@ def post_pipeline_feature_configs(
 
     Returns:
         The status of the API call.
-
     """
     sotai_feature_configs = []
 
@@ -165,7 +156,7 @@ def post_pipeline_feature_configs(
 def post_trained_model_analysis(
     pipeline_config_uuid: str, trained_model: TrainedModel
 ) -> Tuple[APIStatus, Optional[Dict[str, str]]]:
-    """Create a new trained model analysis on the SOTAI API .
+    """Create a new trained model analysis on the SOTAI API.
 
     Args:
         pipeline_config_uuid: The pipeline config uuid to create the trained model
@@ -175,14 +166,13 @@ def post_trained_model_analysis(
     Returns:
         A tuple containing the status of the API call and a dict containing the UUIDs
         of the resources created as well as a link that can be used to view the trained
-        model analysis. If unsuccessful, the UUID will be None.
+        model analysis. If unsuccessful, the UUID will be `None`.
 
         Keys:
             - `trainedModelMetadataUUID`: The UUID of the trained model.
             - `modelConfigUUID`: The UUID of the model configuration.
             - `pipelineConfigUUID`: The UUID of the pipeline configuration.
             - `analysisURL`: The URL of the trained model analysis.
-
     """
     training_results = trained_model.training_results
     train_primary_metrics = training_results.train_primary_metric_by_epoch
@@ -260,7 +250,7 @@ def post_trained_model_analysis(
 
 
 def post_trained_model(trained_model_path: str, trained_model_uuid: str) -> APIStatus:
-    """Create a new trained model on the SOTAI API .
+    """Create a new trained model on the SOTAI API.
 
     Args:
         trained_model_path: The path to the trained model file to post.
@@ -323,15 +313,14 @@ def post_inference(
 def get_inference_status(
     inference_uuid: str,
 ) -> Tuple[APIStatus, Optional[InferenceConfigStatus]]:
-    """Get an inference from the SOTAI API .
+    """Get an inference from the SOTAI API.
 
     Args:
         inference_uuid: The UUID of the inference to get.
 
     Returns:
        A tuple containing the status of the API call and the status of the inference job
-       if the API call is successful. If unsuccessful, the UUID will be None.
-
+       if the API call is successful. If unsuccessful, the UUID will be `None`.
     """
     response = requests.get(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences/{inference_uuid}/status",
@@ -347,10 +336,10 @@ def get_inference_status(
 
 
 def get_inference_results(inference_uuid: str, download_folder: str) -> APIStatus:
-    """Get an inference from the SOTAI API .
+    """Get an inference from the SOTAI API.
 
     Args:
-        inference_uuid: The UUID of the inference to get.
+        inference_uuid: The UUID of the inference results to get.
 
     Returns:
         The status of the API call.

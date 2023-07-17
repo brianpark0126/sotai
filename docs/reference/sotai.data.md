@@ -26,9 +26,21 @@ replace_missing_values(
 Replaces empty values or unspecified categories with a constant value. 
 
 
+
+**Args:**
+ 
+    - data: The dataset in which to replace missing values. 
+    - feature_configs: A dictionary mapping feature names to feature configurations. 
+
+
+
+**Returns:**
+  The dataset with missing values replaced. 
+
+
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L43"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L51"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `determine_feature_types`
 
@@ -41,7 +53,7 @@ Returns a dictionary mapping feature name to type for the given data.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L57"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L65"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CSVData`
 Class for handling CSV data for calibrated modeling. 
@@ -59,9 +71,7 @@ Class for handling CSV data for calibrated modeling.
 
 
 **Example:**
- 
-
-```python
+ ```python
 csv_data = CSVData("path/to/data.csv")
 feature_configs = [
     NumericalFeatureConfig(
@@ -78,7 +88,7 @@ for examples, labels in csv_data.batch(64):
     training_step(...)
 ``` 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L88"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L95"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -101,7 +111,7 @@ Loads a CSV file if filepath is provided. Otherwise it will use the provided Dat
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L178"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L185"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `batch`
 
@@ -134,7 +144,7 @@ A generator that yields a tensor with `batch_size` examples.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L135"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/data.py#L142"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `prepare`
 

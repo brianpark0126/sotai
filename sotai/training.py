@@ -59,6 +59,7 @@ def create_features(
                     input_keypoints_init=feature_config.input_keypoints_init,
                     missing_input_value=MISSING_NUMERICAL_VALUE,
                     monotonicity=feature_config.monotonicity,
+                    projection_iterations=feature_config.projection_iterations,
                 )
             )
 
@@ -180,7 +181,7 @@ def extract_feature_analyses(
     """Extracts feature statistics and calibration weights for each feature.
 
     Args:
-        ptcm_model: A PyTorch Calibrated model.
+        model: A (pytorch) calibrated model.
         feature_configs: A mapping from feature name to feature config.
         data: The training + validation data for this model.
 

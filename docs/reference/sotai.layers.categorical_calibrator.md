@@ -28,9 +28,7 @@ This module takes an input of shape `(batch_size, 1)` and calibrates it by mappi
 
 
 **Example:**
- 
-
-```python
+ ```python
 inputs = torch.tensor(...)  # shape: (batch_size, 1)
 calibrator = CategoricalCalibrator(
     num_categories=5,
@@ -43,7 +41,7 @@ calibrator = CategoricalCalibrator(
 outputs = calibrator(inputs)
 ``` 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator.py#L45"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator.py#L44"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -83,7 +81,7 @@ Initializes an instance of `CategoricalCalibrator`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/constrain#L140"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/constrain#L139"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `constrain`
 
@@ -95,7 +93,7 @@ Projects kernel into desired constraints.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator.py#L122"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator.py#L121"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `forward`
 
@@ -118,7 +116,7 @@ Calibrates categorical inputs through a learned mapping.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_inputs#L158"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_inputs#L157"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_inputs`
 
@@ -130,7 +128,7 @@ Returns a tensor of keypoint inputs (category indices).
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_outputs#L171"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_outputs#L170"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_outputs`
 

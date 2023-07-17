@@ -68,6 +68,7 @@ A class for managing data.
 
 **Attributes:**
  
+ - <b>`id`</b>:  The ID of the dataset used by the pipeline that prepared it. 
  - <b>`pipeline_config_id`</b>:  The ID of the pipeline config used to create this dataset. 
  - <b>`prepared_data`</b>:  The prepared data ready for training. 
 
@@ -130,8 +131,8 @@ Feature analysis results for a single feature of a trained model.
  - <b>`mean`</b>:  The mean value of the feature. 
  - <b>`median`</b>:  The median value of the feature. 
  - <b>`std`</b>:  The standard deviation of the feature. 
- - <b>`keypoints_inputs_numerical`</b>:  The input keypoints for the feature if the feature  is numerical. 
- - <b>`keypoints_inputs_categorical`</b>:  The input keypoints for the feature if the feature  is categorical. 
+ - <b>`keypoints_inputs_numerical`</b>:  The input keypoints for the feature if the feature  is numerical. Otherwise this should be `None`. 
+ - <b>`keypoints_inputs_categorical`</b>:  The input keypoints for the feature if the feature  is categorical. Otherwise this should be `None`. 
  - <b>`keypoints_outputs`</b>:  The output keypoints for each input keypoint. 
 
 
@@ -181,6 +182,7 @@ Configuration for a numerical feature.
  - <b>`input_keypoints_init`</b>:  The method for initializing the input keypoints. 
  - <b>`input_keypoints_type`</b>:  The type of input keypoints. 
  - <b>`monotonicity`</b>:  The monotonicity constraint, if any. 
+ - <b>`projection_iterations`</b>:  Number of times to run Dykstra's projection algorithm  when applying constraints. 
 
 
 
@@ -188,7 +190,7 @@ Configuration for a numerical feature.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L217"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L220"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CategoricalFeatureConfig`
 Configuration for a categorical feature. 
@@ -201,7 +203,7 @@ Configuration for a categorical feature.
  - <b>`type`</b>:  The type of the feature. Always `FeatureType.CATEGORICAL`. 
  - <b>`categories`</b>:  The categories for the feature. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L231"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L234"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -219,7 +221,7 @@ __init__(**kwargs)
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L235"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L238"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `PipelineConfig`
 A configuration object for a `Pipeline`. 

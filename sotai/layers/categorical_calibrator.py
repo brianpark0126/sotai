@@ -26,7 +26,6 @@ class CategoricalCalibrator(torch.nn.Module):
         kernel: `torch.nn.Parameter` that stores the categorical mapping weights.
 
     Example:
-
     ```python
     inputs = torch.tensor(...)  # shape: (batch_size, 1)
     calibrator = CategoricalCalibrator(

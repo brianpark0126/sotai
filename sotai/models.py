@@ -103,6 +103,7 @@ class CalibratedLinear(torch.nn.Module):
                     output_max=output_max,
                     monotonicity=feature.monotonicity,
                     kernel_init=NumericalCalibratorInit.EQUAL_SLOPES,
+                    projection_iterations=feature.projection_iterations,
                 )
                 if feature.monotonicity == Monotonicity.NONE:
                     linear_monotonicities.append(Monotonicity.NONE)
