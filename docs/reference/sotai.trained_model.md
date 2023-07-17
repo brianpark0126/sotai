@@ -30,7 +30,7 @@ trained_model.analyze()
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L90"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L91"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `load`
 
@@ -72,11 +72,11 @@ Returns predictions for the given data.
 
 
 **Returns:**
- A tuple containing an array of predictions and an array of logits. If the target type is regression, then logits will be None. 
+ A tuple containing an array of predictions and an array of probabilities. If the target type is regression, then logits will be `None`. If the target type is classification, then the predictions will be logits. 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L74"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L75"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `save`
 

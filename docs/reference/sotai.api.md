@@ -8,8 +8,8 @@ This module contains the API functions for interacting with the SOTAI API.
 **Global Variables**
 ---------------
 - **SOTAI_API_ENDPOINT**
-- **SOTAI_BASE_URL**
 - **SOTAI_API_TIMEOUT**
+- **SOTAI_BASE_URL**
 
 ---
 
@@ -40,17 +40,12 @@ Set the SOTAI API key in the environment variables.
 get_api_key() → str
 ```
 
-Get the SOTAI API key from the environment variables. 
-
-
-
-**Returns:**
-  The API key retrieved from the environment variable. 
+Returns the SOTAI API key from the environment variables. 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L39"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L35"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_auth_headers`
 
@@ -58,17 +53,12 @@ Get the SOTAI API key from the environment variables.
 get_auth_headers() → Dict[str, str]
 ```
 
-Get the authentication headers for a pipeline. 
-
-
-
-**Returns:**
-  The authentication headers. 
+Returns the authentication headers for a pipeline. 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L50"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline`
 
@@ -76,7 +66,7 @@ Get the authentication headers for a pipeline.
 post_pipeline(pipeline) → Tuple[APIStatus, Optional[str]]
 ```
 
-Create a new pipeline on the SOTAI API . 
+Create a new pipeline on the SOTAI API. 
 
 
 
@@ -87,12 +77,12 @@ Create a new pipeline on the SOTAI API .
 
 
 **Returns:**
- A tuple containing the status of the API call and the UUID of the created pipeline. If unsuccessful, the UUID will be None. 
+ A tuple containing the status of the API call and the UUID of the created pipeline. If unsuccessful, the UUID will be `None`. 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L70"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline_config`
 
@@ -103,7 +93,7 @@ post_pipeline_config(
 ) → Tuple[APIStatus, Optional[str]]
 ```
 
-Create a new pipeline config on the SOTAI API . 
+Create a new pipeline config on the SOTAI API. 
 
 
 
@@ -115,12 +105,12 @@ Create a new pipeline config on the SOTAI API .
 
 
 **Returns:**
- A tuple containing the status of the API call and the UUID of the created pipeline. If unsuccessful, the UUID will be None. 
+ A tuple containing the status of the API call and the UUID of the created pipeline. If unsuccessful, the UUID will be `None`. 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L111"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L103"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline_feature_configs`
 
@@ -131,7 +121,7 @@ post_pipeline_feature_configs(
 ) → <enum 'APIStatus'>
 ```
 
-Create a new pipeline feature configs on the SOTAI API . 
+Create a new pipeline feature configs on the SOTAI API. 
 
 
 
@@ -148,7 +138,7 @@ Create a new pipeline feature configs on the SOTAI API .
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L165"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L156"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_trained_model_analysis`
 
@@ -159,7 +149,7 @@ post_trained_model_analysis(
 ) → Tuple[APIStatus, Optional[Dict[str, str]]]
 ```
 
-Create a new trained model analysis on the SOTAI API . 
+Create a new trained model analysis on the SOTAI API. 
 
 
 
@@ -171,7 +161,7 @@ Create a new trained model analysis on the SOTAI API .
 
 
 **Returns:**
- A tuple containing the status of the API call and a dict containing the UUIDs of the resources created as well as a link that can be used to view the trained model analysis. If unsuccessful, the UUID will be None. 
+ A tuple containing the status of the API call and a dict containing the UUIDs of the resources created as well as a link that can be used to view the trained model analysis. If unsuccessful, the UUID will be `None`. 
 
 Keys: 
         - `trainedModelMetadataUUID`: The UUID of the trained model. 
@@ -182,7 +172,7 @@ Keys:
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L262"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L252"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_trained_model`
 
@@ -193,7 +183,7 @@ post_trained_model(
 ) → <enum 'APIStatus'>
 ```
 
-Create a new trained model on the SOTAI API . 
+Create a new trained model on the SOTAI API. 
 
 
 
@@ -210,7 +200,7 @@ Create a new trained model on the SOTAI API .
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L293"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L283"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_inference`
 
@@ -238,7 +228,7 @@ Create a new inference on the SOTAI API .
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L323"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L313"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_inference_status`
 
@@ -248,7 +238,7 @@ get_inference_status(
 ) → Tuple[APIStatus, Optional[InferenceConfigStatus]]
 ```
 
-Get an inference from the SOTAI API . 
+Get an inference from the SOTAI API. 
 
 
 
@@ -259,12 +249,12 @@ Get an inference from the SOTAI API .
 
 
 **Returns:**
- A tuple containing the status of the API call and the status of the inference job if the API call is successful. If unsuccessful, the UUID will be None. 
+ A tuple containing the status of the API call and the status of the inference job if the API call is successful. If unsuccessful, the UUID will be `None`. 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L349"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L338"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_inference_results`
 
@@ -275,13 +265,13 @@ get_inference_results(
 ) → <enum 'APIStatus'>
 ```
 
-Get an inference from the SOTAI API . 
+Get an inference from the SOTAI API. 
 
 
 
 **Args:**
  
- - <b>`inference_uuid`</b>:  The UUID of the inference to get. 
+ - <b>`inference_uuid`</b>:  The UUID of the inference results to get. 
 
 
 

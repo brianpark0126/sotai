@@ -28,7 +28,7 @@ Returns a list of PyTorch Calibrated feature configs.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L68"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L69"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `create_loss`
 
@@ -41,7 +41,7 @@ Returns a Torch loss function from the given `LossType`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L84"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L85"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `create_metric`
 
@@ -54,7 +54,7 @@ Returns a torchmetric Metric for the given `Metric`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L96"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L97"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `create_model`
 
@@ -70,7 +70,7 @@ Returns a PTCM model config constructed from the given `ModelConfig`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L112"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L113"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `train_model`
 
@@ -91,7 +91,7 @@ Trains a PyTorch Calibrated model according to the given config.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L175"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L176"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `extract_feature_analyses`
 
@@ -109,7 +109,7 @@ Extracts feature statistics and calibration weights for each feature.
 
 **Args:**
  
- - <b>`ptcm_model`</b>:  A PyTorch Calibrated model. 
+ - <b>`model`</b>:  A (pytorch) calibrated model. 
  - <b>`feature_configs`</b>:  A mapping from feature name to feature config. 
  - <b>`data`</b>:  The training + validation data for this model. 
 
@@ -121,7 +121,7 @@ Extracts feature statistics and calibration weights for each feature.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L229"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L230"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `extract_linear_coefficients`
 
@@ -137,7 +137,7 @@ Extracts linear coefficients from a PyTorch `CalibratedLinear` model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L243"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/training.py#L244"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `train_and_evaluate_model`
 

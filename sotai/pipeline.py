@@ -255,7 +255,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         Returns:
             If the pipeline was successfully uploaded, the pipeline UUID.
             Otherwise, None.
-
         """
         pipeline_response_status, pipeline_uuid = post_pipeline(self)
         if pipeline_response_status == APIStatus.ERROR:
@@ -275,6 +274,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         If you would like to analyze the results for a trained model without uploading
         it to the SOTAI web client, the data is available in `training_results`.
+
+        Args:
+            trained_model: The trained model to be analyzed.
+
+        Returns:
+            If the analysis was successfully run, the analysis URL. Otherwise `None`.
         """
         if trained_model.analysis_url:  # early exit if analysis has already been run.
             return trained_model.analysis_url
@@ -341,7 +346,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             trained_model: The trained model to use for inference.
 
         Returns:
-            If UUID of the inference run, if unsuccessful, None.
+            If UUID of the inference run. If unsuccessful, `None`.
         """
 
         if not get_api_key():
@@ -369,7 +374,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             inference_results_folder_path: The path to save the inference results to.
 
         Returns:
-            If the inference job was successfully run, the path to the inference results.
+            If inference was successfully run, the path to the inference results.
         """
         while True:
             inference_response_status, inference_job_status = get_inference_status(

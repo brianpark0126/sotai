@@ -15,34 +15,50 @@ Enum Classes for SOTAI SDK.
 The type of target to predict. 
 
 
+- CLASSIFICATION: classification target i.e. binary 0/1. 
+- REGRESSION: regression target i.e. continuous float. 
+
+
 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L27"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `LossType`
 The type of loss function to use. 
 
 
+- BINARY_CROSSENTROPY: binary cross entropy loss. 
+- HINGE: hinge loss. 
+- HUBER: huber loss. 
+- MAE: mean absolute error loss. 
+- MSE: mean squared error loss. 
+
+
 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L37"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L48"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `Metric`
 The type of metric to use. 
 
 
+- AUC: area under the ROC curve. 
+- MAE: mean absolute error. 
+- MSE: mean squared error. 
+
+
 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L45"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L61"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `InputKeypointsInit`
 Type of initialization to use for NumericalCalibrator input keypoints. 
@@ -57,14 +73,13 @@ Type of initialization to use for NumericalCalibrator input keypoints.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L57"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L73"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `InputKeypointsType`
 The type of input keypoints to use. 
 
 
 - FIXED: the input keypoints will be fixed during initialization. 
-- LEARNED: the input keypoints will be learned during training after initialization. 
 
 
 
@@ -72,7 +87,7 @@ The type of input keypoints to use.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L69"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L84"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `FeatureType`
 Type of feature. 
@@ -88,7 +103,7 @@ Type of feature.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L84"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L99"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `NumericalCalibratorInit`
 Type of kernel initialization to use for NumericalCalibrator. 
@@ -103,7 +118,7 @@ Type of kernel initialization to use for NumericalCalibrator.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L95"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L110"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CategoricalCalibratorInit`
 Type of kernel initialization to use for CategoricalCalibrator. 
@@ -118,7 +133,7 @@ Type of kernel initialization to use for CategoricalCalibrator.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L108"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L123"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `Monotonicity`
 Type of monotonicity constraint. 
@@ -134,7 +149,7 @@ Type of monotonicity constraint.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L121"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L136"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `APIStatus`
 Status of API. 
@@ -149,10 +164,17 @@ Status of API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L147"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `InferenceConfigStatus`
 Enum for InferenceConfig status. 
+
+
+- FAILED: inference job failed. 
+- INITIALIZING: inference job is initializing. 
+- PREPARING: inference job is preparing to run. 
+- RUNNING: inference job is running. 
+- SUCCESS: inference job completed successfully. 
 
 
 

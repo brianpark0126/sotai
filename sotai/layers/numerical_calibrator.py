@@ -28,7 +28,6 @@ class NumericalCalibrator(torch.nn.Module):
             missing inputs. Only available if `missing_input_value` is provided.
 
     Example:
-
     ```python
     inputs = torch.tensor(...)  # shape: (batch_size, 1)
     calibrator = NumericalCalibrator(

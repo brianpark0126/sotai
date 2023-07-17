@@ -29,9 +29,7 @@ This module takes an input of shape `(batch_size, input_dim)` and applied a line
 
 
 **Example:**
- 
-
-```python
+ ```python
 input_dim = 3
 inputs = torch.tensor(...)  # shape: (batch_size, input_dim)
 linear = Linear(
@@ -47,7 +45,7 @@ linear = Linear(
 outputs = linear(inputs)
 ``` 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear.py#L45"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear.py#L44"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -82,7 +80,7 @@ Initializes an instance of `Linear`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear/constrain#L101"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear/constrain#L100"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `constrain`
 
@@ -94,7 +92,7 @@ Projects kernel into desired constraints.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear.py#L87"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear.py#L86"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `forward`
 

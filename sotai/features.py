@@ -52,6 +52,7 @@ class NumericalFeature(_Feature):
         input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES,
         missing_input_value: Optional[float] = None,
         monotonicity: Monotonicity = Monotonicity.NONE,
+        projection_iterations: int = 8,
     ) -> None:
         """Initializes a `NumericalFeatureConfig` instance.
 
@@ -68,6 +69,8 @@ class NumericalFeature(_Feature):
             missing_input_value: If provided, this feature's calibrator will learn to
                 map all instances of this missing input value to a learned output value.
             monotonicity: Monotonicity constraint for this feature, if any.
+            projection_iterations: Number of times to run Dykstra's projection
+                algorithm when applying constraints.
 
         Raises:
             ValueError: If `data` contains NaN values.
@@ -83,6 +86,7 @@ class NumericalFeature(_Feature):
         self.input_keypoints_init = input_keypoints_init
         self.missing_input_value = missing_input_value
         self.monotonicity = monotonicity
+        self.projection_iterations = projection_iterations
 
         sorted_unique_values = np.unique(data)
 

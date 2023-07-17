@@ -44,7 +44,8 @@ __init__(
     num_keypoints: int = 10,
     input_keypoints_init: InputKeypointsInit = 'quantiles',
     missing_input_value: Optional[float] = None,
-    monotonicity: Monotonicity = 'none'
+    monotonicity: Monotonicity = 'none',
+    projection_iterations: int = 8
 ) → None
 ```
 
@@ -60,6 +61,7 @@ Initializes a `NumericalFeatureConfig` instance.
  - <b>`input_keypoints_init`</b>:  The scheme to use for initializing the input  keypoints. See `InputKeypointsInit` for more details. 
  - <b>`missing_input_value`</b>:  If provided, this feature's calibrator will learn to  map all instances of this missing input value to a learned output value. 
  - <b>`monotonicity`</b>:  Monotonicity constraint for this feature, if any. 
+ - <b>`projection_iterations`</b>:  Number of times to run Dykstra's projection  algorithm when applying constraints. 
 
 
 
@@ -74,7 +76,7 @@ Initializes a `NumericalFeatureConfig` instance.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L113"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CategoricalFeature`
 Feature configuration for categorical features. 
@@ -88,7 +90,7 @@ Feature configuration for categorical features.
  - <b>`category_indices`</b>:  A dictionary mapping string categories to their index. 
  - <b>`monotonicity_index_pairs`</b>:  A conversion of `monotonicity_pairs` from string  categories to category indices. Only available if `monotonicity_pairs` are  provided. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L125"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/features.py#L129"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 

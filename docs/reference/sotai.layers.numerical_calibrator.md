@@ -29,9 +29,7 @@ This module takes an input of shape `(batch_size, 1)` and calibrates it using a 
 
 
 **Example:**
- 
-
-```python
+ ```python
 inputs = torch.tensor(...)  # shape: (batch_size, 1)
 calibrator = NumericalCalibrator(
     input_keypoints=np.linspace(1., 5., num=5),
@@ -43,7 +41,7 @@ calibrator = NumericalCalibrator(
 outputs = calibrator(inputs)
 ``` 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator.py#L45"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator.py#L44"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -84,7 +82,7 @@ Initializes an instance of `NumericalCalibrator`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/constrain#L155"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/constrain#L154"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `constrain`
 
@@ -98,7 +96,7 @@ Uses Dykstra's alternating projection algorithm to jointly project onto all give
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator.py#L131"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `forward`
 
@@ -121,7 +119,7 @@ Calibrates numerical inputs through piece-wise linear interpolation.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_inputs#L232"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_inputs#L231"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_inputs`
 
@@ -133,7 +131,7 @@ Returns tensor of keypoint inputs.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_outputs#L243"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_outputs#L242"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_outputs`
 
