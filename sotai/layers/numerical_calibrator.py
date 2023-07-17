@@ -153,6 +153,20 @@ class NumericalCalibrator(torch.nn.Module):
         return result
 
     @torch.no_grad()
+    def assert_constraints(self, eps=1e-6) -> bool:
+        weights = torch.squeeze(self.kernel.data)
+        if self.output_max is not None and torch.max(weights) > self.output_max:
+            return False
+        if self.output_min is not None and torch.min(weights) < self.output_min:
+            return False
+        diffs = weights[1:] - weights[:-1]
+        if self.monotonicity == Monotonicity.INCREASING:
+            return torch.min(diffs) >= -eps
+        elif self.monotonicity == Monotonicity.DECREASING:
+            return torch.max(diffs) <= eps
+        return True
+
+    @torch.no_grad()
     def constrain(self) -> None:
         """Jointly projects kernel into desired constraints.
 

@@ -175,6 +175,14 @@ class CalibratedLinear(torch.nn.Module):
         return result
 
     @torch.no_grad()
+    def assert_constraints(self) -> bool:
+        """Tells the user if constraints are met (passes constraints returns True)"""
+        for calibrator in self.calibrators.values():
+            if not calibrator.assert_constraints():
+                return False
+        return self.linear.assert_constraints()
+
+    @torch.no_grad()
     def constrain(self) -> None:
         """Constrains the model into desired constraints specified by the config."""
         for calibrator in self.calibrators.values():

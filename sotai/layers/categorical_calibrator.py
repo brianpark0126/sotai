@@ -138,6 +138,19 @@ class CategoricalCalibrator(torch.nn.Module):
         return torch.mm(one_hot, self.kernel)
 
     @torch.no_grad()
+    def assert_constraints(self, eps=1e-6) -> bool:
+        """Confirms monotonicity constraints for output of calibrator."""
+        weights = torch.squeeze(self.kernel.data)
+        if self.output_max is not None and torch.max(weights) > self.output_max:
+            return False
+        if self.output_min is not None and torch.min(weights) < self.output_min:
+            return False
+        #Should I include epsilon for bounds?
+        if self.monotonicity_pairs:
+            return not any(weights[i] - weights[j] > eps for (i,j) in self.monotonicity_pairs)
+        return True
+
+    @torch.no_grad()
     def constrain(self) -> None:
         """Projects kernel into desired constraints."""
         projected_kernel_data = self.kernel.data

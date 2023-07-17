@@ -99,6 +99,24 @@ class Linear(torch.nn.Module):
         return result
 
     @torch.no_grad()
+    def assert_constraints(self, eps=1e-6) -> bool:
+        if self.monotonicities:
+            monotonicities_constant = torch.tensor(
+                [1 if m == Monotonicity.INCREASING else -1 if m == Monotonicity.DECREASING
+                    else 0 for m in self.monotonicities],
+                device = self.kernel.device,
+                dtype = self.kernel.dtype
+            ).view(-1, 1)
+            min_value = torch.min(self.kernel * monotonicities_constant)
+            if min_value < -eps:
+                return False
+        if self.weighted_average:
+            total_weight = torch.sum(self.kernel.data)
+            if torch.abs(total_weight - 1.0) > eps:
+                return False
+        return True
+
+    @torch.no_grad()
     def constrain(self) -> None:
         """Projects kernel into desired constraints."""
         projected_kernel_data = self.kernel.data
