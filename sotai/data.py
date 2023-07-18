@@ -16,7 +16,15 @@ def replace_missing_values(
     data: pd.DataFrame,
     feature_configs: Dict[str, Union[CategoricalFeatureConfig, NumericalFeatureConfig]],
 ) -> pd.DataFrame:
-    """Replaces empty values or unspecified categories with a constant value."""
+    """Replaces empty values or unspecified categories with a constant value.
+
+    Args:
+        - data: The dataset in which to replace missing values.
+        - feature_configs: A dictionary mapping feature names to feature configurations.
+
+    Returns:
+        The dataset with missing values replaced.
+    """
     for feature_name, feature_config in feature_configs.items():
         if feature_config.type == FeatureType.CATEGORICAL:
             unspecified_categories = list(
@@ -66,7 +74,6 @@ class CSVData:
             been called.
 
     Example:
-
     ```python
     csv_data = CSVData("path/to/data.csv")
     feature_configs = [

@@ -342,7 +342,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         Returns:
             If the pipeline was successfully uploaded, the pipeline UUID.
             Otherwise, None.
-
         """
         pipeline_response_status, pipeline_uuid = post_pipeline(self)
         if pipeline_response_status == APIStatus.ERROR:
@@ -362,6 +361,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         If you would like to analyze the results for a trained model without uploading
         it to the SOTAI web client, the data is available in `training_results`.
+
+        Args:
+            trained_model: The trained model to be analyzed.
+
+        Returns:
+            If the analysis was successfully run, the analysis URL. Otherwise `None`.
         """
         if trained_model.analysis_url:  # early exit if analysis has already been run.
             return trained_model.analysis_url
@@ -401,15 +406,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         filepath: str,
         trained_model_uuid: str,
     ) -> Optional[str]:
-        """Runs inference on the specified dataset using the specified trained model
-        in the SOTAI cloud.
+        """Runs inference on a dataset with a trained model in the SOTAI cloud.
 
         Args:
             inference_dataset_path: The path to the dataset to run inference on.
             trained_model: The trained model to use for inference.
 
         Returns:
-            If UUID of the inference run, if unsuccessful, None.
+            If UUID of the inference run. If unsuccessful, `None`.
         """
 
         if not get_api_key():
@@ -437,7 +441,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             inference_results_folder_path: The path to save the inference results to.
 
         Returns:
-            If the inference job was successfully run, the path to the inference results.
+            If inference was successfully run, the path to the inference results.
         """
         while True:
             inference_response_status, inference_job_status = get_inference_status(
@@ -563,11 +567,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         self,
         trained_model: TrainedModel,
     ) -> APIStatus:
-        """Uploads the trained model to the SOTAI web client. If a model has already
-        been uploaded, this function will return without uploading the model again.
+        """Uploads the trained model to the SOTAI web client.
 
-        This function requires an internet connection and a SOTAI account. The trained
-        model will be uploaded to the SOTAI web client for inference.
+        If a model has already been uploaded, this function will return without
+        uploading the model again. This function requires an internet connection and a
+        SOTAI account. The trained model will be uploaded to the SOTAI web client for
+        inference.
 
         Args:
             trained_model: The trained model to upload.
