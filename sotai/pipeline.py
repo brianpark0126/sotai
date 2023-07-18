@@ -305,36 +305,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 return []
             return trained_model_uuids
 
-        hyperparameter_permutations = list(
-            itertools.product(
-                hypertune_config.batch_sizes,
-                hypertune_config.epochs,
-                hypertune_config.learning_rates,
-            )
+        return self._local_hypertuning(
+            hypertune_config=hypertune_config,
+            data=data,
+            pipeline_config_id=pipeline_config.id,
+            model_config=model_config,
         )
-        trained_models = []
-
-        for i, hyperparameters in enumerate(hyperparameter_permutations):
-            batch_size, epochs, learning_rate = hyperparameters
-            logging.info(
-                "Training model %s/%s", i + 1, len(hyperparameter_permutations)
-            )
-
-            trained_model = self.train(
-                data,
-                pipeline_config_id=pipeline_config_id,
-                model_config=model_config,
-                training_config=TrainingConfig(
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    learning_rate=learning_rate,
-                    loss_type=hypertune_config.loss_type,
-                ),
-            )
-
-            trained_models.append(trained_model)
-
-        return trained_models
 
     def publish(self) -> Optional[str]:
         """Uploads the pipeline to the SOTAI web client.
@@ -654,3 +630,53 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             return None
 
         return pipeline_config_uuid
+
+    def _local_hypertuning(
+        self,
+        hypertune_config: HypertuneConfig,
+        data: pd.DataFrame,
+        pipeline_config_id: Optional[int] = None,
+        model_config: Optional[LinearConfig] = None,
+    ):
+        """Runs hypertuning locally.
+
+        Args:
+            hypertune_config: The config to be used for hypertuning the model.
+            data: The raw dataframe to be trained on.
+            pipeline_config_id: The id of the pipeline config to be used for training.
+            model_config: The config to be used for training the model.
+
+        Returns:
+            A list of `TrainedModel` instances.
+        """
+
+        hyperparameter_permutations = list(
+            itertools.product(
+                hypertune_config.batch_sizes,
+                hypertune_config.epochs,
+                hypertune_config.learning_rates,
+            )
+        )
+        trained_models = []
+
+        for i, hyperparameters in enumerate(hyperparameter_permutations):
+            batch_size, epochs, learning_rate = hyperparameters
+            logging.info(
+                "Training model %s/%s", i + 1, len(hyperparameter_permutations)
+            )
+
+            trained_model = self.train(
+                data,
+                pipeline_config_id=pipeline_config_id,
+                model_config=model_config,
+                training_config=TrainingConfig(
+                    batch_size=batch_size,
+                    epochs=epochs,
+                    learning_rate=learning_rate,
+                    loss_type=hypertune_config.loss_type,
+                ),
+            )
+
+            trained_models.append(trained_model)
+
+        return trained_models
