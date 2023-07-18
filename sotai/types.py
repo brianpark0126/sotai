@@ -268,12 +268,14 @@ class PipelineConfig(BaseModel):
 
 
 class HypertuneConfig(BaseModel):
-    """A configuration object for a HypertuneConfig.
+    """A configuration object for hypertuning.
 
     Attributes:
+        loss_type: The type of loss function to use for training.
         epochs: A list of epochs to try.
         batch_sizes: A list of batch sizes to try.
         learning_rates: A list of learning rates to try.
+        hypertune_method: The method to use for hypertuning.
     """
 
     loss_type: LossType

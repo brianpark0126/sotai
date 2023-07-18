@@ -3,7 +3,8 @@ import logging
 import os
 import tarfile
 import urllib
-from typing import Dict, List, Optional, Tuple, Union
+
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import requests
 
@@ -11,8 +12,10 @@ from .constants import SOTAI_API_ENDPOINT, SOTAI_API_TIMEOUT, SOTAI_BASE_URL
 from .enums import APIStatus, InferenceConfigStatus
 from .trained_model import TrainedModel
 from .types import (
+    _BaseModelConfig,
     CategoricalFeatureConfig,
     FeatureType,
+    LinearConfig,
     NumericalFeatureConfig,
     PipelineConfig,
     HypertuneConfig,
@@ -375,11 +378,13 @@ def post_dataset(
     categorical_columns: List[str],
     pipeline_uuid: str,
 ) -> Tuple[APIStatus, Optional[str]]:
-    """Upload a dataset to th the SOTAI API .
+    """Upload a dataset to th the SOTAI API.
 
     Args:
         data_filepath: The path to the data file to create the inference for.
-        pipeline_uuid: The pipeline uuid to upload the dataset for.
+        columns: The columns of the dataset.
+        categorical_columns: The categorical columns of the dataset.
+        pipeline_uuid: The pipeline uuid for which to upload the dataset.
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
@@ -408,21 +413,33 @@ def post_dataset(
 def post_hypertune_job(
     hypertune_config: HypertuneConfig,
     pipeline_config: PipelineConfig,
+    model_config: Type[_BaseModelConfig],
     dataset_uuid: str,
 ):
-    """Upload a dataset to th the SOTAI API .
+    """Upload a dataset to th the SOTAI API.
 
     Args:
         hypertune_config: The hypertune config to create the hypertune job for.
         pipeline_config: The pipeline config to create the hypertune job for.
         dataset_uuid: The dataset uuid to create the hypertune job for.
 
-
     Returns:
         A tuple containing the status of the API call and the UUID of the created
         inference job. If unsuccessful, the UUID will be None.
-
     """
+
+    input_keypoints_type = model_config.output_calibration_input_keypoints_type
+    advanced_options = {
+        "output_min": model_config.output_min,
+        "output_max": model_config.output_max,
+        "output_calibration": model_config.output_calibration,
+        "output_calibration_num_keypoints": model_config.output_calibration_num_keypoints,
+        "output_initialization": model_config.output_initialization,
+        "output_calibration_input_keypoints_type": input_keypoints_type,
+    }
+    if isinstance(model_config, LinearConfig):
+        advanced_options["use_bias"] = model_config.use_bias
+
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-config/{pipeline_config.uuid}/hypertune",
         json={
@@ -441,10 +458,9 @@ def post_hypertune_job(
                 "target_column_type": pipeline_config.target_type.value,
                 "target_column": pipeline_config.target,
                 "primary_metric": pipeline_config.primary_metric.value,
-                "selected_features": [
-                    key for key in pipeline_config.feature_configs.keys()
-                ],
+                "selected_features": list(pipeline_config.feature_configs.keys()),
                 "loss_type": hypertune_config.loss_type.value,
+                "advanced_options": advanced_options,
             },
         },
         headers=get_auth_headers(),

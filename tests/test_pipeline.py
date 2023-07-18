@@ -386,7 +386,6 @@ def test_hypertune_hosted(
     assert hypertune_response[0] == "test_uuid"
 
 
-
 def test_hypertune_local(fixture_feature_names, fixture_target, fixture_data):
     """Tests that pipeline hypertuning works as expected."""
     pipeline = Pipeline(

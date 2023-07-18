@@ -285,6 +285,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         else:
             pipeline_config = self.configs[pipeline_config_id]
 
+        if model_config is None:
+            model_config = LinearConfig()
+
         if hosted:
             if not get_api_key():
                 raise ValueError(
@@ -296,7 +299,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
             _, dataset_uuid = self._upload_dataset(self.uuid, data)
             hypertune_response, trained_model_uuids = post_hypertune_job(
-                hypertune_config, pipeline_config, dataset_uuid
+                hypertune_config, pipeline_config, model_config, dataset_uuid
             )
             if hypertune_response == APIStatus.ERROR:
                 return []
@@ -311,11 +314,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         )
         trained_models = []
 
-        if model_config is None:
-            model_config = LinearConfig()
-
-        for i, permutation in enumerate(hyperparameter_permutations):
-            batch_size, epochs, learning_rate = permutation
+        for i, hyperparameters in enumerate(hyperparameter_permutations):
+            batch_size, epochs, learning_rate = hyperparameters
             logging.info(
                 "Training model %s/%s", i + 1, len(hyperparameter_permutations)
             )
@@ -608,15 +608,17 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         dataset_response, dataset_uuid = post_dataset(
             "/tmp/sotai/dataset.csv",
             columns=columns,
-            categorical_columns=["thal"],
+            categorical_columns=[],
             pipeline_uuid=pipeline_uuid,
         )
 
         return dataset_response, dataset_uuid
 
     def _post_pipeline_config(self, pipeline_config: PipelineConfig):
-        """Posts a pipeline config to the SOTAI web client. If a pipeline config has already
-        been posted, this function will return without posting the config again.
+        """Posts a pipeline config to the SOTAI web client.
+
+        If a pipeline config has already been posted, this function will return without
+        posting the config again.
 
         Args:
             pipeline_config: The pipeline config to post.
