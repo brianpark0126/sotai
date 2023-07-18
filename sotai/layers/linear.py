@@ -101,10 +101,16 @@ class Linear(torch.nn.Module):
     def assert_constraints(self, eps=1e-6) -> bool:
         if self.monotonicities:
             monotonicities_constant = torch.tensor(
-                [1 if m == Monotonicity.INCREASING else -1 if m == Monotonicity.DECREASING
-                    else 0 for m in self.monotonicities],
-                device = self.kernel.device,
-                dtype = self.kernel.dtype
+                [
+                    1
+                    if m == Monotonicity.INCREASING
+                    else -1
+                    if m == Monotonicity.DECREASING
+                    else 0
+                    for m in self.monotonicities
+                ],
+                device=self.kernel.device,
+                dtype=self.kernel.dtype,
             ).view(-1, 1)
             min_value = torch.min(self.kernel * monotonicities_constant)
             if min_value < -eps:

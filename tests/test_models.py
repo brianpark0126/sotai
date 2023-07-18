@@ -211,39 +211,45 @@ def test_forward(
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             False,
-            False
+            False,
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[2.0], [1.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             False,
-            False
+            False,
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.4]]).double(),
             True,
-            False
+            False,
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.2], [-0.2]]).double(),
             True,
-            False
+            False,
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             True,
-            True
+            True,
         ),
     ],
 )
-def test_assert_constraints(cat_cal_kernel_data,num_cal_kernel_data,linear_kernel_data,weighted_avg,expected_outputs):
+def test_assert_constraints(
+    cat_cal_kernel_data,
+    num_cal_kernel_data,
+    linear_kernel_data,
+    weighted_avg,
+    expected_outputs,
+):
     """Tests that each layer's assert_constraints is properly called"""
     calibrated_linear = CalibratedLinear(
         features=[
@@ -260,11 +266,14 @@ def test_assert_constraints(cat_cal_kernel_data,num_cal_kernel_data,linear_kerne
             ),
         ],
     )
-    calibrated_linear.calibrators["categorical_feature"].kernel.data = cat_cal_kernel_data
+    calibrated_linear.calibrators[
+        "categorical_feature"
+    ].kernel.data = cat_cal_kernel_data
     calibrated_linear.calibrators["numerical_feature"].kernel.data = num_cal_kernel_data
     calibrated_linear.linear.kernel.data = linear_kernel_data
     calibrated_linear.linear.weighted_average = weighted_avg
-    assert(calibrated_linear.assert_constraints() == expected_outputs)
+    assert calibrated_linear.assert_constraints() == expected_outputs
+
 
 def test_constrain():
     """Tests that constrain properly constrains all layers."""

@@ -89,17 +89,26 @@ def test_forward(kernel_data, bias_data, inputs, expected_outputs) -> None:
             True,
         ),
         (
-            [Monotonicity.NONE, Monotonicity.NONE, Monotonicity.DECREASING, Monotonicity.INCREASING],
+            [
+                Monotonicity.NONE,
+                Monotonicity.NONE,
+                Monotonicity.DECREASING,
+                Monotonicity.INCREASING,
+            ],
             torch.tensor([[1.5], [-1.5], [0.01], [-0.01]]).double(),
             True,
         ),
     ],
 )
-def test_assert_constraints_monotonicty(monotonicities, kernel_data, expected_out) -> None:
+def test_assert_constraints_monotonicty(
+    monotonicities, kernel_data, expected_out
+) -> None:
     """Tests that assert_constraints properly checks the constraints."""
-    linear = Linear(kernel_data.size()[0], monotonicities=monotonicities, weighted_average=False)
+    linear = Linear(
+        kernel_data.size()[0], monotonicities=monotonicities, weighted_average=False
+    )
     linear.kernel.data = kernel_data
-    assert (linear.assert_constraints(eps=0.05) == expected_out)
+    assert linear.assert_constraints(eps=0.05) == expected_out
 
 
 @pytest.mark.parametrize(
@@ -137,8 +146,12 @@ def test_assert_constraints_monotonicty(monotonicities, kernel_data, expected_ou
         ),
     ],
 )
-def test_assert_constraints_weighted_average(monotonicities, kernel_data, expected_out) -> None:
-    linear = Linear(kernel_data.size()[0], monotonicities=monotonicities, weighted_average=True)
+def test_assert_constraints_weighted_average(
+    monotonicities, kernel_data, expected_out
+) -> None:
+    linear = Linear(
+        kernel_data.size()[0], monotonicities=monotonicities, weighted_average=True
+    )
     linear.kernel.data = kernel_data
     linear.monotonicities = monotonicities
     assert linear.assert_constraints(eps=0.05) == expected_out

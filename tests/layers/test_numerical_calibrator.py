@@ -182,12 +182,12 @@ def test_forward(input_keypoints, kernel_init, kernel_data, inputs, expected_out
         (torch.tensor([[0.4], [0.1], [0.4], [0.1]]), Monotonicity.NONE, True),
     ],
 )
-def test_assert_constraints_monotonicity(kernel_data,monotonicity, expected_out):
+def test_assert_constraints_monotonicity(kernel_data, monotonicity, expected_out):
     """Tests that assert_constraints maintains monotonicity pairs."""
     calibrator = NumericalCalibrator(np.linspace(1.0, 4.0, num=4))
     calibrator.kernel.data = kernel_data
     calibrator.monotonicity = monotonicity
-    assert (calibrator.assert_constraints(eps=0.05) == expected_out)
+    assert calibrator.assert_constraints(eps=0.05) == expected_out
 
 
 @pytest.mark.parametrize(
@@ -198,13 +198,14 @@ def test_assert_constraints_monotonicity(kernel_data,monotonicity, expected_out)
         (torch.tensor([[0.0], [0.1], [0.2], [0.4]]), True),
     ],
 )
-def test_assert_constraints_bounds(kernel_data,expected_out):
+def test_assert_constraints_bounds(kernel_data, expected_out):
     """Tests that assert_constraints maintains monotonicity pairs."""
     calibrator = NumericalCalibrator(np.linspace(1.0, 4.0, num=4))
     calibrator.kernel.data = kernel_data
     calibrator.output_min = 0.0
     calibrator.output_max = 1.0
-    assert (calibrator.assert_constraints() == expected_out)
+    assert calibrator.assert_constraints() == expected_out
+
 
 def test_constrain_no_constraints():
     """Tests that constrain does nothing when there are no constraints."""

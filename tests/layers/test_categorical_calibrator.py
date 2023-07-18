@@ -102,12 +102,14 @@ def test_forward(missing_input_value, kernel_data, inputs, expected_outputs):
         (torch.tensor([[1.0], [0.8], [1.5], [2.0]]), [(0, 1), (1, 2), (2, 3)], True),
     ],
 )
-def test_assert_constraints_monotonicity_pairs(kernel_data, monotonicity_pairs, expected_out):
+def test_assert_constraints_monotonicity_pairs(
+    kernel_data, monotonicity_pairs, expected_out
+):
     """Tests that assert_constraints maintains monotonicity pairs."""
     calibrator = CategoricalCalibrator(kernel_data.size()[0])
     calibrator.kernel.data = kernel_data
     calibrator.monotonicity_pairs = monotonicity_pairs
-    assert (calibrator.assert_constraints(eps=0.25) == expected_out)
+    assert calibrator.assert_constraints(eps=0.25) == expected_out
 
 
 @pytest.mark.parametrize(
@@ -118,13 +120,13 @@ def test_assert_constraints_monotonicity_pairs(kernel_data, monotonicity_pairs, 
         (torch.tensor([[0.0], [0.1], [0.2], [0.4]]), True),
     ],
 )
-def test_assert_constraints_bounds(kernel_data,expected_out):
+def test_assert_constraints_bounds(kernel_data, expected_out):
     """Tests that assert_constraints maintains monotonicity pairs."""
     calibrator = CategoricalCalibrator(kernel_data.size()[0])
     calibrator.kernel.data = kernel_data
     calibrator.output_min = 0.0
     calibrator.output_max = 1.0
-    assert (calibrator.assert_constraints(eps=0.25) == expected_out)
+    assert calibrator.assert_constraints(eps=0.25) == expected_out
 
 
 def test_constrain_no_constraints():

@@ -144,9 +144,11 @@ class CategoricalCalibrator(torch.nn.Module):
             return False
         if self.output_min is not None and torch.min(weights) < self.output_min:
             return False
-        #Should I include epsilon for bounds?
+        # Should I include epsilon for bounds?
         if self.monotonicity_pairs:
-            return not any(weights[i] - weights[j] > eps for (i,j) in self.monotonicity_pairs)
+            return not any(
+                weights[i] - weights[j] > eps for (i, j) in self.monotonicity_pairs
+            )
         return True
 
     @torch.no_grad()
