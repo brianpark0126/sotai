@@ -3,7 +3,7 @@ import logging
 import os
 import tarfile
 import urllib
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import requests
 
@@ -15,6 +15,7 @@ from .types import (
     FeatureType,
     NumericalFeatureConfig,
     PipelineConfig,
+    HypertuneConfig,
 )
 
 
@@ -103,6 +104,7 @@ def post_pipeline_config(
 
     if response.status_code != 200:
         logging.error("Failed to create pipeline config")
+        logging.error(response.json())
         return APIStatus.ERROR, None
 
     return APIStatus.SUCCESS, response.json()["uuid"]
@@ -157,6 +159,7 @@ def post_pipeline_feature_configs(
 
     if response.status_code != 200:
         logging.error("Failed to create pipeline feature configs")
+        logging.error(response.json())
         return APIStatus.ERROR
 
     return APIStatus.SUCCESS
@@ -254,6 +257,7 @@ def post_trained_model_analysis(
 
     if response.status_code != 200:
         logging.error("Failed to create trained model analysis")
+        logging.error(response.json())
         return APIStatus.ERROR, None
 
     return APIStatus.SUCCESS, response.json()
@@ -285,6 +289,7 @@ def post_trained_model(trained_model_path: str, trained_model_uuid: str) -> APIS
 
     if response.status_code != 200:
         logging.error("Failed to create trained model")
+        logging.error(response.json())
         return APIStatus.ERROR
 
     return APIStatus.SUCCESS
@@ -315,6 +320,7 @@ def post_inference(
 
     if response.status_code != 200:
         logging.error("Failed to create inference")
+        logging.error(response.json())
         return APIStatus.ERROR, None
 
     return APIStatus.SUCCESS, response.json()["inferenceConfigUUID"]
@@ -341,6 +347,7 @@ def get_inference_status(
 
     if response.status_code != 200:
         logging.error("Failed to get inference")
+        logging.error(response.json())
         return APIStatus.ERROR, None
 
     return APIStatus.SUCCESS, response.json()
@@ -362,8 +369,8 @@ def get_inference_results(inference_uuid: str, download_folder: str) -> APIStatu
     )
 
     if response.status_code != 200:
-        print("Failed to get inference")
         logging.error("Failed to get inference")
+        logging.error(response.json())
         return APIStatus.ERROR
 
     urllib.request.urlretrieve(
@@ -371,3 +378,93 @@ def get_inference_results(inference_uuid: str, download_folder: str) -> APIStatu
     )
 
     return APIStatus.SUCCESS
+
+
+def post_dataset(
+    data_filepath: str,
+    columns: List[str],
+    categorical_columns: List[str],
+    pipeline_uuid: str,
+) -> Tuple[APIStatus, Optional[str]]:
+    """Upload a dataset to th the SOTAI API .
+
+    Args:
+        data_filepath: The path to the data file to create the inference for.
+        pipeline_uuid: The pipeline uuid to upload the dataset for.
+
+    Returns:
+        A tuple containing the status of the API call and the UUID of the created
+        inference job. If unsuccessful, the UUID will be None.
+    """
+    with open(data_filepath, "rb") as data_file:
+        response = requests.post(
+            f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
+            files={"file": data_file},
+            data={
+                "pipeline_uuid": pipeline_uuid,
+                "columns": columns,
+                "categorical_columns": categorical_columns,
+            },
+            headers=get_auth_headers(),
+            timeout=SOTAI_API_TIMEOUT,
+        )
+    if response.status_code != 200:
+        logging.error("Failed to upload dataset")
+        logging.error(response.json())
+        return APIStatus.ERROR, None
+
+    return APIStatus.SUCCESS, response.json()["uuid"]
+
+
+def post_hypertune_job(
+    hypertune_config: HypertuneConfig,
+    pipeline_config: PipelineConfig,
+    dataset_uuid: str,
+):
+    """Upload a dataset to th the SOTAI API .
+
+    Args:
+        hypertune_config: The hypertune config to create the hypertune job for.
+        pipeline_config: The pipeline config to create the hypertune job for.
+        dataset_uuid: The dataset uuid to create the hypertune job for.
+
+
+    Returns:
+        A tuple containing the status of the API call and the UUID of the created
+        inference job. If unsuccessful, the UUID will be None.
+
+    """
+    response = requests.post(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-config/{pipeline_config.uuid}/hypertune",
+        json={
+            "dataset_uuid": dataset_uuid,
+            "training_config": {
+                "epochs_options": hypertune_config.epochs,
+                "batch_size_options": hypertune_config.batch_sizes,
+                "learning_rate_options": hypertune_config.learning_rates,
+                "num_cpus_per_job": 2,
+                "num_parallel_jobs": 4,
+            },
+            "model_config": {
+                "model_framework": "pytorch",
+                "model_config_name": "Model 1",
+                "model_type": "linear",
+                "target_column_type": pipeline_config.target_type.value,
+                "target_column": pipeline_config.target,
+                "primary_metric": pipeline_config.primary_metric.value,
+                "selected_features": [
+                    key for key in pipeline_config.feature_configs.keys()
+                ],
+                "loss_type": hypertune_config.loss_type.value,
+            },
+        },
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    if response.status_code != 200:
+        logging.error("Failed to run hypertuning")
+        logging.error(response.json())
+        return APIStatus.ERROR, None
+
+    return APIStatus.SUCCESS, response.json()["trainedModelMetadataUuids"]

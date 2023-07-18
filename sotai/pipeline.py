@@ -6,7 +6,7 @@ import os
 import pickle
 from time import sleep
 from typing import Dict, List, Optional, Tuple, Union
-
+import itertools
 import numpy as np
 import pandas as pd
 
@@ -20,6 +20,8 @@ from .api import (
     post_pipeline_feature_configs,
     post_trained_model,
     post_trained_model_analysis,
+    post_dataset,
+    post_hypertune_job,
 )
 from .constants import INFERENCE_POLLING_INTERVAL, SOTAI_BASE_URL
 from .data import determine_feature_types, replace_missing_values
@@ -42,6 +44,7 @@ from .types import (
     PipelineConfig,
     PreparedData,
     TrainingConfig,
+    HypertuneConfig,
 )
 
 
@@ -249,6 +252,90 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             model=model,
         )
 
+    def hypertune(
+        self,
+        data: pd.DataFrame,
+        hypertune_config: HypertuneConfig,
+        pipeline_config_id: Optional[int] = None,
+        model_config: Optional[LinearConfig] = None,
+        hosted: bool = False,
+    ) -> List[Union[TrainedModel, str]]:
+        """Returns a list of trained models trained according to the given configs.
+
+        Args:
+            data: The raw dataframe to be trained on.
+            hypertune_config: The config to be used for hypertuning the model.
+            pipeline_config_id: The id of the pipeline config to be used for training.
+                If not provided, the current pipeline config will be versioned and used.
+                If data is an int, this argument is ignored and the pipeline config used
+                to prepare the data with the given id will be used.
+            model_config: The config to be used for training the model. If not provided,
+                a default config will be used.
+            hosted: Whether to run the hypertune job on the SOTAI cloud. If False, the
+                hypertune job will be run locally.
+
+
+        Returns:
+            A list of `TrainedModel` instances if run locally, or a list of trained
+            model uuids if run in the SOTAI cloud.
+        """
+
+        if not pipeline_config_id:
+            pipeline_config = self._version_pipeline_config(data, pipeline_config_id)
+        else:
+            pipeline_config = self.configs[pipeline_config_id]
+
+        if hosted:
+            if not get_api_key():
+                raise ValueError(
+                    "You must have an API key to run hosted hypertuning."
+                    " Please visit app.sotai.ai to get an API key."
+                )
+
+            _ = self._post_pipeline_config(pipeline_config=pipeline_config)
+
+            _, dataset_uuid = self._upload_dataset(self.uuid, data)
+            hypertune_response, trained_model_uuids = post_hypertune_job(
+                hypertune_config, pipeline_config, dataset_uuid
+            )
+            if hypertune_response == APIStatus.ERROR:
+                return []
+            return trained_model_uuids
+
+        hyperparameter_permutations = list(
+            itertools.product(
+                hypertune_config.batch_sizes,
+                hypertune_config.epochs,
+                hypertune_config.learning_rates,
+            )
+        )
+        trained_models = []
+
+        if model_config is None:
+            model_config = LinearConfig()
+
+        for i, permutation in enumerate(hyperparameter_permutations):
+            batch_size, epochs, learning_rate = permutation
+            logging.info(
+                "Training model %s/%s", i + 1, len(hyperparameter_permutations)
+            )
+
+            trained_model = self.train(
+                data,
+                pipeline_config_id=pipeline_config_id,
+                model_config=model_config,
+                training_config=TrainingConfig(
+                    batch_size=batch_size,
+                    epochs=epochs,
+                    learning_rate=learning_rate,
+                    loss_type=hypertune_config.loss_type,
+                ),
+            )
+
+            trained_models.append(trained_model)
+
+        return trained_models
+
     def publish(self) -> Optional[str]:
         """Uploads the pipeline to the SOTAI web client.
 
@@ -285,27 +372,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 " Please visit app.sotai.ai to get an API key."
             )
 
-        if self.uuid is None:
-            self.uuid = self.publish()
-
-        if self.uuid is None:
-            return None
-
-        pipeline_config_response_status, pipeline_config_uuid = post_pipeline_config(
-            self.uuid, trained_model.pipeline_config
-        )
-
-        if pipeline_config_response_status == APIStatus.ERROR:
-            return None
-
-        trained_model.pipeline_config.uuid = pipeline_config_uuid
-
-        feature_config_response_status = post_pipeline_feature_configs(
-            pipeline_config_uuid, trained_model.pipeline_config.feature_configs
-        )
-
-        if feature_config_response_status == APIStatus.ERROR:
-            return None
+        pipeline_config_uuid = self._post_pipeline_config(trained_model.pipeline_config)
 
         analysis_response_status, analysis_results = post_trained_model_analysis(
             pipeline_config_uuid, trained_model
@@ -522,3 +589,61 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         )
         self.trained_models[trained_model.uuid] = trained_model
         return trained_model_response
+
+    def _upload_dataset(
+        self,
+        pipeline_uuid: str,
+        dataset: pd.DataFrame,
+    ):
+        filepath = "/tmp/sotai"
+        if not os.path.exists(filepath):
+            os.makedirs("/tmp/sotai/")
+        dataset.to_csv("/tmp/sotai/dataset.csv")
+        columns = dataset.columns.tolist()
+        dataset_response, dataset_uuid = post_dataset(
+            "/tmp/sotai/dataset.csv",
+            columns=columns,
+            categorical_columns=["thal"],
+            pipeline_uuid=pipeline_uuid,
+        )
+
+        return dataset_response, dataset_uuid
+
+    def _post_pipeline_config(self, pipeline_config: PipelineConfig):
+        """Posts a pipeline config to the SOTAI web client. If a pipeline config has already
+        been posted, this function will return without posting the config again.
+
+        Args:
+            pipeline_config: The pipeline config to post.
+
+        Returns:
+            If the pipeline config was successfully posted, the pipeline config UUID.
+            Otherwise, None.
+        """
+
+        if pipeline_config.uuid is not None:
+            return pipeline_config.uuid
+
+        if self.uuid is None:
+            self.uuid = self.publish()
+
+        if self.uuid is None:
+            return None
+
+        pipeline_config_response_status, pipeline_config_uuid = post_pipeline_config(
+            self.uuid, pipeline_config
+        )
+
+        if pipeline_config_response_status == APIStatus.ERROR:
+            return None
+
+        pipeline_config.uuid = pipeline_config_uuid
+
+        feature_config_response_status = post_pipeline_feature_configs(
+            pipeline_config_uuid, pipeline_config.feature_configs
+        )
+
+        if feature_config_response_status == APIStatus.ERROR:
+            return None
+
+        return pipeline_config_uuid

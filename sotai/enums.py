@@ -136,3 +136,9 @@ class InferenceConfigStatus(_Enum):
     PREPARING = "preparing"
     RUNNING = "running"
     SUCCESS = "success"
+
+
+class HypertuneMethod(_Enum):
+    """Enum for HypertuneMethod"""
+
+    GRID = "grid"

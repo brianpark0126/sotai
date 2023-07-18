@@ -7,6 +7,8 @@ from sotai import (
     APIStatus,
     DatasetSplit,
     FeatureType,
+    HypertuneConfig,
+    LossType,
     Metric,
     Pipeline,
     PipelineConfig,
@@ -337,3 +339,66 @@ def test_await_inference_results(
     pipeline.await_inference("test_uuid", "/tmp/predictions")
     get_inference_status.assert_called_with("test_uuid")
     get_inference_results.assert_called_once()
+
+
+@patch(
+    "sotai.pipeline.post_hypertune_job",
+    return_value=(
+        APIStatus.SUCCESS,
+        ["test_uuid"],
+    ),
+)
+@patch(
+    "sotai.pipeline.Pipeline._upload_dataset",
+    return_value=(APIStatus.SUCCESS, "test_dataset_id"),
+)
+@patch(
+    "sotai.pipeline.Pipeline._post_pipeline_config",
+    return_value="test_pipeline_config_id",
+)
+@patch("sotai.pipeline.get_api_key", return_value="test_api_key")
+def test_hypertune_hosted(
+    get_api_key,
+    post_pipeline_config,
+    upload_dataset,
+    post_hypertune_job,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
+):
+    """Tests that pipeline analysis works as expected."""
+    pipeline = Pipeline(
+        fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
+    )
+    hypertune_config = HypertuneConfig(
+        epochs=[100],
+        batch_sizes=[32],
+        learning_rates=[0.001, 0.01],
+        loss_type=LossType.BINARY_CROSSENTROPY,
+    )
+    hypertune_response = pipeline.hypertune(fixture_data, hypertune_config, hosted=True)
+
+    get_api_key.assert_called()
+    upload_dataset.assert_called_once()
+    post_hypertune_job.assert_called_once()
+    post_pipeline_config.assert_called_once()
+
+    assert hypertune_response[0] == "test_uuid"
+
+
+
+def test_hypertune_local(fixture_feature_names, fixture_target, fixture_data):
+    """Tests that pipeline hypertuning works as expected."""
+    pipeline = Pipeline(
+        fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
+    )
+    hypertune_config = HypertuneConfig(
+        epochs=[100],
+        batch_sizes=[32, 64],
+        learning_rates=[0.001, 0.01],
+        loss_type=LossType.BINARY_CROSSENTROPY,
+    )
+    trained_models = pipeline.hypertune(fixture_data, hypertune_config, hosted=False)
+
+    assert len(trained_models) == 4
+    assert trained_models[0].training_config.epochs == 100
