@@ -66,27 +66,27 @@ def test_forward(kernel_data, bias_data, inputs, expected_outputs) -> None:
         (
             [Monotonicity.INCREASING, Monotonicity.INCREASING, Monotonicity.INCREASING],
             torch.tensor([[0.2], [0.1], [0.2]]).double(),
-            True,
+            [],
         ),
         (
             [Monotonicity.INCREASING, Monotonicity.INCREASING, Monotonicity.INCREASING],
             torch.tensor([[0.2], [-0.01], [0.2]]).double(),
-            True,
-        ),
-        (
-            [Monotonicity.INCREASING, Monotonicity.INCREASING, Monotonicity.INCREASING],
-            torch.tensor([[0.2], [0.1], [-0.2]]).double(),
-            False,
+            [],
         ),
         (
             [Monotonicity.DECREASING, Monotonicity.DECREASING, Monotonicity.DECREASING],
             torch.tensor([[-0.2], [-0.1], [-0.2]]).double(),
-            True,
+            [],
         ),
         (
             [Monotonicity.DECREASING, Monotonicity.DECREASING, Monotonicity.DECREASING],
             torch.tensor([[-0.2], [0.01], [-0.2]]).double(),
-            True,
+            [],
+        ),
+        (
+            [Monotonicity.INCREASING, Monotonicity.DECREASING, Monotonicity.INCREASING],
+            torch.tensor([[-0.2], [0.2], [-0.2]]).double(),
+            ["Monotonicity violated at: [0, 1, 2]"],
         ),
         (
             [
@@ -96,14 +96,14 @@ def test_forward(kernel_data, bias_data, inputs, expected_outputs) -> None:
                 Monotonicity.INCREASING,
             ],
             torch.tensor([[1.5], [-1.5], [0.01], [-0.01]]).double(),
-            True,
+            [],
         ),
     ],
 )
 def test_assert_constraints_monotonicty(
     monotonicities, kernel_data, expected_out
 ) -> None:
-    """Tests that assert_constraints properly checks the constraints."""
+    """Tests that assert_constraints properly checks monotonicity."""
     linear = Linear(
         kernel_data.size()[0], monotonicities=monotonicities, weighted_average=False
     )
@@ -117,38 +117,69 @@ def test_assert_constraints_monotonicty(
         (
             [Monotonicity.INCREASING, Monotonicity.INCREASING],
             torch.tensor([[0.4], [0.6]]).double(),
-            True,
+            [],
         ),
         (
             [Monotonicity.INCREASING, Monotonicity.INCREASING],
-            torch.tensor([[0.4], [0.7]]).double(),
-            False,
+            torch.tensor([[0.4], [0.61]]).double(),
+            [],
+        ),
+        (
+            [Monotonicity.INCREASING, Monotonicity.DECREASING],
+            torch.tensor([[1.5], [-0.5]]).double(),
+            [],
+        ),
+        (
+            [Monotonicity.INCREASING, Monotonicity.DECREASING],
+            torch.tensor([[1.5], [-0.51]]).double(),
+            [],
         ),
         (
             [Monotonicity.INCREASING, Monotonicity.DECREASING, Monotonicity.NONE],
             torch.tensor([[1.5], [-2.2], [1.7]]).double(),
-            True,
+            [],
         ),
         (
-            [Monotonicity.INCREASING, Monotonicity.INCREASING],
-            torch.tensor([[0.4], [0.601]]).double(),
-            True,
-        ),
-        (
-            [Monotonicity.DECREASING, Monotonicity.DECREASING],
-            torch.tensor([[-0.4], [-0.61]]).double(),
-            False,
-        ),
-        (
-            [Monotonicity.DECREASING, Monotonicity.DECREASING],
-            torch.tensor([[-0.7], [-0.7]]).double(),
-            False,
+            [Monotonicity.INCREASING, Monotonicity.DECREASING, Monotonicity.NONE],
+            torch.tensor([[1.5], [-2.2], [2.7]]).double(),
+            ["Weights do not sum to 1."],
         ),
     ],
 )
 def test_assert_constraints_weighted_average(
     monotonicities, kernel_data, expected_out
 ) -> None:
+    """Tests assert_constraints checks weights sum to 1 when weighted_average=True."""
+    linear = Linear(
+        kernel_data.size()[0], monotonicities=monotonicities, weighted_average=True
+    )
+    linear.kernel.data = kernel_data
+    linear.monotonicities = monotonicities
+    assert linear.assert_constraints(eps=0.05) == expected_out
+
+
+@pytest.mark.parametrize(
+    "monotonicities,kernel_data,expected_out",
+    [
+        (
+            [Monotonicity.INCREASING, Monotonicity.INCREASING],
+            torch.tensor([[0.4], [0.6]]).double(),
+            [],
+        ),
+        (
+            [Monotonicity.DECREASING, Monotonicity.NONE, Monotonicity.DECREASING],
+            torch.tensor([[0.4], [0.01], [0.6]]).double(),
+            ["Monotonicity violated at: [0, 2]"],
+        ),
+        (
+            [Monotonicity.INCREASING, Monotonicity.NONE, Monotonicity.DECREASING],
+            torch.tensor([[-0.5], [2.0], [0.5]]).double(),
+            ["Weights do not sum to 1.", "Monotonicity violated at: [0, 2]"],
+        ),
+    ],
+)
+def test_assert_constraints_combo(monotonicities, kernel_data, expected_out) -> None:
+    """Tests asserts_constraints for both monotonicity and weighed_average."""
     linear = Linear(
         kernel_data.size()[0], monotonicities=monotonicities, weighted_average=True
     )

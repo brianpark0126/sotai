@@ -137,19 +137,39 @@ class CategoricalCalibrator(torch.nn.Module):
         return torch.mm(one_hot, self.kernel)
 
     @torch.no_grad()
-    def assert_constraints(self, eps=1e-6) -> bool:
-        """Confirms monotonicity constraints for output of calibrator."""
+    def assert_constraints(self, eps=1e-6) -> List[str]:
+        """
+        Asserts that layer satisfies specified constraints (monotonicity pairs and
+        output bounds).
+
+        Args:
+            eps: the margin of error allowed
+
+        Returns:
+            A list of messages describing violated constraints including violated
+            monotonicity pairs. If no constraints  violated, the list will be empty.
+        """
         weights = torch.squeeze(self.kernel.data)
-        if self.output_max is not None and torch.max(weights) > self.output_max:
-            return False
-        if self.output_min is not None and torch.min(weights) < self.output_min:
-            return False
-        # Should I include epsilon for bounds?
+        messages = []
+
+        if self.output_max is not None and torch.max(weights) > self.output_max + eps:
+            messages.append("Max weight greater than output_max.")
+        if self.output_min is not None and torch.min(weights) < self.output_min - eps:
+            messages.append("Min weight less than output_min.")
+
         if self.monotonicity_pairs:
-            return not any(
-                weights[i] - weights[j] > eps for (i, j) in self.monotonicity_pairs
-            )
-        return True
+            violation_indices = [
+                (i, j)
+                for (i, j) in self.monotonicity_pairs
+                if weights[i] - weights[j] > eps
+            ]
+            if violation_indices:
+                messages.append(
+                    "Monotonicity violated at: "
+                    + str(violation_indices).strip("[]")
+                    + "."
+                )
+        return messages
 
     @torch.no_grad()
     def constrain(self) -> None:

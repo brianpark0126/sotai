@@ -99,6 +99,24 @@ class Linear(torch.nn.Module):
 
     @torch.no_grad()
     def assert_constraints(self, eps=1e-6) -> bool:
+        """
+        Asserts that layer satisfies specified constraints (monotonicity, weights
+        summing to 1 for weighted_average=True).
+
+        Args:
+            eps: the margin of error allowed
+
+        Returns:
+            A list of messages describing violated constraints. If no constraints
+            violated, the list will be empty.
+        """
+        messages = []
+
+        if self.weighted_average:
+            total_weight = torch.sum(self.kernel.data)
+            if torch.abs(total_weight - 1.0) > eps:
+                messages.append("Weights do not sum to 1.")
+
         if self.monotonicities:
             monotonicities_constant = torch.tensor(
                 [
@@ -112,14 +130,15 @@ class Linear(torch.nn.Module):
                 device=self.kernel.device,
                 dtype=self.kernel.dtype,
             ).view(-1, 1)
-            min_value = torch.min(self.kernel * monotonicities_constant)
-            if min_value < -eps:
-                return False
-        if self.weighted_average:
-            total_weight = torch.sum(self.kernel.data)
-            if torch.abs(total_weight - 1.0) > eps:
-                return False
-        return True
+
+            violated_monotonicities = (self.kernel * monotonicities_constant) < -eps
+            violation_indices = torch.where(violated_monotonicities)
+            if violation_indices[0].numel() > 0:
+                messages.append(
+                    f"Monotonicity violated at: " f"{violation_indices[0].tolist()}"
+                )
+
+        return messages
 
     @torch.no_grad()
     def constrain(self) -> None:

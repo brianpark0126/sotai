@@ -211,35 +211,42 @@ def test_forward(
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             False,
-            False,
+            [("categorical_feature", ["Monotonicity violated at: (0, 1)."])],
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[2.0], [1.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             False,
-            False,
+            [("numerical_feature", ["Monotonicity violated at: (0, 1)."])],
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.4]]).double(),
             True,
-            False,
+            [("Linear Layer", ["Weights do not sum to 1."])],
         ),
         (
-            torch.tensor([[1.0], [2.0]]).double(),
-            torch.tensor([[1.0], [2.0]]).double(),
-            torch.tensor([[1.2], [-0.2]]).double(),
+            torch.tensor([[2.0], [1.0]]).double(),
+            torch.tensor([[2.0], [1.0]]).double(),
+            torch.tensor([[0.2], [-0.2]]).double(),
             True,
-            False,
+            [
+                ("numerical_feature", ["Monotonicity violated at: (0, 1)."]),
+                ("categorical_feature", ["Monotonicity violated at: (0, 1)."]),
+                (
+                    "Linear Layer",
+                    ["Weights do not sum to 1.", "Monotonicity violated at: [1]"],
+                ),
+            ],
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             True,
-            True,
+            [],
         ),
     ],
 )
@@ -250,7 +257,10 @@ def test_assert_constraints(
     weighted_avg,
     expected_outputs,
 ):
-    """Tests that each layer's assert_constraints is properly called"""
+    """
+    Tests that each layer's assert_constraints is properly called and aggregates each
+    set of error messages properly.
+    """
     calibrated_linear = CalibratedLinear(
         features=[
             NumericalFeature(

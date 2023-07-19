@@ -5,7 +5,7 @@ single-dimensional input and transforms it using piece-wise linear functions tha
 satisfy desired bounds and monotonicity constraints.
 """
 from collections import defaultdict
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -152,18 +152,39 @@ class NumericalCalibrator(torch.nn.Module):
         return result
 
     @torch.no_grad()
-    def assert_constraints(self, eps=1e-6) -> bool:
+    def assert_constraints(self, eps=1e-6) -> List[str]:
+        """
+        Asserts that layer satisfies specified constraints (monotonicity and output
+        bounds),
+
+        Args:
+            eps: the margin of error allowed
+
+        Returns:
+            A list of messages describing violated constraints including indices of
+            monotonicity violations. If no constraints violated, the list will be empty.
+        """
         weights = torch.squeeze(self.kernel.data)
-        if self.output_max is not None and torch.max(weights) > self.output_max:
-            return False
-        if self.output_min is not None and torch.min(weights) < self.output_min:
-            return False
+        messages = []
+        if self.output_max is not None and torch.max(weights) > self.output_max + eps:
+            messages.append("Max weight greater than output_max.")
+        if self.output_min is not None and torch.min(weights) < self.output_min - eps:
+            messages.append("Min weight less than output_min.")
+
         diffs = weights[1:] - weights[:-1]
+        violation_indices = []
+
         if self.monotonicity == Monotonicity.INCREASING:
-            return torch.min(diffs) >= -eps
+            violation_indices = (diffs < -eps).nonzero().tolist()
         elif self.monotonicity == Monotonicity.DECREASING:
-            return torch.max(diffs) <= eps
-        return True
+            violation_indices = (diffs > eps).nonzero().tolist()
+
+        violation_indices = [(i[0], i[0] + 1) for i in violation_indices]
+        if violation_indices:
+            messages.append(
+                "Monotonicity violated at: " + str(violation_indices).strip("[]") + "."
+            )
+        return messages
 
     @torch.no_grad()
     def constrain(self) -> None:

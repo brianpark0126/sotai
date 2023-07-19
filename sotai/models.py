@@ -4,7 +4,7 @@ PyTorch Calibrated Models make it easy to construct common calibrated model
 architectures. To construct a PyTorch Calibrated Model, pass a calibrated modeling
 config to the corresponding calibrated model.
 """
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 
 import numpy as np
 import torch
@@ -176,12 +176,24 @@ class CalibratedLinear(torch.nn.Module):
         return result
 
     @torch.no_grad()
-    def assert_constraints(self) -> bool:
-        """Tells the user if constraints are met (passes constraints returns True)"""
-        for calibrator in self.calibrators.values():
-            if not calibrator.assert_constraints():
-                return False
-        return self.linear.assert_constraints()
+    def assert_constraints(self) -> List[Tuple[str, List[str]]]:
+        """
+        Tells the user if constraints are met for each of the calibration layers within
+        the model as well as the linear layer.
+
+        Returns:
+            List[(str, List[str])] of each layer's feature_name (or Linear Layer) for
+            linear layer and its relevant assertion violation messages, if any.
+        """
+        messages = []
+        for name, calibrator in self.calibrators.items():
+            calibrator_messages = calibrator.assert_constraints()
+            if calibrator_messages:
+                messages.append((name, calibrator_messages))
+        linear_messages = self.linear.assert_constraints()
+        if linear_messages:
+            messages.append(("Linear Layer", linear_messages))
+        return messages
 
     @torch.no_grad()
     def constrain(self) -> None:
