@@ -274,7 +274,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             hosted: Whether to run the hypertune job on the SOTAI cloud. If False, the
                 hypertune job will be run locally.
 
-
         Returns:
             A list of `TrainedModel` instances if run locally, or a list of trained
             model uuids if run in the SOTAI cloud.
