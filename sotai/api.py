@@ -300,7 +300,7 @@ def post_inference(
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        inference job. If unsuccessful, the UUID will be None.
+        inference job. If unsuccessful, the UUID will be `None`.
     """
     with open(data_filepath, "rb") as data_file:
         response = requests.post(
@@ -381,14 +381,14 @@ def post_dataset(
     """Upload a dataset to th the SOTAI API.
 
     Args:
-        data_filepath: The path to the data file to create the inference for.
+        data_filepath: The path to the data file to push to the API.
         columns: The columns of the dataset.
         categorical_columns: The categorical columns of the dataset.
         pipeline_uuid: The pipeline uuid for which to upload the dataset.
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        inference job. If unsuccessful, the UUID will be None.
+        inference job. If unsuccessful, the UUID will be `None`.
     """
     with open(data_filepath, "rb") as data_file:
         response = requests.post(
@@ -425,7 +425,7 @@ def post_hypertune_job(
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        inference job. If unsuccessful, the UUID will be None.
+        inference job. If unsuccessful, the UUID will be `None`.
     """
 
     input_keypoints_type = model_config.output_calibration_input_keypoints_type

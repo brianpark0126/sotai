@@ -650,6 +650,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             A list of `TrainedModel` instances.
         """
 
+        prepared_data, _ = self.prepare(data, pipeline_config_id)
         hyperparameter_permutations = list(
             itertools.product(
                 hypertune_config.batch_sizes,
@@ -666,7 +667,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             )
 
             trained_model = self.train(
-                data,
+                prepared_data.id,
                 pipeline_config_id=pipeline_config_id,
                 model_config=model_config,
                 training_config=TrainingConfig(
