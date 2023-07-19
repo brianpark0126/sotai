@@ -9,10 +9,13 @@ from sotai.api import (
     post_pipeline_config,
     post_pipeline_feature_configs,
     post_trained_model,
+    post_dataset,
+    post_hypertune_job,
     post_trained_model_analysis,
 )
+from sotai.types import HypertuneConfig, LinearConfig
+from sotai.enums import LossType
 from sotai.constants import SOTAI_API_ENDPOINT, SOTAI_BASE_URL
-
 from .utils import MockResponse
 
 
@@ -257,3 +260,100 @@ def test_get_inference_result(mock_get_api_key, mock_get, mock_urlretrieve):
     assert inference_status == "success"
     mock_get_api_key.assert_called_once()
     mock_urlretrieve.assert_called_with("test.com", "/tmp/inference_results.csv")
+
+
+@patch("builtins.open")
+@patch(
+    "requests.post",
+    return_value=MockResponse({"uuid": "test_dataset_uuid"}),
+)
+@patch("sotai.api.get_api_key", return_value="test_api_key")
+def test_post_dataset(
+    mock_get_api_key,
+    mock_post,
+    mock_open_data,
+):
+    """Tests that feature configs are posted correctly."""
+    mock_open_data.return_value.__enter__.return_value = "data"
+    pipeline_response = post_dataset(
+        "/tmp/dataset/dataset.csv", ["age", "chol"], [], "test_pipeline_uuid"
+    )
+
+    mock_post.assert_called_with(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
+        files={"file": "data"},
+        data={
+            "pipeline_uuid": "test_pipeline_uuid",
+            "columns": ["age", "chol"],
+            "categorical_columns": [],
+        },
+        headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
+    )
+    mock_get_api_key.assert_called_once()
+
+    assert pipeline_response[1] == "test_dataset_uuid"
+    assert pipeline_response[0] == "success"
+
+
+@patch(
+    "requests.post",
+    return_value=MockResponse(
+        {"trainedModelMetadataUuids": ["test_uuid_1", "test_uuid_2"]}
+    ),
+)
+@patch("sotai.api.get_api_key", return_value="test_api_key")
+def test_post_hypertune(mock_get_api_key, mock_post, fixture_pipeline_config):
+    """Tests that a trained model is posted correctly."""
+
+    hypertune_config = HypertuneConfig(
+        epochs=[100],
+        batch_sizes=[32],
+        learning_rates=[0.001, 0.01],
+        loss_type=LossType.BINARY_CROSSENTROPY,
+    )
+    fixture_pipeline_config.uuid = "test_uuid"
+    model_config = LinearConfig()
+    post_hypertune_job(
+        hypertune_config, fixture_pipeline_config, model_config, "test_dataset_uuid"
+    )
+
+    mock_post.assert_called_with(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipeline-config/test_uuid/hypertune",
+        json={
+            "dataset_uuid": "test_dataset_uuid",
+            "model_config": {
+                "model_framework": "pytorch",
+                "model_config_name": "Model 1",
+                "model_type": "linear",
+                "target_column_type": "classification",
+                "target_column": "target",
+                "primary_metric": "auc",
+                "selected_features": [
+                    "numerical",
+                    "categorical_strs",
+                    "categorical_ints",
+                ],
+                "loss_type": "binary",
+                "advanced_options": {
+                    "output_min": None,
+                    "output_max": None,
+                    "output_calibration": False,
+                    "output_calibration_num_keypoints": 10,
+                    "output_initialization": "quantiles",
+                    "output_calibration_input_keypoints_type": "fixed",
+                    "use_bias": True,
+                },
+            },
+            "training_config": {
+                "epochs_options": [100],
+                "batch_size_options": [32],
+                "learning_rate_options": [0.001, 0.01],
+                "num_parallel_jobs": 4,
+                "num_cpus_per_job": 2,
+            },
+        },
+        headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
+    )
+    mock_get_api_key.assert_called_once()

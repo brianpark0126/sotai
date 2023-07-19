@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, root_validator
 from .enums import (
     FeatureType,
     InputKeypointsInit,
+    HypertuneMethod,
     InputKeypointsType,
     LossType,
     Metric,
@@ -264,3 +265,21 @@ class PipelineConfig(BaseModel):
     shuffle_data: bool = Field(...)
     drop_empty_percentage: int = Field(...)
     dataset_split: DatasetSplit = Field(...)
+
+
+class HypertuneConfig(BaseModel):
+    """A configuration object for hypertuning.
+
+    Attributes:
+        loss_type: The type of loss function to use for training.
+        epochs: A list of epochs to try.
+        batch_sizes: A list of batch sizes to try.
+        learning_rates: A list of learning rates to try.
+        hypertune_method: The method to use for hypertuning.
+    """
+
+    loss_type: LossType
+    epochs: List[int]
+    batch_sizes: List[int]
+    learning_rates: List[float]
+    hypertune_method: HypertuneMethod = Field(default=HypertuneMethod.GRID)
