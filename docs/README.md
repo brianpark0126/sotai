@@ -18,11 +18,11 @@ import sotai
 
 ## SDK Documentation
 
-You can find documentation for this SDK at [https://docs.sotai.ai/sdk](https://docs.sotai.ai/sdk) or in the repo [docs folder](./).
+You can find documentation for this SDK at [https://docs.sotai.ai/v/sdk-ref](https://docs.sotai.ai/v/sdk-ref) or in the repo [docs folder](./).
 
 ## Web Client User Documentation
 
-You can find documentation for how to use the hosted web client at [https://docs.sotai.ai/app](https://docs.sotai.ai/app)
+You can find documentation for how to use the hosted web client at [https://docs.sotai.ai/](https://docs.sotai.ai/)
 
 ## Contribution Guidelines
 
