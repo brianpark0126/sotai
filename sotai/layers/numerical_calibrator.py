@@ -5,7 +5,7 @@ single-dimensional input and transforms it using piece-wise linear functions tha
 satisfy desired bounds and monotonicity constraints.
 """
 from collections import defaultdict
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -150,6 +150,42 @@ class NumericalCalibrator(torch.nn.Module):
             result = missing_mask * self.missing_output + (1.0 - missing_mask) * result
 
         return result
+
+    @torch.no_grad()
+    def assert_constraints(self, eps=1e-6) -> List[str]:
+        """Asserts that layer satisfies specified constraints.
+
+        This checks that weights follow the layer's monotonicity and that the output is
+        within bounds.
+
+        Args:
+            eps: the margin of error allowed
+
+        Returns:
+            A list of messages describing violated constraints including indices of
+            monotonicity violations. If no constraints violated, the list will be empty.
+        """
+        weights = torch.squeeze(self.kernel.data)
+        messages = []
+
+        if self.output_max is not None and torch.max(weights) > self.output_max + eps:
+            messages.append("Max weight greater than output_max.")
+        if self.output_min is not None and torch.min(weights) < self.output_min - eps:
+            messages.append("Min weight less than output_min.")
+
+        diffs = weights[1:] - weights[:-1]
+        violation_indices = []
+
+        if self.monotonicity == Monotonicity.INCREASING:
+            violation_indices = (diffs < -eps).nonzero().tolist()
+        elif self.monotonicity == Monotonicity.DECREASING:
+            violation_indices = (diffs > eps).nonzero().tolist()
+
+        violation_indices = [(i[0], i[0] + 1) for i in violation_indices]
+        if violation_indices:
+            messages.append(f"Monotonicity violated at: {str(violation_indices)}.")
+
+        return messages
 
     @torch.no_grad()
     def constrain(self) -> None:

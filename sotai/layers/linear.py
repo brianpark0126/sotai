@@ -98,6 +98,51 @@ class Linear(torch.nn.Module):
         return result
 
     @torch.no_grad()
+    def assert_constraints(self, eps=1e-6) -> List[str]:
+        """Asserts that layer satisfies specified constraints.
+
+        This checks that decreasing monotonicity corresponds to negative weights,
+        increasing monotonicity corresponds to positive weights, and weights sum to 1
+        for weighted_average=True.
+
+        Args:
+            eps: the margin of error allowed
+
+        Returns:
+            A list of messages describing violated constraints. If no constraints
+            violated, the list will be empty.
+        """
+        messages = []
+
+        if self.weighted_average:
+            total_weight = torch.sum(self.kernel.data)
+            if torch.abs(total_weight - 1.0) > eps:
+                messages.append("Weights do not sum to 1.")
+
+        if self.monotonicities:
+            monotonicities_constant = torch.tensor(
+                [
+                    1
+                    if m == Monotonicity.INCREASING
+                    else -1
+                    if m == Monotonicity.DECREASING
+                    else 0
+                    for m in self.monotonicities
+                ],
+                device=self.kernel.device,
+                dtype=self.kernel.dtype,
+            ).view(-1, 1)
+
+            violated_monotonicities = (self.kernel * monotonicities_constant) < -eps
+            violation_indices = torch.where(violated_monotonicities)
+            if violation_indices[0].numel() > 0:
+                messages.append(
+                    f"Monotonicity violated at: {violation_indices[0].tolist()}"
+                )
+
+        return messages
+
+    @torch.no_grad()
     def constrain(self) -> None:
         """Projects kernel into desired constraints."""
         projected_kernel_data = self.kernel.data

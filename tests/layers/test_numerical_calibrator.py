@@ -170,6 +170,101 @@ def test_forward(input_keypoints, kernel_init, kernel_data, inputs, expected_out
     assert torch.allclose(outputs, expected_outputs)
 
 
+@pytest.mark.parametrize(
+    "kernel_data,monotonicity, expected_out",
+    [
+        (torch.tensor([[0.0], [0.1], [0.2], [0.3]]), Monotonicity.INCREASING, []),
+        (torch.tensor([[0.0], [0.1], [0.09], [0.3]]), Monotonicity.INCREASING, []),
+        (
+            torch.tensor([[0.0], [0.3], [0.2], [0.1]]),
+            Monotonicity.INCREASING,
+            ["Monotonicity violated at: [(1, 2), (2, 3)]."],
+        ),
+        (torch.tensor([[0.3], [0.2], [0.1], [0.0]]), Monotonicity.DECREASING, []),
+        (torch.tensor([[0.3], [0.2], [0.21], [0.0]]), Monotonicity.DECREASING, []),
+        (
+            torch.tensor([[0.3], [0.1], [0.2], [0.3]]),
+            Monotonicity.DECREASING,
+            ["Monotonicity violated at: [(1, 2), (2, 3)]."],
+        ),
+        (torch.tensor([[0.4], [0.1], [0.4], [0.1]]), Monotonicity.NONE, []),
+    ],
+)
+def test_assert_constraints_monotonicity(kernel_data, monotonicity, expected_out):
+    """Tests assert_constraints maintains monotonicity with a tolerance of eps."""
+    calibrator = NumericalCalibrator(np.linspace(1.0, 4.0, num=4))
+    calibrator.kernel.data = kernel_data
+    calibrator.monotonicity = monotonicity
+    assert calibrator.assert_constraints(eps=0.05) == expected_out
+
+
+@pytest.mark.parametrize(
+    "kernel_data,expected_out",
+    [
+        (torch.tensor([[1.0], [0.8], [0.7], [1.5]]), []),
+        (torch.tensor([[1.0], [-0.1], [0.7], [2.1]]), []),
+        (
+            torch.tensor([[1.0], [0.8], [0.5], [2.5]]),
+            ["Max weight greater than output_max."],
+        ),
+        (
+            torch.tensor([[1.0], [0.8], [-0.5], [2.0]]),
+            ["Min weight less than output_min."],
+        ),
+        (
+            torch.tensor([[1.0], [0.8], [-0.5], [2.5]]),
+            ["Max weight greater than output_max.", "Min weight less than output_min."],
+        ),
+    ],
+)
+def test_assert_constraints_output_bounds(kernel_data, expected_out):
+    """Tests assert_constraints for output bounds with a tolerance of eps."""
+    calibrator = NumericalCalibrator(np.linspace(1.0, 4.0, num=4))
+    calibrator.kernel.data = kernel_data
+    calibrator.monotonicity = Monotonicity.NONE
+    calibrator.output_min = 0.0
+    calibrator.output_max = 2.0
+    assert calibrator.assert_constraints(eps=0.25) == expected_out
+
+
+@pytest.mark.parametrize(
+    "kernel_data,monotonicity, expected_out",
+    [
+        (
+            torch.tensor([[0.0], [1.0], [0.5], [2.5]]),
+            Monotonicity.INCREASING,
+            [
+                "Max weight greater than output_max.",
+                "Monotonicity violated at: [(1, 2)].",
+            ],
+        ),
+        (
+            torch.tensor([[-1.0], [1.0], [0.5], [2.5]]),
+            Monotonicity.INCREASING,
+            [
+                "Max weight greater than output_max.",
+                "Min weight less than output_min.",
+                "Monotonicity violated at: [(1, 2)].",
+            ],
+        ),
+        (
+            torch.tensor([[1.5], [0.2], [1.4], [-1.0]]),
+            Monotonicity.DECREASING,
+            ["Min weight less than output_min.", "Monotonicity violated at: [(1, 2)]."],
+        ),
+        (torch.tensor([[0.3], [0.2], [0.1], [-0.1]]), Monotonicity.DECREASING, []),
+    ],
+)
+def test_assert_constraints_combo(kernel_data, monotonicity, expected_out):
+    """Tests assert_constraints for monotonicity and output bounds together."""
+    calibrator = NumericalCalibrator(np.linspace(1.0, 4.0, num=4))
+    calibrator.monotonicity = monotonicity
+    calibrator.kernel.data = kernel_data
+    calibrator.output_min = 0.0
+    calibrator.output_max = 2.0
+    assert calibrator.assert_constraints(eps=0.25) == expected_out
+
+
 def test_constrain_no_constraints():
     """Tests that constrain does nothing when there are no constraints."""
     calibrator = NumericalCalibrator(np.linspace(1.0, 5.0, num=5))

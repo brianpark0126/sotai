@@ -137,6 +137,39 @@ class CategoricalCalibrator(torch.nn.Module):
         return torch.mm(one_hot, self.kernel)
 
     @torch.no_grad()
+    def assert_constraints(self, eps=1e-6) -> List[str]:
+        """Asserts that layer satisfies specified constraints.
+
+        This checks that weights at the indexes of monotonicity pairs are in the correct
+        order and that the output is within bounds.
+
+        Args:
+            eps: the margin of error allowed
+
+        Returns:
+            A list of messages describing violated constraints including violated
+            monotonicity pairs. If no constraints  violated, the list will be empty.
+        """
+        weights = torch.squeeze(self.kernel.data)
+        messages = []
+
+        if self.output_max is not None and torch.max(weights) > self.output_max + eps:
+            messages.append("Max weight greater than output_max.")
+        if self.output_min is not None and torch.min(weights) < self.output_min - eps:
+            messages.append("Min weight less than output_min.")
+
+        if self.monotonicity_pairs:
+            violation_indices = [
+                (i, j)
+                for (i, j) in self.monotonicity_pairs
+                if weights[i] - weights[j] > eps
+            ]
+            if violation_indices:
+                messages.append(f"Monotonicity violated at: {str(violation_indices)}.")
+
+        return messages
+
+    @torch.no_grad()
     def constrain(self) -> None:
         """Projects kernel into desired constraints."""
         projected_kernel_data = self.kernel.data
