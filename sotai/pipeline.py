@@ -57,7 +57,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     can be compared.
 
     Example:
-
     ```python
     data = pd.read_csv(...)
     pipeline = Pipeline(features, target, TargetType.CLASSIFICATION)
@@ -65,7 +64,21 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     ```
 
     Attributes:
-        ...
+        name: The name of the pipeline.
+        target: The name of the target column.
+        target_type: The type of the target column.
+        primary_metric: The primary metric to use for training and evaluation.
+        feature_configs: A dictionary mapping feature names to feature configurations.
+        shuffle_data: Whether or not to shuffle the data before training.
+        drop_empty_percentage: The percentage of empty values in a single row that will
+            result in dropping the row before training.
+        dataset_split: The dataset split to use for training and evaluation.
+        configs: A dictionary mapping versioned pipeline configuration IDs to pipeline
+            configurations.
+        datasets: A dictionary mapping versioned dataset IDs to datasets.
+        uuid: The UUID of the pipeline. This will be `None` unless the pipeline has been
+            published.
+        trained_models: A dictionary mapping trained model UUIDs to trained models.
     """
 
     def __init__(

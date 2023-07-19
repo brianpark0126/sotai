@@ -29,6 +29,20 @@ class TrainedModel(BaseModel):
     predictions = trained_model.predict(data)
     trained_model.analyze()
     ```
+
+    Attributes:
+        dataset_id: The ID of the dataset used to train the model.
+        pipeline_uuid: The UUID of the pipeline used to train the model. This will be
+            `None` if the trained model has not been analyzed under a pipeline.
+        pipeline_config: The configuration of the pipeline used to train the model.
+        model_config: The configuration of the model used to train the model.
+        training_config: The training configuration used to train the model.
+        training_results: The results of training the model.
+        model: The trained calibrated model.
+        uuid: The UUID of the trained model. This will be `None` if the trained model
+            has not been analyzed under a pipeline.
+        analysis_url: The URL of the analysis of the trained model. This will be `None`
+            if the trained model has not been analyzed under a pipeline.
     """
 
     dataset_id: int = Field(...)

@@ -27,10 +27,24 @@ trained_model.analyze()
 
 
 
+**Attributes:**
+ 
+ - <b>`dataset_id`</b>:  The ID of the dataset used to train the model. 
+ - <b>`pipeline_uuid`</b>:  The UUID of the pipeline used to train the model. This will be  `None` if the trained model has not been analyzed under a pipeline. 
+ - <b>`pipeline_config`</b>:  The configuration of the pipeline used to train the model. 
+ - <b>`model_config`</b>:  The configuration of the model used to train the model. 
+ - <b>`training_config`</b>:  The training configuration used to train the model. 
+ - <b>`training_results`</b>:  The results of training the model. 
+ - <b>`model`</b>:  The trained calibrated model. 
+ - <b>`uuid`</b>:  The UUID of the trained model. This will be `None` if the trained model  has not been analyzed under a pipeline. 
+ - <b>`analysis_url`</b>:  The URL of the analysis of the trained model. This will be `None`  if the trained model has not been analyzed under a pipeline. 
+
+
+
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L91"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L105"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `load`
 
@@ -53,7 +67,7 @@ Loads a trained model from the specified filepath.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L49"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L63"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `predict`
 
@@ -76,7 +90,7 @@ Returns predictions for the given data.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L75"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L89"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `save`
 
