@@ -178,14 +178,14 @@ def test_forward(input_keypoints, kernel_init, kernel_data, inputs, expected_out
         (
             torch.tensor([[0.0], [0.3], [0.2], [0.1]]),
             Monotonicity.INCREASING,
-            ["Monotonicity violated at: (1, 2), (2, 3)."],
+            ["Monotonicity violated at: [(1, 2), (2, 3)]."],
         ),
         (torch.tensor([[0.3], [0.2], [0.1], [0.0]]), Monotonicity.DECREASING, []),
         (torch.tensor([[0.3], [0.2], [0.21], [0.0]]), Monotonicity.DECREASING, []),
         (
             torch.tensor([[0.3], [0.1], [0.2], [0.3]]),
             Monotonicity.DECREASING,
-            ["Monotonicity violated at: (1, 2), (2, 3)."],
+            ["Monotonicity violated at: [(1, 2), (2, 3)]."],
         ),
         (torch.tensor([[0.4], [0.1], [0.4], [0.1]]), Monotonicity.NONE, []),
     ],
@@ -235,7 +235,7 @@ def test_assert_constraints_output_bounds(kernel_data, expected_out):
             Monotonicity.INCREASING,
             [
                 "Max weight greater than output_max.",
-                "Monotonicity violated at: (1, 2).",
+                "Monotonicity violated at: [(1, 2)].",
             ],
         ),
         (
@@ -244,13 +244,13 @@ def test_assert_constraints_output_bounds(kernel_data, expected_out):
             [
                 "Max weight greater than output_max.",
                 "Min weight less than output_min.",
-                "Monotonicity violated at: (1, 2).",
+                "Monotonicity violated at: [(1, 2)].",
             ],
         ),
         (
             torch.tensor([[1.5], [0.2], [1.4], [-1.0]]),
             Monotonicity.DECREASING,
-            ["Min weight less than output_min.", "Monotonicity violated at: (1, 2)."],
+            ["Min weight less than output_min.", "Monotonicity violated at: [(1, 2)]."],
         ),
         (torch.tensor([[0.3], [0.2], [0.1], [-0.1]]), Monotonicity.DECREASING, []),
     ],

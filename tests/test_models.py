@@ -211,42 +211,39 @@ def test_forward(
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             False,
-            [("categorical_feature", ["Monotonicity violated at: (0, 1)."])],
+            {"categorical_feature": ["Monotonicity violated at: [(0, 1)]."]},
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[2.0], [1.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             False,
-            [("numerical_feature", ["Monotonicity violated at: (0, 1)."])],
+            {"numerical_feature": ["Monotonicity violated at: [(0, 1)]."]},
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.4]]).double(),
             True,
-            [("Linear Layer", ["Weights do not sum to 1."])],
+            {"linear": ["Weights do not sum to 1."]},
         ),
         (
             torch.tensor([[2.0], [1.0]]).double(),
             torch.tensor([[2.0], [1.0]]).double(),
             torch.tensor([[0.2], [-0.2]]).double(),
             True,
-            [
-                ("numerical_feature", ["Monotonicity violated at: (0, 1)."]),
-                ("categorical_feature", ["Monotonicity violated at: (0, 1)."]),
-                (
-                    "Linear Layer",
-                    ["Weights do not sum to 1.", "Monotonicity violated at: [1]"],
-                ),
-            ],
+            {
+                "numerical_feature": ["Monotonicity violated at: [(0, 1)]."],
+                "categorical_feature": ["Monotonicity violated at: [(0, 1)]."],
+                "linear": ["Weights do not sum to 1.", "Monotonicity violated at: [1]"],
+            },
         ),
         (
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[1.0], [2.0]]).double(),
             torch.tensor([[0.4], [0.6]]).double(),
             True,
-            [],
+            {},
         ),
     ],
 )
@@ -282,6 +279,7 @@ def test_assert_constraints(
     calibrated_linear.calibrators["numerical_feature"].kernel.data = num_cal_kernel_data
     calibrated_linear.linear.kernel.data = linear_kernel_data
     calibrated_linear.linear.weighted_average = weighted_avg
+
     assert calibrated_linear.assert_constraints() == expected_outputs
 
 

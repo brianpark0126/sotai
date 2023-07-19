@@ -98,10 +98,12 @@ class Linear(torch.nn.Module):
         return result
 
     @torch.no_grad()
-    def assert_constraints(self, eps=1e-6) -> bool:
-        """
-        Asserts that layer satisfies specified constraints (monotonicity, weights
-        summing to 1 for weighted_average=True).
+    def assert_constraints(self, eps=1e-6) -> List[str]:
+        """Asserts that layer satisfies specified constraints.
+
+        This checks that decreasing monotonicity corresponds to negative weights,
+        increasing monotonicity corresponds to positive weights, and weights sum to 1
+        for weighted_average=True.
 
         Args:
             eps: the margin of error allowed
@@ -135,7 +137,7 @@ class Linear(torch.nn.Module):
             violation_indices = torch.where(violated_monotonicities)
             if violation_indices[0].numel() > 0:
                 messages.append(
-                    f"Monotonicity violated at: " f"{violation_indices[0].tolist()}"
+                    f"Monotonicity violated at: {violation_indices[0].tolist()}"
                 )
 
         return messages

@@ -153,9 +153,10 @@ class NumericalCalibrator(torch.nn.Module):
 
     @torch.no_grad()
     def assert_constraints(self, eps=1e-6) -> List[str]:
-        """
-        Asserts that layer satisfies specified constraints (monotonicity and output
-        bounds),
+        """Asserts that layer satisfies specified constraints.
+
+        This checks that weights follow the layer's monotonicity and that the output is
+        within bounds.
 
         Args:
             eps: the margin of error allowed
@@ -166,6 +167,7 @@ class NumericalCalibrator(torch.nn.Module):
         """
         weights = torch.squeeze(self.kernel.data)
         messages = []
+
         if self.output_max is not None and torch.max(weights) > self.output_max + eps:
             messages.append("Max weight greater than output_max.")
         if self.output_min is not None and torch.min(weights) < self.output_min - eps:
@@ -181,9 +183,8 @@ class NumericalCalibrator(torch.nn.Module):
 
         violation_indices = [(i[0], i[0] + 1) for i in violation_indices]
         if violation_indices:
-            messages.append(
-                "Monotonicity violated at: " + str(violation_indices).strip("[]") + "."
-            )
+            messages.append(f"Monotonicity violated at: {str(violation_indices)}.")
+
         return messages
 
     @torch.no_grad()

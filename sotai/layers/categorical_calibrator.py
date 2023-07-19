@@ -138,9 +138,10 @@ class CategoricalCalibrator(torch.nn.Module):
 
     @torch.no_grad()
     def assert_constraints(self, eps=1e-6) -> List[str]:
-        """
-        Asserts that layer satisfies specified constraints (monotonicity pairs and
-        output bounds).
+        """Asserts that layer satisfies specified constraints.
+
+        This checks that weights at the indexes of monotonicity pairs are in the correct
+        order and that the output is within bounds.
 
         Args:
             eps: the margin of error allowed
@@ -164,11 +165,8 @@ class CategoricalCalibrator(torch.nn.Module):
                 if weights[i] - weights[j] > eps
             ]
             if violation_indices:
-                messages.append(
-                    "Monotonicity violated at: "
-                    + str(violation_indices).strip("[]")
-                    + "."
-                )
+                messages.append(f"Monotonicity violated at: {str(violation_indices)}.")
+
         return messages
 
     @torch.no_grad()

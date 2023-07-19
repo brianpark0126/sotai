@@ -100,12 +100,12 @@ def test_forward(missing_input_value, kernel_data, inputs, expected_outputs):
         (
             torch.tensor([[1.0], [0.8], [1.5], [2.0]]),
             [(0, 1), (2, 1), (3, 2)],
-            ["Monotonicity violated at: (2, 1), (3, 2)."],
+            ["Monotonicity violated at: [(2, 1), (3, 2)]."],
         ),
         (
             torch.tensor([[1.0], [0.8], [0.5], [2.5]]),
             [(0, 2), (1, 2), (3, 2)],
-            ["Monotonicity violated at: (0, 2), (1, 2), (3, 2)."],
+            ["Monotonicity violated at: [(0, 2), (1, 2), (3, 2)]."],
         ),
     ],
 )
@@ -158,7 +158,7 @@ def test_assert_constraints_output_bounds(
         (
             torch.tensor([[1.0], [0.8], [-0.5], [2.0]]),
             [(1, 0), (3, 2), (2, 1)],
-            ["Min weight less than output_min.", "Monotonicity violated at: (3, 2)."],
+            ["Min weight less than output_min.", "Monotonicity violated at: [(3, 2)]."],
         ),
         (
             torch.tensor([[1.0], [0.8], [-0.5], [2.5]]),
@@ -171,7 +171,7 @@ def test_assert_constraints_output_bounds(
             [
                 "Max weight greater than output_max.",
                 "Min weight less than output_min.",
-                "Monotonicity violated at: (3, 0), (1, 2).",
+                "Monotonicity violated at: [(3, 0), (1, 2)].",
             ],
         ),
     ],
