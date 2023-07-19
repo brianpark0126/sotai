@@ -388,7 +388,7 @@ def post_dataset(
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
-        inference job. If unsuccessful, the UUID will be `None`.
+        dataset. If unsuccessful, the UUID will be `None`.
     """
     with open(data_filepath, "rb") as data_file:
         response = requests.post(
@@ -424,8 +424,8 @@ def post_hypertune_job(
         dataset_uuid: The dataset uuid to create the hypertune job for.
 
     Returns:
-        A tuple containing the status of the API call and the UUID of the created
-        inference job. If unsuccessful, the UUID will be `None`.
+        A tuple containing the status of the API call and an array of the UUIDs of the
+        created trained models. If unsuccessful, the UUIDs will be `None`.
     """
 
     input_keypoints_type = model_config.output_calibration_input_keypoints_type

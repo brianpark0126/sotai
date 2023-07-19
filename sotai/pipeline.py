@@ -590,7 +590,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         return dataset_response, dataset_uuid
 
-    def _post_pipeline_config(self, pipeline_config: PipelineConfig):
+    def _post_pipeline_config(self, pipeline_config: PipelineConfig) -> str:
         """Posts a pipeline config to the SOTAI web client.
 
         If a pipeline config has already been posted, this function will return without
@@ -637,7 +637,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         data: pd.DataFrame,
         pipeline_config_id: Optional[int] = None,
         model_config: Optional[LinearConfig] = None,
-    ):
+    ) -> List[TrainedModel]:
         """Runs hypertuning locally.
 
         Args:
