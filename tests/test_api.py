@@ -58,6 +58,7 @@ def test_post_pipeline_config(mock_get_api_key, mock_post, fixture_pipeline_conf
             "train_percentage": 60,
             "validation_percentage": 20,
             "test_percentage": 20,
+            "pipeline_config_sdk_id": 1,
         },
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,

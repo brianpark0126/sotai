@@ -92,6 +92,7 @@ def post_pipeline_config(
             "train_percentage": pipeline_config.dataset_split.train,
             "validation_percentage": pipeline_config.dataset_split.val,
             "test_percentage": pipeline_config.dataset_split.test,
+            "pipeline_config_sdk_id": pipeline_config.id,
         },
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
