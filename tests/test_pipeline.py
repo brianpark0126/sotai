@@ -199,7 +199,7 @@ def test_pipeline_save_load(
     pipeline = Pipeline(
         fixture_feature_names, fixture_target, TargetType.CLASSIFICATION
     )
-    _ = pipeline.train(fixture_data)
+    trained_model = pipeline.train(fixture_data)
     pipeline.save(tmp_path)
     loaded_pipeline = Pipeline.load(tmp_path)
     assert isinstance(loaded_pipeline, Pipeline)
@@ -216,6 +216,23 @@ def test_pipeline_save_load(
         assert loaded_dataset.prepared_data.train.equals(dataset.prepared_data.train)
         assert loaded_dataset.prepared_data.val.equals(dataset.prepared_data.val)
         assert loaded_dataset.prepared_data.test.equals(dataset.prepared_data.test)
+    assert len(loaded_pipeline.trained_models) == 1
+    assert loaded_pipeline.trained_models[0].dataset_id == trained_model.dataset_id
+    assert (
+        loaded_pipeline.trained_models[0].pipeline_uuid == trained_model.pipeline_uuid
+    )
+    assert (
+        loaded_pipeline.trained_models[0].pipeline_config
+        == trained_model.pipeline_config
+    )
+    assert (
+        loaded_pipeline.trained_models[0].training_results
+        == trained_model.training_results
+    )
+    assert (
+        loaded_pipeline.trained_models[0].training_config
+        == trained_model.training_config
+    )
 
 
 @patch(

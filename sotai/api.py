@@ -224,6 +224,7 @@ def post_trained_model_analysis(
         "train_primary_metric": [training_results.train_primary_metric_by_epoch[-1]],
         "validation_primary_metric": [training_results.val_primary_metric_by_epoch[-1]],
         "test_primary_metric": training_results.test_primary_metric,
+        "trained_model_sdk_id": trained_model.id,
     }
 
     model_config_dict = {

@@ -144,9 +144,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         # Maps a dataset id to its corresponding `Dataset`` instance.
         self.datasets: Dict[int, Dataset] = {}
 
+        # Tracking for the next versioned config, dataset, and model.
+        self._next_config_id = 0
+        self._next_dataset_id = 0
+        self._next_model_id = 0
+
         # Tracks
         self.uuid = None
-        self.trained_models: Dict[str, TrainedModel] = {}
+        self.trained_models: Dict[int, TrainedModel] = {}
 
     def prepare(  # pylint: disable=too-many-locals
         self,
@@ -169,9 +174,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         """
         data.replace("", np.nan, inplace=True)  # treat empty strings as NaN
         if pipeline_config_id is None:
-            pipeline_config_id = len(self.configs)
-            pipeline_config = self._version_pipeline_config(data, pipeline_config_id)
-            self.configs[pipeline_config_id] = pipeline_config
+            pipeline_config = self._version_pipeline_config(data)
         else:
             pipeline_config = self.configs[pipeline_config_id]
 
@@ -196,10 +199,11 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         ]
         test_data = data.iloc[int(len(data) * (train_percentage + val_percentage)) :]
 
-        dataset_id = len(self.datasets)
+        dataset_id = self._next_dataset_id
+        self._next_dataset_id += 1
         dataset = Dataset(
             id=dataset_id,
-            pipeline_config_id=pipeline_config_id,
+            pipeline_config_id=pipeline_config.id,
             prepared_data=PreparedData(train=train_data, val=val_data, test=test_data),
         )
         self.datasets[dataset_id] = dataset
@@ -256,7 +260,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             training_config,
         )
 
-        return TrainedModel(
+        trained_model = TrainedModel(
+            id=self._next_model_id,
             dataset_id=dataset.id,
             pipeline_config=pipeline_config,
             model_config=model_config,
@@ -264,6 +269,10 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             training_results=training_results,
             model=model,
         )
+
+        self.trained_models[self._next_model_id] = trained_model
+        self._next_model_id += 1
+        return trained_model
 
     def hypertune(
         self,
@@ -292,8 +301,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             model uuids if run in the SOTAI cloud.
         """
 
-        if not pipeline_config_id:
-            pipeline_config = self._version_pipeline_config(data, pipeline_config_id)
+        if pipeline_config_id is None:
+            pipeline_config = self._version_pipeline_config(data)
+            pipeline_config_id = pipeline_config.id
         else:
             pipeline_config = self.configs[pipeline_config_id]
 
@@ -453,19 +463,28 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
             sleep(INFERENCE_POLLING_INTERVAL)
 
-    def save(self, filepath: str):
+    def save(self, filepath: str, include_trained_models: bool = True):
         """Saves the pipeline to the specified filepath.
 
+        Trained models will be saved with the pipeline by default.
+
         Args:
-            filepath: The directory to which the pipeline wil be saved. If the directory
-                does not exist, this function will attempt to create it. If the
-                directory already exists, this function will overwrite any existing
-                content with conflicting filenames.
+            ...
+            include_trained_models: If True (default), then all models trained under
+                this pipeline present in the trained_models dictionary attribute will
+                be stored along with the pipeline under a `trained_models/{id}`
+                directory. If False, trained models will be excluded from saving.
         """
         if not os.path.exists(filepath):
             os.makedirs(filepath)
         with open(os.path.join(filepath, "pipeline.pkl"), "wb") as file:
             pickle.dump(self, file)
+
+        if include_trained_models:
+            for trained_model in self.trained_models.values():
+                trained_model.save(
+                    os.path.join(filepath, f"trained_models/{trained_model.id}")
+                )
 
     @classmethod
     def load(cls, filepath: str) -> Pipeline:
@@ -481,6 +500,13 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         """
         with open(os.path.join(filepath, "pipeline.pkl"), "rb") as file:
             pipeline = pickle.load(file)
+
+        if pipeline.trained_models:
+            for trained_model_id in pipeline.trained_models:
+                trained_model = TrainedModel.load(
+                    os.path.join(filepath, f"trained_models/{trained_model_id}")
+                )
+                pipeline.trained_models[trained_model_id] = trained_model
 
         return pipeline
 
@@ -507,8 +533,10 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     #                            Private Methods                               #
     ############################################################################
 
-    def _version_pipeline_config(self, data: pd.DataFrame, pipeline_config_id: int):
+    def _version_pipeline_config(self, data: pd.DataFrame):
         """Returns a new `PipelineConfig` instance verisoned from the current config."""
+        pipeline_config_id = self._next_config_id
+        self._next_config_id += 1
         pipeline_config = PipelineConfig(
             id=pipeline_config_id,
             target=self.target,
@@ -549,6 +577,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 )
                 pipeline_config.feature_configs.pop(feature_name)
 
+        self.configs[pipeline_config_id] = pipeline_config
         return pipeline_config
 
     def _upload_model(
@@ -580,7 +609,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         trained_model_response = post_trained_model(
             model_save_folder_path, trained_model.uuid
         )
-        self.trained_models[trained_model.uuid] = trained_model
         return trained_model_response
 
     def _upload_dataset(
