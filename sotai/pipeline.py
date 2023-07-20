@@ -144,6 +144,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         # Maps a dataset id to its corresponding `Dataset`` instance.
         self.datasets: Dict[int, Dataset] = {}
 
+        # Maps a trained model id to its corresponding `TrainedModel`` instance.
+        self.trained_models: Dict[int, TrainedModel] = {}
+
         # Tracking for the next versioned config, dataset, and model.
         self._next_config_id = 0
         self._next_dataset_id = 0
@@ -151,7 +154,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         # Tracks
         self.uuid = None
-        self.trained_models: Dict[int, TrainedModel] = {}
 
     def prepare(  # pylint: disable=too-many-locals
         self,
@@ -482,9 +484,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
         if include_trained_models:
             for trained_model in self.trained_models.values():
+                # trained_model.save(filepath) handles creating the directory.
                 trained_model.save(
                     os.path.join(filepath, f"trained_models/{trained_model.id}")
                 )
+
+    def get_next_model_id(self) -> int:
+        """Returns the next model id."""
+        return self._next_model_id
 
     @classmethod
     def load(cls, filepath: str) -> Pipeline:
@@ -501,12 +508,17 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         with open(os.path.join(filepath, "pipeline.pkl"), "rb") as file:
             pipeline = pickle.load(file)
 
-        if pipeline.trained_models:
-            for trained_model_id in pipeline.trained_models:
+        for trained_model_id in range(pipeline.get_next_model_id()):
+            try:
                 trained_model = TrainedModel.load(
                     os.path.join(filepath, f"trained_models/{trained_model_id}")
                 )
                 pipeline.trained_models[trained_model_id] = trained_model
+            except FileNotFoundError:
+                logging.warning(
+                    "Could not find trained model %s. Skipping.", trained_model_id
+                )
+                continue
 
         return pipeline
 
@@ -532,6 +544,21 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     ############################################################################
     #                            Private Methods                               #
     ############################################################################
+
+    def __getstate__(self):
+        """Return state values to be pickled. We exclude the trained models from the
+        pipeline.
+        """
+        state = self.__dict__.copy()
+        del state["trained_models"]
+        return state
+
+    def __setstate__(self, state):
+        """Restore state from the unpickled state values. We restore the trained model
+        field
+        """
+        self.__dict__.update(state)
+        self.trained_models = {}
 
     def _version_pipeline_config(self, data: pd.DataFrame):
         """Returns a new `PipelineConfig` instance verisoned from the current config."""
