@@ -45,6 +45,7 @@ class TrainedModel(BaseModel):
             if the trained model has not been analyzed under a pipeline.
     """
 
+    id: int = None
     dataset_id: int = Field(...)
     pipeline_uuid: Optional[str] = None
     pipeline_config: PipelineConfig = Field(...)

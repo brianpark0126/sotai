@@ -58,6 +58,7 @@ def test_post_pipeline_config(mock_get_api_key, mock_post, fixture_pipeline_conf
             "train_percentage": 60,
             "validation_percentage": 20,
             "test_percentage": 20,
+            "pipeline_config_sdk_id": 1,
         },
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
@@ -116,7 +117,7 @@ def test_post_trained_model_analysis(
     mock_get_api_key, mock_post, fixture_trained_model
 ):
     """Tests that a trained model is posted correctly."""
-
+    fixture_trained_model.id = 1
     post_trained_model_analysis("test_uuid", fixture_trained_model)
 
     mock_post.assert_called_with(
@@ -166,6 +167,7 @@ def test_post_trained_model_analysis(
                 "test_primary_metric": 1,
                 "validation_primary_metric": [3],
                 "train_primary_metric": [3],
+                "trained_model_sdk_id": 1,
             },
         },
         headers={"sotai-api-key": "test_api_key"},

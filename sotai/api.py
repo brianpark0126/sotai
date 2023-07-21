@@ -92,6 +92,7 @@ def post_pipeline_config(
             "train_percentage": pipeline_config.dataset_split.train,
             "validation_percentage": pipeline_config.dataset_split.val,
             "test_percentage": pipeline_config.dataset_split.test,
+            "pipeline_config_sdk_id": pipeline_config.id,
         },
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
@@ -224,6 +225,7 @@ def post_trained_model_analysis(
         "train_primary_metric": [training_results.train_primary_metric_by_epoch[-1]],
         "validation_primary_metric": [training_results.val_primary_metric_by_epoch[-1]],
         "test_primary_metric": training_results.test_primary_metric,
+        "trained_model_sdk_id": trained_model.id,
     }
 
     model_config_dict = {
