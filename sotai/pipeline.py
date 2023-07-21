@@ -471,7 +471,10 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         Trained models will be saved with the pipeline by default.
 
         Args:
-            ...
+            filepath: The directory to which the pipeline wil be saved. If the directory
+                does not exist, this function will attempt to create it. If the
+                directory already exists, this function will overwrite any existing
+                content with conflicting filenames.
             include_trained_models: If True (default), then all models trained under
                 this pipeline present in the trained_models dictionary attribute will
                 be stored along with the pipeline under a `trained_models/{id}`
@@ -489,10 +492,6 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                     os.path.join(filepath, f"trained_models/{trained_model.id}")
                 )
 
-    def get_next_model_id(self) -> int:
-        """Returns the next model id."""
-        return self._next_model_id
-
     @classmethod
     def load(cls, filepath: str) -> Pipeline:
         """Loads the pipeline from the specified filepath.
@@ -508,17 +507,14 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         with open(os.path.join(filepath, "pipeline.pkl"), "rb") as file:
             pipeline = pickle.load(file)
 
-        for trained_model_id in range(pipeline.get_next_model_id()):
-            try:
-                trained_model = TrainedModel.load(
-                    os.path.join(filepath, f"trained_models/{trained_model_id}")
-                )
-                pipeline.trained_models[trained_model_id] = trained_model
-            except FileNotFoundError:
-                logging.warning(
-                    "Could not find trained model %s. Skipping.", trained_model_id
-                )
-                continue
+        trained_model_dir = os.path.join(filepath, "trained_models")
+        if os.path.isdir(trained_model_dir):
+            for directory in os.listdir(trained_model_dir):
+                if os.path.isdir(os.path.join(trained_model_dir, directory)):
+                    trained_model = TrainedModel.load(
+                        os.path.join(trained_model_dir, directory)
+                    )
+                    pipeline.trained_models[trained_model.id] = trained_model
 
         return pipeline
 
