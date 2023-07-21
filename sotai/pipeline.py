@@ -542,16 +542,18 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     ############################################################################
 
     def __getstate__(self):
-        """Return state values to be pickled. We exclude the trained models from the
-        pipeline.
+        """Return state values to be pickled.
+
+        We exclude the trained models from the pipeline.
         """
         state = self.__dict__.copy()
         del state["trained_models"]
         return state
 
     def __setstate__(self, state):
-        """Restore state from the unpickled state values. We restore the trained model
-        field
+        """Restore state from the unpickled state values.
+
+        We restore the trained model field
         """
         self.__dict__.update(state)
         self.trained_models = {}
