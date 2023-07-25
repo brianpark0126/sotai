@@ -15,7 +15,7 @@ from sotai import (
     TargetType,
 )
 from sotai.enums import InferenceConfigStatus
-from sotai.constants import SOTAI_API_ENDPOINT, SOTAI_BASE_URL
+from sotai.constants import SOTAI_BASE_URL
 
 
 @pytest.mark.parametrize(

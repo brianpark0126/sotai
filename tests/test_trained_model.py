@@ -2,11 +2,10 @@
 
 from unittest.mock import patch
 import numpy as np
-from sotai import TargetType, TrainedModel
 from sotai.models import CalibratedLinear
-
-from .utils import construct_trained_model
-from sotai.types import (
+from sotai import (
+    TargetType,
+    TrainedModel,
     PipelineConfig,
     TrainingConfig,
     TrainingResults,
@@ -17,6 +16,8 @@ from sotai.types import (
     LossType,
     FeatureType,
 )
+
+from .utils import construct_trained_model
 
 
 def test_trained_classification_model_predict(fixture_data, fixture_feature_configs):
