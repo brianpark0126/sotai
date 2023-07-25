@@ -513,9 +513,9 @@ def parse_pipeline_config(
 
     pipeline_config_json["feature_configs"] = feature_configs
     pipeline_config = PipelineConfig(**pipeline_config_json | update_dict)
-    pipeline_config.id = pipeline_config_json[
+    pipeline_config.id = pipeline_config_json[  # pylint: disable=C0103
         "pipeline_config_sdk_id"
-    ]  # pylint: disable=C0103
+    ]
     return pipeline_config
 
 
@@ -650,14 +650,12 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
                 }
                 for feature in feature_analyses
             },
-            linear_coefficients={
-                dict(
-                    zip(
-                        overall_model_results["feature_names"],
-                        overall_model_results["linear_coefficients"],
-                    )
+            linear_coefficients=dict(
+                zip(
+                    overall_model_results["feature_names"],
+                    overall_model_results["linear_coefficients"],
                 )
-            },
+            ),
         ),
         "pipeline_config": parse_pipeline_config(
             pipeline_config_json,
