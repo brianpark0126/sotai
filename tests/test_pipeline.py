@@ -15,6 +15,7 @@ from sotai import (
     TargetType,
 )
 from sotai.enums import InferenceConfigStatus
+from sotai.constants import SOTAI_API_ENDPOINT, SOTAI_BASE_URL
 
 
 @pytest.mark.parametrize(
@@ -299,10 +300,10 @@ def test_analysis(
     post_trained_model_analysis.assert_called_once_with(
         "test_pipeline_config_id", trained_model
     )
-
+    print(analysis_response)
     assert (
         analysis_response
-        == "https://app.sotai.ai/pipelines/test_pipeline_id/trained-models/test_uuid"
+        == f"{SOTAI_BASE_URL}/pipelines/test_pipeline_id/trained-models/test_uuid"
     )
 
 
@@ -325,7 +326,7 @@ def test_run_inference(
     trained_model = pipeline.train(fixture_data)
     trained_model.uuid = "test_uuid"
 
-    pipeline.inference("/tmp/data.csv", trained_model.uuid)
+    pipeline.inference("/tmp/data.csv", trained_model)
 
     get_api_key.assert_called_once()
     post_inference.assert_called_once_with("/tmp/data.csv", "test_uuid")
@@ -418,3 +419,71 @@ def test_hypertune_local(fixture_feature_names, fixture_target, fixture_data):
 
     assert len(trained_models) == 4
     assert trained_models[0].training_config.epochs == 100
+
+
+@patch(
+    "sotai.pipeline.get_pipeline",
+    return_value=(
+        {
+            "id": 1,
+            "name": "test_pipeline",
+            "target": "target",
+            "target_type": "classification",
+            "primary_metric": "auc",
+        },
+        {
+            "age": {
+                "name": "age",
+                "type": "numerical",
+                "num_keypoints": 10,
+                "input_keypoints_init": "quantiles",
+                "monotonicity": None,
+            },
+            "chol": {
+                "name": "chol",
+                "type": "numerical",
+                "num_keypoints": 10,
+                "input_keypoints_init": "quantiles",
+                "monotonicity": None,
+            },
+        },
+        {
+            "0": {
+                "id": 0,
+                "target": "target",
+                "target_type": "classification",
+                "primary_metric": "auc",
+                "feature_configs": {
+                    "age": {
+                        "name": "age",
+                        "type": "numerical",
+                        "num_keypoints": 10,
+                        "input_keypoints_init": "quantiles",
+                        "monotonicity": None,
+                    },
+                    "chol": {
+                        "name": "chol",
+                        "type": "numerical",
+                        "num_keypoints": 10,
+                        "input_keypoints_init": "quantiles",
+                        "monotonicity": None,
+                    },
+                },
+            }
+        },
+        ["test_uuid"],
+    ),
+)
+def test_load_from_hosted(mock_get_pipeline):
+    """Tests that a pipeline can be loaded from the API."""
+    pipeline = Pipeline.from_hosted("test_uuid", include_trained_models=False)
+
+    mock_get_pipeline.assert_called_once_with("test_uuid")
+
+    assert pipeline.name == "test_pipeline"
+    assert pipeline.target == "target"
+    assert pipeline.target_type == TargetType.CLASSIFICATION
+    assert pipeline.primary_metric == Metric.AUC
+    assert len(pipeline.feature_configs) == 2
+    assert len(pipeline.configs) == 1
+    assert len(pipeline.datasets) == 0

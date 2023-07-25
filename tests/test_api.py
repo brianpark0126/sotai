@@ -6,6 +6,8 @@ from sotai.api import (
     get_inference_status,
     post_inference,
     post_pipeline,
+    get_pipeline,
+    get_trained_model_metadata,
     post_pipeline_config,
     post_pipeline_feature_configs,
     post_trained_model,
@@ -317,7 +319,7 @@ def test_post_hypertune(mock_get_api_key, mock_post, fixture_pipeline_config):
     fixture_pipeline_config.uuid = "test_uuid"
     model_config = LinearConfig()
     post_hypertune_job(
-        hypertune_config, fixture_pipeline_config, model_config, "test_dataset_uuid"
+        hypertune_config, fixture_pipeline_config, model_config, "test_dataset_uuid", 1
     )
 
     mock_post.assert_called_with(
@@ -354,8 +356,291 @@ def test_post_hypertune(mock_get_api_key, mock_post, fixture_pipeline_config):
                 "num_parallel_jobs": 4,
                 "num_cpus_per_job": 2,
             },
+            "next_model_id": 1,
         },
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+
+
+@patch(
+    "requests.get",
+    return_value=MockResponse(
+        {
+            "name": "target_classification",
+            "target": "target",
+            "target_type": "classification",
+            "primary_metric": "auc",
+            "shuffle_data": True,
+            "drop_empty_percentage": 70,
+            "dataset_split": {
+                "train_percentage": 80,
+                "test_percentage": 10,
+                "validation_percentage": 10,
+            },
+            "trained_model_metadata_uuids": ["test_model_uuid"],
+            "pipeline_configs": [
+                {
+                    "uuid": "test_pipeline_config_uuid",
+                    "pipeline_config_sdk_id": 1,
+                    "shuffle_data": True,
+                    "drop_empty_percentage": 70,
+                    "train_percentage": 80,
+                    "validation_percentage": 10,
+                    "test_percentage": 10,
+                    "feature_config_list": [
+                        {
+                            "feature_name": "age",
+                            "feature_type": "numerical",
+                            "monotonicity": "none",
+                            "num_buckets": 0,
+                            "num_keypoints": 10,
+                            "input_keypoints": "quantiles",
+                            "input_keypoints_type": "fixed",
+                            "unimodality": "none",
+                            "feature_index": 1,
+                            "status": "success",
+                        },
+                        {
+                            "feature_name": "sex",
+                            "feature_type": "numerical",
+                            "monotonicity": "none",
+                            "num_buckets": 0,
+                            "num_keypoints": 10,
+                            "input_keypoints": "quantiles",
+                            "input_keypoints_type": "fixed",
+                            "unimodality": "none",
+                            "feature_index": 2,
+                            "status": "success",
+                        },
+                    ],
+                }
+            ],
+        }
+    ),
+)
+@patch("sotai.api.get_api_key", return_value="test_api_key")
+def test_get_pipeline(mock_get_api_key, mock_get):
+    """Tests that a trained model is posted correctly."""
+
+    (
+        pipeline_metadata,
+        feature_configs,
+        pipeline_configs,
+        trained_model_uuids,
+    ) = get_pipeline("test_uuid")
+    mock_get.assert_called_with(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/test_uuid",
+        headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
+    )
+    mock_get_api_key.assert_called_once()
+    assert trained_model_uuids[0] == "test_model_uuid"
+    assert pipeline_configs[1].uuid == "test_pipeline_config_uuid"
+    assert pipeline_metadata["name"] == "target_classification"
+    assert feature_configs["age"].name == "age"
+    assert feature_configs["age"].num_keypoints == 10
+    assert feature_configs["age"].input_keypoints_init == "quantiles"
+    assert feature_configs["age"].input_keypoints_type == "fixed"
+
+
+@patch(
+    "requests.get",
+    return_value=MockResponse(
+        {
+            "trained_model_metadata": {
+                "uuid": "e5433d21-7b48-41e4-93e2-d87c9f33bef8",
+                "model_config_id": 1,
+                "epochs": 100,
+                "learning_rate": 0.01,
+                "batch_size": 32,
+                "use_sample_weighting": False,
+                "train_primary_metric": [0.6956136226654053],
+                "validation_primary_metric": [0.7204969525337219],
+                "train_loss": [0.5408805320764899],
+                "validation_loss": [0.536510161892792],
+                "test_primary_metric": 0.7826087474822998,
+                "test_loss": 0.4712568339697588,
+                "trained_model_sdk_id": None,
+            },
+            "overall_model_results": {
+                "model_config_id": 317,
+                "epochs": 100,
+                "learning_rate": 0.01,
+                "batch_size": 32,
+                "test_primary_metric": 0.7826087474822998,
+                "test_loss": 0.4712568339697588,
+                "train_primary_metric_per_epoch": [
+                    0.6437626481056213,
+                    0.6544962525367737,
+                    0.6522144079208374,
+                ],
+                "validation_primary_metric_per_epoch": [
+                    0.714285671710968,
+                    0.7267080545425415,
+                    0.7329192757606506,
+                ],
+                "train_loss_per_epoch": [
+                    0.6172197544043537,
+                    0.600101311881279,
+                    0.5933227655110775,
+                ],
+                "validation_loss_per_epoch": [
+                    0.4814422345862075,
+                    0.48776790247917684,
+                    0.48770808078051964,
+                ],
+                "feature_names": [
+                    "age",
+                    "sex",
+                ],
+                "feature_importances": [
+                    0.21172318895300993,
+                    0.3109056738089249,
+                    0.11562846497569708,
+                    0.0,
+                ],
+                "linear_coefficients": [
+                    0.21172318895300993,
+                    0.3109056738089249,
+                ],
+                "runtime_in_seconds": 1,
+            },
+            "model_config": {
+                "output_min": None,
+                "output_max": None,
+                "output_calibration": False,
+                "output_calibration_num_keypoints": 10,
+                "output_initialization": "uniform",
+                "output_calibration_input_keypoints_type": "fixed",
+                "lattice_size": 2,
+                "interpolation": "hypercube",
+                "parameterization": "kronecker_factored",
+                "num_terms": 2,
+                "random_seed": 0,
+                "use_bias": True,
+                "lattices": "random",
+                "model_config_name": "Model 1",
+                "model_framework": "pytorch",
+                "model_type": "linear",
+                "loss_type": "binary",
+                "primary_metric": "auc",
+                "best_primary_metric": 0.7204969525337219,
+                "target_column": "target",
+                "target_column_type": "classification",
+            },
+            "feature_analyses": [
+                {
+                    "feature_name": "age",
+                    "feature_type": "numerical",
+                    "statistic_min": 29.0,
+                    "statistic_max": 77.0,
+                    "statistic_mean": 54.50367647058823,
+                    "statistic_median": 55.5,
+                    "statistic_std": 8.785850155457481,
+                    "keypoints_inputs_numerical": [
+                        29.0,
+                        39.0,
+                        43.0,
+                        48.0,
+                        52.0,
+                        56.0,
+                        60.0,
+                        65.0,
+                        69.0,
+                        77.0,
+                    ],
+                    "keypoints_inputs_categorical": [],
+                    "keypoints_outputs": [
+                        -2.023148125135339,
+                        -1.2120778523877926,
+                        -0.6988228320910564,
+                        -0.3834010392634607,
+                        -0.7148440594259099,
+                        -0.2876861882027164,
+                        0.06256910105143593,
+                        0.6036461743404464,
+                        0.2773983506080544,
+                        1.5282870069736034,
+                    ],
+                    "updated_at": "2023-07-24T14:38:21.104913-07:00",
+                    "created_at": "2023-07-24T14:38:21.104882-07:00",
+                },
+                {
+                    "feature_name": "sex",
+                    "feature_type": "numerical",
+                    "statistic_min": 0.0,
+                    "statistic_max": 1.0,
+                    "statistic_mean": 0.6838235294117647,
+                    "statistic_median": 1.0,
+                    "statistic_std": 0.4649826986400699,
+                    "keypoints_inputs_numerical": [0.0, 1.0],
+                    "keypoints_inputs_categorical": [],
+                    "keypoints_outputs": [-2.039680783236546, 1.9639668866171704],
+                    "updated_at": "2023-07-24T14:38:21.112405-07:00",
+                    "created_at": "2023-07-24T14:38:21.112378-07:00",
+                },
+            ],
+            "name": "target_classification",
+            "target": "target",
+            "target_type": "classification",
+            "primary_metric": "auc",
+            "shuffle_data": True,
+            "drop_empty_percentage": 70,
+            "dataset_split": {
+                "train_percentage": 80,
+                "test_percentage": 10,
+                "validation_percentage": 10,
+            },
+            "trained_model_metadata_uuids": ["test_model_uuid"],
+            "pipeline_config": {
+                "uuid": "test_pipeline_config_uuid",
+                "pipeline_config_sdk_id": 1,
+                "shuffle_data": True,
+                "drop_empty_percentage": 70,
+                "train_percentage": 80,
+                "validation_percentage": 10,
+                "test_percentage": 10,
+                "feature_config_list": [
+                    {
+                        "feature_name": "age",
+                        "feature_type": "numerical",
+                        "monotonicity": "none",
+                        "num_buckets": 0,
+                        "num_keypoints": 10,
+                        "input_keypoints": "quantiles",
+                        "input_keypoints_type": "fixed",
+                        "unimodality": "none",
+                        "feature_index": 1,
+                        "status": "success",
+                    },
+                    {
+                        "feature_name": "sex",
+                        "feature_type": "numerical",
+                        "monotonicity": "none",
+                        "num_buckets": 0,
+                        "num_keypoints": 10,
+                        "input_keypoints": "quantiles",
+                        "input_keypoints_type": "fixed",
+                        "unimodality": "none",
+                        "feature_index": 2,
+                        "status": "success",
+                    },
+                ],
+            },
+        }
+    ),
+)
+@patch("sotai.api.get_api_key", return_value="test_api_key")
+def test_get_trained_model_metadata(mock_get_api_key, mock_get):
+    """Tests that a trained model is posted correctly."""
+
+    trained_model_metadata = get_trained_model_metadata("test_uuid")
+    mock_get.assert_called_with(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/trained-model/test_uuid",
+        headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
+    )
+    mock_get_api_key.assert_called_once()
+    print(trained_model_metadata)
