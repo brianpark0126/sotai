@@ -513,7 +513,9 @@ def parse_pipeline_config(
 
     pipeline_config_json["feature_configs"] = feature_configs
     pipeline_config = PipelineConfig(**pipeline_config_json | update_dict)
-    pipeline_config.id = pipeline_config_json["pipeline_config_sdk_id"]
+    pipeline_config.id = pipeline_config_json[
+        "pipeline_config_sdk_id"
+    ]  # pylint: disable=C0103
     return pipeline_config
 
 
@@ -649,10 +651,11 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
                 for feature in feature_analyses
             },
             linear_coefficients={
-                name: coefficient
-                for name, coefficient in zip(
-                    overall_model_results["feature_names"],
-                    overall_model_results["linear_coefficients"],
+                dict(
+                    zip(
+                        overall_model_results["feature_names"],
+                        overall_model_results["linear_coefficients"],
+                    )
                 )
             },
         ),
@@ -690,7 +693,6 @@ def download_trained_model(trained_model_uuid: str):
         os.makedirs(download_folder)
     urllib.request.urlretrieve(response.json(), download_path)
 
-    model_file = tarfile.open(download_path)
-    model_file.extractall(download_folder)
-    model_file.close()
+    with tarfile.open(download_path) as model_file:
+        model_file.extractall(download_folder)
     return model_file_path
