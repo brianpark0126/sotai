@@ -402,7 +402,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         # TODO: update to use response analysisUrl once no longer broken.
         analysis_url = (
             f"{SOTAI_BASE_URL}/pipelines/{self.uuid}"
-            f"/trained-models/{trained_model.uuid}"
+            f"/trained-models/{trained_model.uuid}/overall-model-results"
         )
         trained_model.analysis_url = analysis_url
 
