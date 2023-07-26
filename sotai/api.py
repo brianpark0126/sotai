@@ -512,10 +512,8 @@ def parse_pipeline_config(
         feature_configs[feature["name"]] = feature
 
     pipeline_config_json["feature_configs"] = feature_configs
+    pipeline_config_json["id"] = pipeline_config_json["pipeline_config_sdk_id"]
     pipeline_config = PipelineConfig(**pipeline_config_json | update_dict)
-    pipeline_config.id = pipeline_config_json[  # pylint: disable=C0103
-        "pipeline_config_sdk_id"
-    ]
     return pipeline_config
 
 
