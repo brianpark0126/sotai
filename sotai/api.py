@@ -513,7 +513,8 @@ def parse_pipeline_config(
 
     pipeline_config_json["feature_configs"] = feature_configs
     pipeline_config_json["id"] = pipeline_config_json["pipeline_config_sdk_id"]
-    pipeline_config = PipelineConfig(**pipeline_config_json | update_dict)
+    pipeline_config_json.update(update_dict)
+    pipeline_config = PipelineConfig(**pipeline_config_json)
     return pipeline_config
 
 
