@@ -640,3 +640,7 @@ def test_get_trained_model_metadata(mock_get_api_key, mock_get):
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    assert (
+        trained_model_metadata.training_config.loss_type == LossType.BINARY_CROSSENTROPY
+    )
+    assert trained_model_metadata.uuid == "test_uuid"

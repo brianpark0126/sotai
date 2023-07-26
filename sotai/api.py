@@ -530,7 +530,7 @@ def get_pipeline(
         pipeline_uuid: The UUID of the pipeline to get.
 
     Returns:
-        A tuple containing the metadata for the pipeline, the id for the most recent 
+        A tuple containing the metadata for the pipeline, the id for the most recent
         config of the pipeline, the pipeline configs for the pipeline, and the UUIDs
         of the trainedmodels for the pipeline.
     """
@@ -666,8 +666,9 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
                 "primary_metric": model_config["primary_metric"],
             },
         ),
+        "uuid": trained_model_uuid,
     }
-    return trained_model_metadata
+    return TrainedModelMetadata(**trained_model_metadata)
 
 
 def download_trained_model(trained_model_uuid: str):

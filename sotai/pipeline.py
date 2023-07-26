@@ -530,7 +530,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             )
         pipeline = Pipeline.from_config(
             name=pipeline_metadata["name"],
-            config=pipeline_configs[last_config_id] ,
+            config=pipeline_configs[last_config_id],
         )
         pipeline.configs = pipeline_configs
         pipeline.uuid = pipeline_uuid

@@ -110,7 +110,7 @@ class TrainedModel(TrainedModelMetadata):
         model = torch.load(downloaded_file_path)
         model.eval()
 
-        return TrainedModel(**metadata, model=model)
+        return TrainedModel(**metadata.dict(), model=model)
 
     @classmethod
     def load(cls, filepath: str) -> TrainedModel:
