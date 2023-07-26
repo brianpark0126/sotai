@@ -4,19 +4,19 @@ from __future__ import annotations
 import os
 import pickle
 from typing import Optional, Tuple
-
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from .data import CSVData, replace_missing_values
 from .enums import TargetType
 from .models import CalibratedLinear
-from .types import LinearConfig, PipelineConfig, TrainingConfig, TrainingResults
+from .types import TrainedModelMetadata
+from .api import get_trained_model_metadata, download_trained_model
 
 
-class TrainedModel(BaseModel):
+class TrainedModel(TrainedModelMetadata):
     """A trained calibrated model.
 
     This model is a container for a trained calibrated model that provides useful
@@ -45,16 +45,7 @@ class TrainedModel(BaseModel):
             if the trained model has not been analyzed under a pipeline.
     """
 
-    id: int = None
-    dataset_id: int = Field(...)
-    pipeline_uuid: Optional[str] = None
-    pipeline_config: PipelineConfig = Field(...)
-    model_config: LinearConfig = Field(...)
-    training_config: TrainingConfig = Field(...)
-    training_results: TrainingResults = Field(...)
     model: CalibratedLinear = Field(...)
-    uuid: Optional[str] = None
-    analysis_url: Optional[str] = None
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         """Standard Pydantic BaseModel Config."""
@@ -102,6 +93,24 @@ class TrainedModel(BaseModel):
             pickle.dump(self.dict(exclude={"model"}), file)
         model_path = f"{filepath}/trained_ptcm_model.pt"
         torch.save(self.model, model_path)
+
+    @classmethod
+    def from_hosted(cls, trained_model_uuid: str) -> TrainedModel:
+        """Loads a trained model from the hosted API.
+
+        Args:
+            trained_model_uuid: The UUID of the trained model to load.
+
+        Returns:
+            A `TrainedModel` instance.
+        """
+
+        metadata = get_trained_model_metadata(trained_model_uuid)
+        downloaded_file_path = download_trained_model(trained_model_uuid)
+        model = torch.load(downloaded_file_path)
+        model.eval()
+
+        return TrainedModel(**metadata.dict(), model=model)
 
     @classmethod
     def load(cls, filepath: str) -> TrainedModel:

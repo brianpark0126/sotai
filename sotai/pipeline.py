@@ -21,6 +21,7 @@ from .api import (
     post_trained_model,
     post_trained_model_analysis,
     post_dataset,
+    get_pipeline,
     post_hypertune_job,
 )
 from .constants import INFERENCE_POLLING_INTERVAL, SOTAI_BASE_URL
@@ -323,10 +324,16 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
             _, dataset_uuid = self._upload_dataset(self.uuid, data)
             hypertune_response, trained_model_uuids = post_hypertune_job(
-                hypertune_config, pipeline_config, model_config, dataset_uuid
+                hypertune_config,
+                pipeline_config,
+                model_config,
+                dataset_uuid,
+                self._next_model_id,
             )
             if hypertune_response == APIStatus.ERROR:
                 return []
+
+            self._next_model_id += len(trained_model_uuids)
             return trained_model_uuids
 
         return self._local_hypertuning(
@@ -404,7 +411,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
     def inference(
         self,
         filepath: str,
-        trained_model_uuid: str,
+        trained_model: TrainedModel,
     ) -> Optional[str]:
         """Runs inference on a dataset with a trained model in the SOTAI cloud.
 
@@ -421,8 +428,12 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 "You must have an API key to run inference."
                 " Please visit app.sotai.ai to get an API key."
             )
+
+        if trained_model.uuid is None:
+            self.analysis(trained_model)
+
         inference_response_status, inference_uuid = post_inference(
-            filepath, trained_model_uuid
+            filepath, trained_model.uuid
         )
         if inference_response_status == APIStatus.ERROR:
             return None
@@ -491,6 +502,49 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
                 trained_model.save(
                     os.path.join(filepath, f"trained_models/{trained_model.id}")
                 )
+
+    @classmethod
+    def from_hosted(
+        cls, pipeline_uuid: str, include_trained_models: bool = False
+    ) -> Pipeline:
+        """Returns a new pipeline created from the specified hosted pipeline uuid.
+
+        Args:
+            pipeline_uuid: The uuid of the hosted pipeline to load.
+            include_trained_models: If True, trained models will be loaded along with
+                the pipeline. If False (default), trained models will not be loaded.
+
+        Returns:
+            A `Pipeline` instance.
+        """
+        (
+            pipeline_metadata,
+            last_config_id,
+            pipeline_configs,
+            trained_model_uuids,
+        ) = get_pipeline(pipeline_uuid)
+
+        if not pipeline_configs:
+            raise ValueError(
+                "Pipeline configs not found. Please run training before loading."
+            )
+        pipeline = Pipeline.from_config(
+            name=pipeline_metadata["name"],
+            config=pipeline_configs[last_config_id],
+        )
+        pipeline.configs = pipeline_configs
+        pipeline.uuid = pipeline_uuid
+
+        if include_trained_models:
+            for trained_model_uuid in trained_model_uuids:
+                trained_model = TrainedModel.from_hosted(trained_model_uuid)
+                pipeline.trained_models[trained_model.id] = trained_model
+
+        pipeline._next_config_id = len(pipeline.configs) + 1
+        if len(pipeline.trained_models) != 0:
+            pipeline._next_model_id = max(pipeline.trained_models.keys()) + 1
+
+        return pipeline
 
     @classmethod
     def load(cls, filepath: str) -> Pipeline:

@@ -283,3 +283,32 @@ class HypertuneConfig(BaseModel):
     batch_sizes: List[int]
     learning_rates: List[float]
     hypertune_method: HypertuneMethod = Field(default=HypertuneMethod.GRID)
+
+
+class TrainedModelMetadata(BaseModel):
+    """Metadata for a trained model.
+
+    Attributes:
+        id: The ID of the trained model.
+        dataset_id: The ID of the dataset used to train the model.
+        pipeline_uuid: The UUID of the pipeline used to train the model. This will be
+        `None` if the trained model has not been analyzed under a pipeline.
+        pipeline_config: The configuration of the pipeline used to train the model.
+        model_config: The configuration of the model used to train the model.
+        training_config: The training configuration used to train the model.
+        training_results: The results of training the model.
+        uuid: The UUID of the trained model. This will be `None` if the trained model
+        has not been analyzed under a pipeline.
+        analysis_url: The URL of the analysis of the trained model. This will be `None`
+        if the trained model has not been analyzed under a pipeline.
+    """
+
+    id: int = None
+    dataset_id: int = None
+    pipeline_uuid: Optional[str] = None
+    pipeline_config: PipelineConfig = Field(...)
+    model_config: LinearConfig = Field(...)
+    training_config: TrainingConfig = Field(...)
+    training_results: TrainingResults = Field(...)
+    uuid: Optional[str] = None
+    analysis_url: Optional[str] = None

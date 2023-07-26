@@ -4,13 +4,12 @@ import os
 import tarfile
 import urllib
 
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import requests
 
 from .constants import SOTAI_API_ENDPOINT, SOTAI_API_TIMEOUT, SOTAI_BASE_URL
 from .enums import APIStatus, InferenceConfigStatus
-from .trained_model import TrainedModel
 from .types import (
     _BaseModelConfig,
     CategoricalFeatureConfig,
@@ -19,6 +18,10 @@ from .types import (
     NumericalFeatureConfig,
     PipelineConfig,
     HypertuneConfig,
+    TrainingResults,
+    DatasetSplit,
+    TrainingConfig,
+    TrainedModelMetadata,
 )
 
 
@@ -102,7 +105,6 @@ def post_pipeline_config(
         logging.error("Failed to create pipeline config")
         logging.error(response.json())
         return APIStatus.ERROR, None
-
     return APIStatus.SUCCESS, response.json()["uuid"]
 
 
@@ -161,7 +163,7 @@ def post_pipeline_feature_configs(
 
 
 def post_trained_model_analysis(
-    pipeline_config_uuid: str, trained_model: TrainedModel
+    pipeline_config_uuid: str, trained_model: TrainedModelMetadata
 ) -> Tuple[APIStatus, Optional[Dict[str, str]]]:
     """Create a new trained model analysis on the SOTAI API.
 
@@ -417,6 +419,7 @@ def post_hypertune_job(
     pipeline_config: PipelineConfig,
     model_config: Type[_BaseModelConfig],
     dataset_uuid: str,
+    next_model_id: int,
 ):
     """Upload a dataset to th the SOTAI API.
 
@@ -455,7 +458,7 @@ def post_hypertune_job(
             },
             "model_config": {
                 "model_framework": "pytorch",
-                "model_config_name": "Model 1",
+                "model_config_name": f"Model {pipeline_config.id}",
                 "model_type": "linear",
                 "target_column_type": pipeline_config.target_type.value,
                 "target_column": pipeline_config.target,
@@ -464,6 +467,7 @@ def post_hypertune_job(
                 "loss_type": hypertune_config.loss_type.value,
                 "advanced_options": advanced_options,
             },
+            "next_model_id": next_model_id,
         },
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
@@ -475,3 +479,220 @@ def post_hypertune_job(
         return APIStatus.ERROR, None
 
     return APIStatus.SUCCESS, response.json()["trainedModelMetadataUuids"]
+
+
+def parse_pipeline_config(
+    pipeline_config_json: Dict[str, Any], update_dict: Dict[str, Any]
+) -> PipelineConfig:
+    """Parse a pipeline config from the SOTAI API.
+
+    Args:
+        pipeline_config_json: The pipeline config JSON to parse.
+        update_dict: The dictionary with which to update the pipeline config.
+
+    Returns:
+        The parsed pipeline config.
+    """
+    pipeline_config = {}
+    pipeline_config.update(pipeline_config_json)
+    pipeline_config.update(update_dict)
+    pipeline_config["dataset_split"] = DatasetSplit(
+        train=pipeline_config_json["train_percentage"],
+        val=pipeline_config_json["validation_percentage"],
+        test=pipeline_config_json["test_percentage"],
+    )
+    feature_configs = {}
+    for feature in pipeline_config_json["feature_config_list"]:
+        feature["name"] = feature["feature_name"]
+        feature["type"] = feature["feature_type"]
+        if feature["feature_type"] == "CATEGORICAL":
+            if feature["categories_str"]:
+                feature["categories"] = feature["categories_str"]
+                del feature["categories_str"]
+            else:
+                feature["categories_int"] = feature["categories_int"]
+                del feature["categories_int"]
+            feature_configs[feature["name"]] = CategoricalFeatureConfig(**feature)
+        else:
+            feature_configs[feature["name"]] = NumericalFeatureConfig(**feature)
+
+    pipeline_config["feature_configs"] = feature_configs
+    pipeline_config["id"] = pipeline_config_json["pipeline_config_sdk_id"]
+    return PipelineConfig(**pipeline_config)
+
+
+def get_pipeline(
+    pipeline_uuid: str,
+) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], List[str]]:
+    """Get a pipeline from the SOTAI API.
+
+    Args:
+        pipeline_uuid: The UUID of the pipeline to get.
+
+    Returns:
+        A tuple containing the metadata for the pipeline, the id for the most recent
+        config of the pipeline, the pipeline configs for the pipeline, and the UUIDs
+        of the trainedmodels for the pipeline.
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    pipeline_metadata = {
+        "name": response.json()["name"],
+        "target": response.json()["target"],
+        "target_type": response.json()["target_type"],
+        "primary_metric": response.json()["primary_metric"],
+        "shuffle_data": response.json()["shuffle_data"],
+        "drop_empty_percentage": response.json()["drop_empty_percentage"],
+    }
+
+    last_config_id = -1
+    pipeline_configs = {}
+
+    for pipeline_config_json in response.json()["pipeline_configs"]:
+        pipeline_config = parse_pipeline_config(pipeline_config_json, pipeline_metadata)
+        last_config_id = max(last_config_id, pipeline_config.id)
+        pipeline_configs[pipeline_config.id] = pipeline_config
+    last_config = pipeline_configs[last_config_id]
+    pipeline_metadata["dataset_split"] = last_config.dataset_split
+    trained_model_uuids = response.json()["trained_model_metadata_uuids"]
+    return pipeline_metadata, last_config_id, pipeline_configs, trained_model_uuids
+
+
+def get_trained_model_uuids(pipeline_uuid: str) -> List[str]:
+    """Get the UUIDs of the trained models for a pipeline from the SOTAI API.
+
+    Args:
+        pipeline_uuid: The UUID of the pipeline to get the trained models for.
+
+    Returns:
+        The UUIDs of the trained models for the pipeline.
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}/trained-models",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    return response.json()["trained_model_uuids"]
+
+
+def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
+    """Get the metadata for a TrainedModelfrom the SOTAI API.
+
+    Args:
+        trained_model_uuid: The UUID of the trained model to get.
+
+    Returns:
+        The metadata for the trained model.
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/trained-model/{trained_model_uuid}",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    trained_model_metadata_json = response.json()["trained_model_metadata"]
+    overall_model_results = response.json()["overall_model_results"]
+    model_config = response.json()["model_config"]
+    pipeline_config_json = response.json()["pipeline_config"]
+    feature_analyses = response.json()["feature_analyses"]
+    trained_model_metadata = {
+        "id": trained_model_metadata_json["trained_model_sdk_id"],
+        "model_config": LinearConfig(
+            output_calibration=model_config["output_calibration"],
+            output_calibration_num_keypoints=model_config[
+                "output_calibration_num_keypoints"
+            ],
+            output_initialization=model_config["output_initialization"],
+            output_min=model_config["output_min"],
+            output_max=model_config["output_max"],
+            output_calibration_input_keypoints_type=model_config[
+                "output_calibration_input_keypoints_type"
+            ],
+            use_bias=model_config["use_bias"],
+        ),
+        "training_config": TrainingConfig(
+            epochs=trained_model_metadata_json["epochs"],
+            batch_size=overall_model_results["batch_size"],
+            learning_rate=overall_model_results["learning_rate"],
+            loss_type=model_config["loss_type"],
+        ),
+        "training_results": TrainingResults(
+            training_time=overall_model_results["runtime_in_seconds"],
+            train_loss_by_epoch=overall_model_results["train_loss_per_epoch"],
+            train_primary_metric_by_epoch=overall_model_results[
+                "train_primary_metric_per_epoch"
+            ],
+            val_loss_by_epoch=overall_model_results["validation_loss_per_epoch"],
+            val_primary_metric_by_epoch=overall_model_results[
+                "validation_primary_metric_per_epoch"
+            ],
+            evaluation_time=overall_model_results["runtime_in_seconds"],
+            test_loss=overall_model_results["test_loss"],
+            test_primary_metric=overall_model_results["test_primary_metric"],
+            feature_analyses={
+                feature["feature_name"]: {
+                    "feature_name": feature["feature_name"],
+                    "feature_type": feature["feature_type"],
+                    "min": feature["statistic_min"],
+                    "max": feature["statistic_max"],
+                    "mean": feature["statistic_mean"],
+                    "median": feature["statistic_median"],
+                    "std": feature["statistic_std"],
+                    "keypoints_outputs": feature["keypoints_outputs"],
+                    "keypoints_inputs_categorical": feature[
+                        "keypoints_inputs_categorical"
+                    ],
+                    "keypoints_inputs_numerical": feature["keypoints_inputs_numerical"],
+                }
+                for feature in feature_analyses
+            },
+            linear_coefficients=dict(
+                zip(
+                    overall_model_results["feature_names"],
+                    overall_model_results["linear_coefficients"],
+                )
+            ),
+        ),
+        "pipeline_config": parse_pipeline_config(
+            pipeline_config_json,
+            {
+                "target": model_config["target_column"],
+                "target_type": model_config["target_column_type"],
+                "primary_metric": model_config["primary_metric"],
+            },
+        ),
+        "uuid": trained_model_uuid,
+    }
+    return TrainedModelMetadata(**trained_model_metadata)
+
+
+def download_trained_model(trained_model_uuid: str):
+    """Download a trained model from the SOTAI API to a local tmp directory.
+
+    Args:
+        trained_model_uuid: The UUID of the trained model to download.
+
+    Returns:
+        The path to the downloaded model.
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/trained-model/{trained_model_uuid}/download",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    download_folder = f"/tmp/sotai/pipeline/trained_models/{trained_model_uuid}"
+    download_path = f"{download_folder}/model.tar.gz"
+    model_file_path = f"{download_folder}/model.pt"
+    if not os.path.exists(download_folder):
+        os.makedirs(download_folder)
+    urllib.request.urlretrieve(response.json(), download_path)
+
+    with tarfile.open(download_path) as model_file:
+        model_file.extractall(download_folder)
+    return model_file_path
