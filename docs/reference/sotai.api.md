@@ -13,7 +13,7 @@ This module contains the API functions for interacting with the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L27"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `set_api_key`
 
@@ -32,7 +32,7 @@ Set the SOTAI API key in the environment variables.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L30"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L36"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_api_key`
 
@@ -45,7 +45,7 @@ Returns the SOTAI API key from the environment variables.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L35"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L41"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_auth_headers`
 
@@ -58,7 +58,7 @@ Returns the authentication headers for a pipeline.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L48"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline`
 
@@ -82,7 +82,7 @@ Create a new pipeline on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L70"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L76"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline_config`
 
@@ -110,7 +110,7 @@ Create a new pipeline config on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L103"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L110"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline_feature_configs`
 
@@ -138,14 +138,14 @@ Create a new pipeline feature configs on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L156"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L164"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_trained_model_analysis`
 
 ```python
 post_trained_model_analysis(
     pipeline_config_uuid: str,
-    trained_model: TrainedModel
+    trained_model: TrainedModelMetadata
 ) → Tuple[APIStatus, Optional[Dict[str, str]]]
 ```
 
@@ -172,7 +172,7 @@ Keys:
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L252"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L262"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_trained_model`
 
@@ -200,7 +200,7 @@ Create a new trained model on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L283"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L294"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_inference`
 
@@ -223,12 +223,12 @@ Create a new inference on the SOTAI API .
 
 
 **Returns:**
- A tuple containing the status of the API call and the UUID of the created inference job. If unsuccessful, the UUID will be None. 
+ A tuple containing the status of the API call and the UUID of the created inference job. If unsuccessful, the UUID will be `None`. 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L313"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L325"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_inference_status`
 
@@ -254,7 +254,7 @@ Get an inference from the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L338"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L351"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_inference_results`
 
@@ -277,6 +277,168 @@ Get an inference from the SOTAI API.
 
 **Returns:**
  The status of the API call. 
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L378"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `post_dataset`
+
+```python
+post_dataset(
+    data_filepath: str,
+    columns: List[str],
+    categorical_columns: List[str],
+    pipeline_uuid: str
+) → Tuple[APIStatus, Optional[str]]
+```
+
+Upload a dataset to th the SOTAI API. 
+
+
+
+**Args:**
+ 
+ - <b>`data_filepath`</b>:  The path to the data file to push to the API. 
+ - <b>`columns`</b>:  The columns of the dataset. 
+ - <b>`categorical_columns`</b>:  The categorical columns of the dataset. 
+ - <b>`pipeline_uuid`</b>:  The pipeline uuid for which to upload the dataset. 
+
+
+
+**Returns:**
+ A tuple containing the status of the API call and the UUID of the created dataset. If unsuccessful, the UUID will be `None`. 
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L416"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `post_hypertune_job`
+
+```python
+post_hypertune_job(
+    hypertune_config: HypertuneConfig,
+    pipeline_config: PipelineConfig,
+    model_config: Type[_BaseModelConfig],
+    dataset_uuid: str,
+    next_model_id: int
+)
+```
+
+Upload a dataset to th the SOTAI API. 
+
+
+
+**Args:**
+ 
+ - <b>`hypertune_config`</b>:  The hypertune config to create the hypertune job for. 
+ - <b>`pipeline_config`</b>:  The pipeline config to create the hypertune job for. 
+ - <b>`dataset_uuid`</b>:  The dataset uuid to create the hypertune job for. 
+
+
+
+**Returns:**
+ A tuple containing the status of the API call and an array of the UUIDs of the created trained models. If unsuccessful, the UUIDs will be `None`. 
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L523"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `get_pipeline`
+
+```python
+get_pipeline(
+    pipeline_uuid: str
+) → Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], List[str]]
+```
+
+Get a pipeline from the SOTAI API. 
+
+
+
+**Args:**
+ 
+ - <b>`pipeline_uuid`</b>:  The UUID of the pipeline to get. 
+
+
+
+**Returns:**
+ A tuple containing the metadata for the pipeline, the id for the most recent config of the pipeline, the pipeline configs for the pipeline, and the UUIDs of the trainedmodels for the pipeline. 
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L566"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `get_trained_model_uuids`
+
+```python
+get_trained_model_uuids(pipeline_uuid: str) → List[str]
+```
+
+Get the UUIDs of the trained models for a pipeline from the SOTAI API. 
+
+
+
+**Args:**
+ 
+ - <b>`pipeline_uuid`</b>:  The UUID of the pipeline to get the trained models for. 
+
+
+
+**Returns:**
+ The UUIDs of the trained models for the pipeline. 
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L584"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `get_trained_model_metadata`
+
+```python
+get_trained_model_metadata(trained_model_uuid: str) → TrainedModelMetadata
+```
+
+Get the metadata for a TrainedModelfrom the SOTAI API. 
+
+
+
+**Args:**
+ 
+ - <b>`trained_model_uuid`</b>:  The UUID of the trained model to get. 
+
+
+
+**Returns:**
+ The metadata for the trained model. 
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L675"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `download_trained_model`
+
+```python
+download_trained_model(trained_model_uuid: str)
+```
+
+Download a trained model from the SOTAI API to a local tmp directory. 
+
+
+
+**Args:**
+ 
+ - <b>`trained_model_uuid`</b>:  The UUID of the trained model to download. 
+
+
+
+**Returns:**
+ The path to the downloaded model. 
 
 
 

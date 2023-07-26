@@ -13,7 +13,7 @@ A Pipeline for calibrated modeling.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L48"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L52"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `Pipeline`
 A pipeline for calibrated modeling. 
@@ -46,7 +46,7 @@ trained_model = pipeline.train(data)
  - <b>`uuid`</b>:  The UUID of the pipeline. This will be `None` unless the pipeline has been  published. 
  - <b>`trained_models`</b>:  A dictionary mapping trained model UUIDs to trained models. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L84"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L88"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -81,7 +81,7 @@ The pipeline is initialized with a default config, which can be modified later. 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L279"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L360"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `analysis`
 
@@ -108,7 +108,7 @@ If you would like to analyze the results for a trained model without uploading i
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L378"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L443"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `await_inference`
 
@@ -132,7 +132,7 @@ Polls the SOTAI cloud for the results of the specified inference job.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L445"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L575"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_config`
 
@@ -144,12 +144,72 @@ Returns a new pipeline created from the specified config.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L350"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L506"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>classmethod</kbd> `from_hosted`
+
+```python
+from_hosted(
+    pipeline_uuid: 'str',
+    include_trained_models: 'bool' = False
+) → Pipeline
+```
+
+Returns a new pipeline created from the specified hosted pipeline uuid. 
+
+
+
+**Args:**
+ 
+ - <b>`pipeline_uuid`</b>:  The uuid of the hosted pipeline to load. 
+ - <b>`include_trained_models`</b>:  If True, trained models will be loaded along with  the pipeline. If False (default), trained models will not be loaded. 
+
+
+
+**Returns:**
+ A `Pipeline` instance. 
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L280"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>method</kbd> `hypertune`
+
+```python
+hypertune(
+    data: 'DataFrame',
+    hypertune_config: 'HypertuneConfig',
+    pipeline_config_id: 'Optional[int]' = None,
+    model_config: 'Optional[LinearConfig]' = None,
+    hosted: 'bool' = False
+) → List[Union[TrainedModel, str]]
+```
+
+Returns a list of trained models trained according to the given configs. 
+
+
+
+**Args:**
+ 
+ - <b>`data`</b>:  The raw dataframe to be trained on. 
+ - <b>`hypertune_config`</b>:  The config to be used for hypertuning the model. 
+ - <b>`pipeline_config_id`</b>:  The id of the pipeline config to be used for training.  If not provided, the current pipeline config will be versioned and used.  If data is an int, this argument is ignored and the pipeline config used  to prepare the data with the given id will be used. 
+ - <b>`model_config`</b>:  The config to be used for training the model. If not provided,  a default config will be used. 
+ - <b>`hosted`</b>:  Whether to run the hypertune job on the SOTAI cloud. If False, the  hypertune job will be run locally. 
+
+
+
+**Returns:**
+ A list of `TrainedModel` instances if run locally, or a list of trained model uuids if run in the SOTAI cloud. 
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L411"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `inference`
 
 ```python
-inference(filepath: 'str', trained_model_uuid: 'str') → Optional[str]
+inference(filepath: 'str', trained_model: 'TrainedModel') → Optional[str]
 ```
 
 Runs inference on a dataset with a trained model in the SOTAI cloud. 
@@ -168,7 +228,7 @@ Runs inference on a dataset with a trained model in the SOTAI cloud.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L428"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L549"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `load`
 
@@ -191,7 +251,7 @@ Loads the pipeline from the specified filepath.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L148"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L159"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `prepare`
 
@@ -220,7 +280,7 @@ If any features in data are detected as non-numeric, the pipeline will attempt t
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L265"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L346"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `publish`
 
@@ -237,25 +297,28 @@ Uploads the pipeline to the SOTAI web client.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L414"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L479"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `save`
 
 ```python
-save(filepath: 'str')
+save(filepath: 'str', include_trained_models: 'bool' = True)
 ```
 
 Saves the pipeline to the specified filepath. 
+
+Trained models will be saved with the pipeline by default. 
 
 
 
 **Args:**
  
  - <b>`filepath`</b>:  The directory to which the pipeline wil be saved. If the directory  does not exist, this function will attempt to create it. If the  directory already exists, this function will overwrite any existing  content with conflicting filenames. 
+ - <b>`include_trained_models`</b>:  If True (default), then all models trained under  this pipeline present in the trained_models dictionary attribute will  be stored along with the pipeline under a `trained_models/{id}`  directory. If False, trained models will be excluded from saving. 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L206"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/pipeline.py#L216"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `train`
 

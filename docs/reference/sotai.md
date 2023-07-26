@@ -10,12 +10,12 @@ SOTAI SDK.
 - **enums**
 - **layers**
 - **constants**
-- **features**
 - **types**
+- **api**
+- **features**
 - **data**
 - **models**
 - **trained_model**
-- **api**
 - **training**
 - **pipeline**
 - **INFERENCE_POLLING_INTERVAL**

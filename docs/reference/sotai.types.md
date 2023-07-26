@@ -9,7 +9,7 @@ Pydantic models for Pipelines.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L18"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L19"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `DatasetSplit`
 Defines the split percentage for train, val, and test datasets. 
@@ -27,7 +27,7 @@ Defines the split percentage for train, val, and test datasets.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L32"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `validate_split_sum`
 
@@ -40,7 +40,7 @@ Ensures that the split percentages add up to 100.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L41"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `PreparedData`
 A train, val, and test set of data that's been cleaned. 
@@ -59,7 +59,7 @@ A train, val, and test set of data that's been cleaned.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L60"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L61"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `Dataset`
 A class for managing data. 
@@ -78,7 +78,7 @@ A class for managing data.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L106"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L107"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `LinearConfig`
 Configuration for a calibrated linear model. 
@@ -95,7 +95,7 @@ Configuration for a calibrated linear model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L116"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `TrainingConfig`
 Configuration for training a single model. 
@@ -115,7 +115,7 @@ Configuration for training a single model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L133"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `FeatureAnalysis`
 Feature analysis results for a single feature of a trained model. 
@@ -141,7 +141,7 @@ Feature analysis results for a single feature of a trained model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L163"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L164"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `TrainingResults`
 Training results for a single calibrated model. 
@@ -167,7 +167,7 @@ Training results for a single calibrated model.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L197"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L198"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `NumericalFeatureConfig`
 Configuration for a numerical feature. 
@@ -190,7 +190,7 @@ Configuration for a numerical feature.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L220"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L221"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CategoricalFeatureConfig`
 Configuration for a categorical feature. 
@@ -203,7 +203,7 @@ Configuration for a categorical feature.
  - <b>`type`</b>:  The type of the feature. Always `FeatureType.CATEGORICAL`. 
  - <b>`categories`</b>:  The categories for the feature. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L234"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L235"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -221,7 +221,7 @@ __init__(**kwargs)
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L238"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L239"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `PipelineConfig`
 A configuration object for a `Pipeline`. 
@@ -239,6 +239,52 @@ A configuration object for a `Pipeline`.
  - <b>`shuffle_data`</b>:  Whether to shuffle the data before splitting it into train,  validation, and test sets. 
  - <b>`drop_empty_percentage`</b>:  Rows will be dropped if they are this percentage empty. 
  - <b>`dataset_split`</b>:  The split of the dataset into train, validation, and test sets. 
+
+
+
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L270"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>class</kbd> `HypertuneConfig`
+A configuration object for hypertuning. 
+
+
+
+**Attributes:**
+ 
+ - <b>`loss_type`</b>:  The type of loss function to use for training. 
+ - <b>`epochs`</b>:  A list of epochs to try. 
+ - <b>`batch_sizes`</b>:  A list of batch sizes to try. 
+ - <b>`learning_rates`</b>:  A list of learning rates to try. 
+ - <b>`hypertune_method`</b>:  The method to use for hypertuning. 
+
+
+
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L288"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>class</kbd> `TrainedModelMetadata`
+Metadata for a trained model. 
+
+
+
+**Attributes:**
+ 
+ - <b>`id`</b>:  The ID of the trained model. 
+ - <b>`dataset_id`</b>:  The ID of the dataset used to train the model. 
+ - <b>`pipeline_uuid`</b>:  The UUID of the pipeline used to train the model. This will be `None` if the trained model has not been analyzed under a pipeline. 
+ - <b>`pipeline_config`</b>:  The configuration of the pipeline used to train the model. 
+ - <b>`model_config`</b>:  The configuration of the model used to train the model. 
+ - <b>`training_config`</b>:  The training configuration used to train the model. 
+ - <b>`training_results`</b>:  The results of training the model. 
+ - <b>`uuid`</b>:  The UUID of the trained model. This will be `None` if the trained model has not been analyzed under a pipeline. 
+ - <b>`analysis_url`</b>:  The URL of the analysis of the trained model. This will be `None` if the trained model has not been analyzed under a pipeline. 
 
 
 

@@ -82,7 +82,32 @@ Initializes an instance of `NumericalCalibrator`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/constrain#L154"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/assert_constraints#L154"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>method</kbd> `assert_constraints`
+
+```python
+assert_constraints(eps=1e-06) → List[str]
+```
+
+Asserts that layer satisfies specified constraints. 
+
+This checks that weights follow the layer's monotonicity and that the output is within bounds. 
+
+
+
+**Args:**
+ 
+ - <b>`eps`</b>:  the margin of error allowed 
+
+
+
+**Returns:**
+ A list of messages describing violated constraints including indices of monotonicity violations. If no constraints violated, the list will be empty. 
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/constrain#L190"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `constrain`
 
@@ -119,7 +144,7 @@ Calibrates numerical inputs through piece-wise linear interpolation.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_inputs#L231"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_inputs#L267"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_inputs`
 
@@ -131,7 +156,7 @@ Returns tensor of keypoint inputs.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_outputs#L242"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/numerical_calibrator/keypoints_outputs#L278"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_outputs`
 
