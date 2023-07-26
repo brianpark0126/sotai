@@ -519,21 +519,21 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         """
         (
             pipeline_metadata,
-            feature_configs,
+            last_config_id,
             pipeline_configs,
             trained_model_uuids,
         ) = get_pipeline(pipeline_uuid)
 
-        pipeline = cls(
+        if not pipeline_configs:
+            raise ValueError(
+                "Pipeline configs not found. Please run training before loading."
+            )
+        pipeline = Pipeline.from_config(
             name=pipeline_metadata["name"],
-            features=feature_configs,
-            target=pipeline_metadata["target"],
-            target_type=pipeline_metadata["target_type"],
-            primary_metric=pipeline_metadata["primary_metric"],
+            config=pipeline_configs[last_config_id] ,
         )
         pipeline.configs = pipeline_configs
         pipeline.uuid = pipeline_uuid
-        pipeline.feature_configs = feature_configs
 
         if include_trained_models:
             for trained_model_uuid in trained_model_uuids:

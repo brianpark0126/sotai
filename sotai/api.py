@@ -488,12 +488,15 @@ def parse_pipeline_config(
 
     Args:
         pipeline_config_json: The pipeline config JSON to parse.
-        update_dict: The dictionary to update the pipeline config with.
+        update_dict: The dictionary with which to update the pipeline config.
 
     Returns:
         The parsed pipeline config.
     """
-    pipeline_config_json["dataset_split"] = DatasetSplit(
+    pipeline_config = {}
+    pipeline_config.update(pipeline_config_json)
+    pipeline_config.update(update_dict)
+    pipeline_config["dataset_split"] = DatasetSplit(
         train=pipeline_config_json["train_percentage"],
         val=pipeline_config_json["validation_percentage"],
         test=pipeline_config_json["test_percentage"],
@@ -509,13 +512,13 @@ def parse_pipeline_config(
             else:
                 feature["categories_int"] = feature["categories_int"]
                 del feature["categories_int"]
-        feature_configs[feature["name"]] = feature
+            feature_configs[feature["name"]] = CategoricalFeatureConfig(**feature)
+        else:
+            feature_configs[feature["name"]] = NumericalFeatureConfig(**feature)
 
-    pipeline_config_json["feature_configs"] = feature_configs
-    pipeline_config_json["id"] = pipeline_config_json["pipeline_config_sdk_id"]
-    pipeline_config_json.update(update_dict)
-    pipeline_config = PipelineConfig(**pipeline_config_json)
-    return pipeline_config
+    pipeline_config["feature_configs"] = feature_configs
+    pipeline_config["id"] = pipeline_config_json["pipeline_config_sdk_id"]
+    return PipelineConfig(**pipeline_config)
 
 
 def get_pipeline(
@@ -527,9 +530,9 @@ def get_pipeline(
         pipeline_uuid: The UUID of the pipeline to get.
 
     Returns:
-        A tuple containing the metadata for the pipeline, the feature configs for the
-        pipeline, the pipeline configs for the pipeline, and the UUIDs of the trained
-        models for the pipeline.
+        A tuple containing the metadata for the pipeline, the id for the most recent 
+        config of the pipeline, the pipeline configs for the pipeline, and the UUIDs
+        of the trainedmodels for the pipeline.
     """
     response = requests.get(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}",
@@ -554,10 +557,9 @@ def get_pipeline(
         last_config_id = max(last_config_id, pipeline_config.id)
         pipeline_configs[pipeline_config.id] = pipeline_config
     last_config = pipeline_configs[last_config_id]
-    feature_configs = last_config.feature_configs
     pipeline_metadata["dataset_split"] = last_config.dataset_split
     trained_model_uuids = response.json()["trained_model_metadata_uuids"]
-    return pipeline_metadata, feature_configs, pipeline_configs, trained_model_uuids
+    return pipeline_metadata, last_config_id, pipeline_configs, trained_model_uuids
 
 
 def get_trained_model_uuids(pipeline_uuid: str) -> List[str]:
@@ -593,13 +595,13 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    trained_model_metadata = response.json()["trained_model_metadata"]
+    trained_model_metadata_json = response.json()["trained_model_metadata"]
     overall_model_results = response.json()["overall_model_results"]
     model_config = response.json()["model_config"]
     pipeline_config_json = response.json()["pipeline_config"]
     feature_analyses = response.json()["feature_analyses"]
-    real_trained_model_metadata = {
-        "id": trained_model_metadata["trained_model_sdk_id"],
+    trained_model_metadata = {
+        "id": trained_model_metadata_json["trained_model_sdk_id"],
         "model_config": LinearConfig(
             output_calibration=model_config["output_calibration"],
             output_calibration_num_keypoints=model_config[
@@ -614,7 +616,7 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
             use_bias=model_config["use_bias"],
         ),
         "training_config": TrainingConfig(
-            epochs=trained_model_metadata["epochs"],
+            epochs=trained_model_metadata_json["epochs"],
             batch_size=overall_model_results["batch_size"],
             learning_rate=overall_model_results["learning_rate"],
             loss_type=model_config["loss_type"],
@@ -665,7 +667,7 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
             },
         ),
     }
-    return real_trained_model_metadata
+    return trained_model_metadata
 
 
 def download_trained_model(trained_model_uuid: str):

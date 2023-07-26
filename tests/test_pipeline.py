@@ -13,10 +13,10 @@ from sotai import (
     Pipeline,
     PipelineConfig,
     TargetType,
+    NumericalFeatureConfig
 )
 from sotai.enums import InferenceConfigStatus
 from sotai.constants import SOTAI_BASE_URL
-
 
 @pytest.mark.parametrize(
     "target_type,expected_primary_metric",
@@ -300,7 +300,6 @@ def test_analysis(
     post_trained_model_analysis.assert_called_once_with(
         "test_pipeline_config_id", trained_model
     )
-    print(analysis_response)
     assert (
         analysis_response
         == f"{SOTAI_BASE_URL}/pipelines/test_pipeline_id/trained-models/test_uuid"
@@ -431,45 +430,35 @@ def test_hypertune_local(fixture_feature_names, fixture_target, fixture_data):
             "target_type": "classification",
             "primary_metric": "auc",
         },
+        0,
         {
-            "age": {
-                "name": "age",
-                "type": "numerical",
-                "num_keypoints": 10,
-                "input_keypoints_init": "quantiles",
-                "monotonicity": None,
-            },
-            "chol": {
-                "name": "chol",
-                "type": "numerical",
-                "num_keypoints": 10,
-                "input_keypoints_init": "quantiles",
-                "monotonicity": None,
-            },
-        },
-        {
-            "0": {
+            0: PipelineConfig(**{
                 "id": 0,
                 "target": "target",
                 "target_type": "classification",
                 "primary_metric": "auc",
                 "feature_configs": {
-                    "age": {
+                    "age": NumericalFeatureConfig(**{
                         "name": "age",
-                        "type": "numerical",
                         "num_keypoints": 10,
                         "input_keypoints_init": "quantiles",
-                        "monotonicity": None,
-                    },
-                    "chol": {
+                        "monotonicity": "none",
+                    }),
+                    "chol": NumericalFeatureConfig(**{
                         "name": "chol",
-                        "type": "numerical",
                         "num_keypoints": 10,
                         "input_keypoints_init": "quantiles",
-                        "monotonicity": None,
-                    },
+                        "monotonicity": "none",
+                    }),
                 },
-            }
+                "shuffle_data": False,
+                "drop_empty_percentage": 70,
+                "dataset_split": {
+                    "train": 80,
+                    "val": 10,
+                    "test": 10,
+                },
+            })
         },
         ["test_uuid"],
     ),

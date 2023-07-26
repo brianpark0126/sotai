@@ -426,7 +426,7 @@ def test_get_pipeline(mock_get_api_key, mock_get):
 
     (
         pipeline_metadata,
-        feature_configs,
+        last_pipeline_config,
         pipeline_configs,
         trained_model_uuids,
     ) = get_pipeline("test_uuid")
@@ -439,10 +439,7 @@ def test_get_pipeline(mock_get_api_key, mock_get):
     assert trained_model_uuids[0] == "test_model_uuid"
     assert pipeline_configs[1].uuid == "test_pipeline_config_uuid"
     assert pipeline_metadata["name"] == "target_classification"
-    assert feature_configs["age"].name == "age"
-    assert feature_configs["age"].num_keypoints == 10
-    assert feature_configs["age"].input_keypoints_init == "quantiles"
-    assert feature_configs["age"].input_keypoints_type == "fixed"
+    assert last_pipeline_config == 1
 
 
 @patch(
@@ -643,4 +640,3 @@ def test_get_trained_model_metadata(mock_get_api_key, mock_get):
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
-    print(trained_model_metadata)
