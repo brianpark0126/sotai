@@ -3,7 +3,6 @@ import logging
 import os
 import tarfile
 import urllib
-
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import requests
@@ -11,17 +10,17 @@ import requests
 from .constants import SOTAI_API_ENDPOINT, SOTAI_API_TIMEOUT, SOTAI_BASE_URL
 from .enums import APIStatus, InferenceConfigStatus
 from .types import (
-    _BaseModelConfig,
     CategoricalFeatureConfig,
+    DatasetSplit,
     FeatureType,
+    HypertuneConfig,
     LinearConfig,
     NumericalFeatureConfig,
     PipelineConfig,
-    HypertuneConfig,
-    TrainingResults,
-    DatasetSplit,
-    TrainingConfig,
     TrainedModelMetadata,
+    TrainingConfig,
+    TrainingResults,
+    _BaseModelConfig,
 )
 
 
@@ -481,7 +480,7 @@ def post_hypertune_job(
     return APIStatus.SUCCESS, response.json()["trainedModelMetadataUuids"]
 
 
-def parse_pipeline_config(
+def _parse_pipeline_config(
     pipeline_config_json: Dict[str, Any], update_dict: Dict[str, Any]
 ) -> PipelineConfig:
     """Parse a pipeline config from the SOTAI API.
@@ -553,7 +552,9 @@ def get_pipeline(
     pipeline_configs = {}
 
     for pipeline_config_json in response.json()["pipeline_configs"]:
-        pipeline_config = parse_pipeline_config(pipeline_config_json, pipeline_metadata)
+        pipeline_config = _parse_pipeline_config(
+            pipeline_config_json, pipeline_metadata
+        )
         last_config_id = max(last_config_id, pipeline_config.id)
         pipeline_configs[pipeline_config.id] = pipeline_config
     last_config = pipeline_configs[last_config_id]
@@ -658,7 +659,7 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
                 )
             ),
         ),
-        "pipeline_config": parse_pipeline_config(
+        "pipeline_config": _parse_pipeline_config(
             pipeline_config_json,
             {
                 "target": model_config["target_column"],
