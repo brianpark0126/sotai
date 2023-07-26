@@ -89,7 +89,26 @@ Initializes an instance of `CalibratedLinear`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/models/constrain#L178"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/models/assert_constraints#L179"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>method</kbd> `assert_constraints`
+
+```python
+assert_constraints() → Dict[str, List[str]]
+```
+
+Asserts all layers within model satisfied specified constraints. 
+
+Asserts monotonicity pairs and output bounds for categorical calibrators, monotonicity and output bounds for numerical calibrators, and monotonicity and weights summing to 1 if weighted_average for linear layer. 
+
+
+
+**Returns:**
+  A dict where key is feature_name for calibrators and 'linear' for the linear  layer, and value is the error messages for each layer. Layers with no error  messages are not present in the dictionary. 
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/models/constrain#L204"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `constrain`
 
