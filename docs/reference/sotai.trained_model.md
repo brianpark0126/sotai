@@ -44,7 +44,30 @@ trained_model.analyze()
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L105"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L97"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>classmethod</kbd> `from_hosted`
+
+```python
+from_hosted(trained_model_uuid: 'str') → TrainedModel
+```
+
+Loads a trained model from the hosted API. 
+
+
+
+**Args:**
+ 
+ - <b>`trained_model_uuid`</b>:  The UUID of the trained model to load. 
+
+
+
+**Returns:**
+ A `TrainedModel` instance. 
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L115"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `load`
 
@@ -67,7 +90,7 @@ Loads a trained model from the specified filepath.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L63"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L55"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `predict`
 
@@ -90,7 +113,7 @@ Returns predictions for the given data.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L89"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/trained_model.py#L81"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `save`
 

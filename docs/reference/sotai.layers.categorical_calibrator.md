@@ -81,7 +81,32 @@ Initializes an instance of `CategoricalCalibrator`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/constrain#L139"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/assert_constraints#L139"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>method</kbd> `assert_constraints`
+
+```python
+assert_constraints(eps=1e-06) → List[str]
+```
+
+Asserts that layer satisfies specified constraints. 
+
+This checks that weights at the indexes of monotonicity pairs are in the correct order and that the output is within bounds. 
+
+
+
+**Args:**
+ 
+ - <b>`eps`</b>:  the margin of error allowed 
+
+
+
+**Returns:**
+ A list of messages describing violated constraints including violated monotonicity pairs. If no constraints  violated, the list will be empty. 
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/constrain#L172"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `constrain`
 
@@ -116,7 +141,7 @@ Calibrates categorical inputs through a learned mapping.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_inputs#L157"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_inputs#L190"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_inputs`
 
@@ -128,7 +153,7 @@ Returns a tensor of keypoint inputs (category indices).
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_outputs#L170"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/categorical_calibrator/keypoints_outputs#L203"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `keypoints_outputs`
 

@@ -80,7 +80,32 @@ Initializes an instance of `Linear`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear/constrain#L100"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear/assert_constraints#L100"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>method</kbd> `assert_constraints`
+
+```python
+assert_constraints(eps=1e-06) → List[str]
+```
+
+Asserts that layer satisfies specified constraints. 
+
+This checks that decreasing monotonicity corresponds to negative weights, increasing monotonicity corresponds to positive weights, and weights sum to 1 for weighted_average=True. 
+
+
+
+**Args:**
+ 
+ - <b>`eps`</b>:  the margin of error allowed 
+
+
+
+**Returns:**
+ A list of messages describing violated constraints. If no constraints violated, the list will be empty. 
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/linear/constrain#L145"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `constrain`
 
