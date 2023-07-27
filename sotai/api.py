@@ -177,10 +177,10 @@ def post_trained_model_analysis(
         model analysis. If unsuccessful, the UUID will be `None`.
 
         Keys:
-            - `trainedModelMetadataUUID`: The UUID of the trained model.
-            - `modelConfigUUID`: The UUID of the model configuration.
-            - `pipelineConfigUUID`: The UUID of the pipeline configuration.
-            - `analysisURL`: The URL of the trained model analysis.
+            - `trained_model_metadata_uuid`: The UUID of the trained model.
+            - `model_config_uuid`: The UUID of the model configuration.
+            - `pipeline_config_uuid`: The UUID of the pipeline configuration.
+            - `analysis_url`: The URL of the trained model analysis.
     """
     training_results = trained_model.training_results
     train_primary_metrics = training_results.train_primary_metric_by_epoch
@@ -319,7 +319,7 @@ def post_inference(
         logging.error(response.json())
         return APIStatus.ERROR, None
 
-    return APIStatus.SUCCESS, response.json()["inferenceConfigUUID"]
+    return APIStatus.SUCCESS, response.json()["inference_config_uuid"]
 
 
 def get_inference_status(

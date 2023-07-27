@@ -393,7 +393,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if analysis_response_status == APIStatus.ERROR:
             return None
 
-        trained_model.uuid = analysis_results["trainedModelMetadataUUID"]
+        trained_model.uuid = analysis_results["trained_model_metadata_uuid"]
 
         upload_response = self._upload_model(trained_model)
         if upload_response == APIStatus.ERROR:
