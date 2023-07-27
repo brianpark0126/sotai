@@ -209,7 +209,7 @@ def test_post_trained_model(
     return_value=MockResponse({"inference_config_uuid": "test_inference_uuid"}),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_post_inferencel(
+def test_post_inference(
     mock_get_api_key,
     mock_post,
     mock_open_data,

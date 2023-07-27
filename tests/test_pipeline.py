@@ -259,7 +259,7 @@ def test_publish(
     "sotai.pipeline.post_trained_model_analysis",
     return_value=(
         APIStatus.SUCCESS,
-        {"trainedModelMetadataUUID": "test_uuid"},
+        {"trained_model_metadata_uuid": "test_uuid"},
     ),
 )
 @patch("sotai.pipeline.post_pipeline_feature_configs", return_value=APIStatus.SUCCESS)
