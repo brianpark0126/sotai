@@ -301,10 +301,11 @@ def test_analysis(
     post_trained_model_analysis.assert_called_once_with(
         "test_pipeline_config_id", trained_model
     )
-    assert (
-        analysis_response
-        == f"{SOTAI_BASE_URL}/pipelines/test_pipeline_id/trained-models/test_uuid"
+    expected_analysis_response = (
+        f"{SOTAI_BASE_URL}/pipelines/test_pipeline_id/"
+        f"trained-models/test_uuid/overall-model-results"
     )
+    assert analysis_response == expected_analysis_response
 
 
 @patch(

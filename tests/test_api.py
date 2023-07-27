@@ -303,7 +303,7 @@ def test_post_dataset(
 @patch(
     "requests.post",
     return_value=MockResponse(
-        {"trainedModelMetadataUuids": ["test_uuid_1", "test_uuid_2"]}
+        {"trained_model_metadata_uuids": ["test_uuid_1", "test_uuid_2"]}
     ),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
