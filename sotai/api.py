@@ -477,7 +477,7 @@ def post_hypertune_job(
         logging.error(response.json())
         return APIStatus.ERROR, None
 
-    return APIStatus.SUCCESS, response.json()["trainedModelMetadataUuids"]
+    return APIStatus.SUCCESS, response.json()["trained_model_metadata_uuids"]
 
 
 def _parse_pipeline_config(
