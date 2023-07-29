@@ -164,10 +164,10 @@ Create a new trained model analysis on the SOTAI API.
  A tuple containing the status of the API call and a dict containing the UUIDs of the resources created as well as a link that can be used to view the trained model analysis. If unsuccessful, the UUID will be `None`. 
 
 Keys: 
-        - `trainedModelMetadataUUID`: The UUID of the trained model. 
-        - `modelConfigUUID`: The UUID of the model configuration. 
-        - `pipelineConfigUUID`: The UUID of the pipeline configuration. 
-        - `analysisURL`: The URL of the trained model analysis. 
+        - `trained_model_metadata_uuid`: The UUID of the trained model. 
+        - `model_config_uuid`: The UUID of the model configuration. 
+        - `pipeline_config_uuid`: The UUID of the pipeline configuration. 
+        - `analysis_url`: The URL of the trained model analysis. 
 
 
 ---
