@@ -69,7 +69,6 @@ def post_pipeline(pipeline) -> Tuple[APIStatus, Optional[str]]:
     if response.status_code != 200:
         logging.error("Failed to create pipeline")
         return APIStatus.ERROR, None
-
     return APIStatus.SUCCESS, response.json()["uuid"]
 
 
@@ -504,7 +503,7 @@ def _parse_pipeline_config(
     for feature in pipeline_config_json["feature_config_list"]:
         feature["name"] = feature["feature_name"]
         feature["type"] = feature["feature_type"]
-        if feature["feature_type"] == "CATEGORICAL":
+        if feature["feature_type"] == "categorical":
             if feature["categories_str"]:
                 feature["categories"] = feature["categories_str"]
                 del feature["categories_str"]
