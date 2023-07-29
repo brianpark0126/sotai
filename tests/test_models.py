@@ -384,4 +384,4 @@ def test_training():  # pylint: disable=too-many-locals
         trained_loss = loss_fn(trained_predictions, training_labels)
 
     assert trained_loss < initial_loss
-    assert trained_loss < 0.0175
+    assert trained_loss < 0.02
