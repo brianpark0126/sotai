@@ -82,7 +82,7 @@ Create a new pipeline on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L76"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L75"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline_config`
 
@@ -110,7 +110,7 @@ Create a new pipeline config on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L110"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L109"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_pipeline_feature_configs`
 
@@ -138,7 +138,7 @@ Create a new pipeline feature configs on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L164"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L163"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_trained_model_analysis`
 
@@ -172,7 +172,7 @@ Keys:
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L262"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L261"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_trained_model`
 
@@ -200,7 +200,7 @@ Create a new trained model on the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L294"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L293"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_inference`
 
@@ -228,7 +228,7 @@ Create a new inference on the SOTAI API .
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L325"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L324"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_inference_status`
 
@@ -254,7 +254,7 @@ Get an inference from the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L351"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L350"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_inference_results`
 
@@ -281,7 +281,7 @@ Get an inference from the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L378"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L377"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_dataset`
 
@@ -313,7 +313,7 @@ Upload a dataset to th the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L416"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L415"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `post_hypertune_job`
 
@@ -345,7 +345,7 @@ Upload a dataset to th the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L523"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L522"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_pipeline`
 
@@ -371,7 +371,7 @@ Get a pipeline from the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L566"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L565"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_trained_model_uuids`
 
@@ -395,7 +395,7 @@ Get the UUIDs of the trained models for a pipeline from the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L584"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L583"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_trained_model_metadata`
 
@@ -419,7 +419,7 @@ Get the metadata for a TrainedModelfrom the SOTAI API.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L675"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L674"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `download_trained_model`
 
