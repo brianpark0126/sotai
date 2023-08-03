@@ -5,7 +5,7 @@
 # current release. Use Semantic Versioning.
 __version__ = "0.4.0"
 
-from . import layers
+from . import api, constants, data, demo, features, layers, models, training
 from .enums import *
 from .pipeline import *
 from .trained_model import *
