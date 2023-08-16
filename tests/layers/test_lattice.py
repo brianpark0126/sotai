@@ -23,27 +23,44 @@ def test_initialization(
     lattice = Lattice(lattice_sizes)
     assert lattice.kernel.data.size() == expected_size
     assert lattice.interpolation == "hypercube"
-    assert lattice.clip_inputs == True
+    assert lattice.clip_inputs
     assert lattice.units == 1
 
+
 @pytest.mark.parametrize(
-    "lattice_sizes, min, max, units, expected_out",
+    "lattice_sizes, output_min, output_max, units, expected_out",
     [
         ([2], 0.0, 1.0, 1, torch.Tensor([[0], [1]])),
         ([2, 2], 0.0, 1.0, 1, torch.Tensor([[0], [0.5], [0.5], [1]])),
-        ([2, 3], 0.2, 3.1, 2, torch.Tensor([[0.2, 0.2], [0.925, 0.925], [1.65, 1.65],
-                                            [1.65, 1.65], [2.375, 2.375], [3.1, 3.1]])),
+        (
+            [2, 3],
+            0.2,
+            3.1,
+            2,
+            torch.Tensor(
+                [
+                    [0.2, 0.2],
+                    [0.925, 0.925],
+                    [1.65, 1.65],
+                    [1.65, 1.65],
+                    [2.375, 2.375],
+                    [3.1, 3.1],
+                ]
+            ),
+        ),
     ],
 )
 def test_linear_initialization(
     lattice_sizes,
-    min,
-    max,
+    output_min,
+    output_max,
     units,
     expected_out,
 ):
     """Tests that linear initialization generates correct values."""
-    lattice = Lattice(lattice_sizes, output_min=min, output_max=max, units=units)
+    lattice = Lattice(
+        lattice_sizes, output_min=output_min, output_max=output_max, units=units
+    )
     assert torch.allclose(lattice.kernel, expected_out.double())
 
 
@@ -106,7 +123,7 @@ def test_forward_hypercube_2_units(
 
 
 @pytest.mark.parametrize(
-    "input, expected_out",
+    "inputs, expected_out",
     [
         (
             [torch.tensor([[0.8, 0.2]]), torch.tensor([[0.7, 0.3]])],
@@ -171,13 +188,15 @@ def test_forward_hypercube_2_units(
     ],
 )
 def test_batch_outer_operation(
-    input,
+    inputs,
     expected_out,
 ):
     """Tests batch_outer_operation works correctly"""
+    # pylint: disable=protected-access
     assert torch.allclose(
-        Lattice._batch_outer_operation(input), expected_out, atol=1e-4
+        Lattice._batch_outer_operation(inputs), expected_out, atol=1e-4
     )
+    # pylint: enable=protected-access
 
 
 @pytest.mark.parametrize(
@@ -217,9 +236,11 @@ def test_bucketize_consecutive_inputs(
 ):
     """Tests bucketize_consecutive_inputs works correctly"""
     lattice = Lattice(lattice_sizes)
+    # pylint: disable=protected-access
     actual_out = list(
         lattice._bucketize_consecutive_equal_dims(torch.tensor([[0.1, 0.2, 0.3, 0.4]]))
     )
+    # pylint: enable=protected-access
     for (expected_tensor, expected_int1, expected_int2), (
         actual_tensor,
         actual_int1,

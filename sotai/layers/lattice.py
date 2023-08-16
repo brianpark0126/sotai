@@ -12,6 +12,7 @@ import torch
 from ..enums import Interpolation, LatticeInit, Monotonicity
 
 
+# pylint: disable=too-many-instance-attributes
 class Lattice(torch.nn.Module):
     """A Lattice Module.
 
@@ -62,14 +63,13 @@ class Lattice(torch.nn.Module):
         def initialize_kernel() -> torch.Tensor:
             if self.kernel_init == LatticeInit.LINEAR:
                 return self._linear_initializer()
-            elif self.kernel_init == LatticeInit.RANDOM_MONOTONIC:
+            if self.kernel_init == LatticeInit.RANDOM_MONOTONIC:
                 raise ValueError("Random monotonic initialization not yet implemented.")
-            else:
-                raise ValueError("Other initializations not yet implemented.")
+            raise ValueError("Other initializations not yet implemented.")
 
         self.kernel = torch.nn.Parameter(initialize_kernel())
 
-
+    # pylint: disable-next=invalid-name
     def forward(self, x: Union[torch.Tensor, List[torch.Tensor]]) -> torch.Tensor:
         """Calculates interpolation from input, using method of self.interpolation.
 
@@ -90,18 +90,18 @@ class Lattice(torch.nn.Module):
         """
         if self.interpolation == Interpolation.HYPERCUBE:
             return self._compute_hypercube_interpolation(x.double())
-        elif self.interpolation == Interpolation.SIMPLEX:
+        if self.interpolation == Interpolation.SIMPLEX:
             raise ValueError("Simplex interpolation not yet implemented.")
-        else:
-            raise ValueError(f"Unknown interpolation type: {self.interpolation}")
+        raise ValueError(f"Unknown interpolation type: {self.interpolation}")
 
     ################################################################################
     ############################## PRIVATE METHODS #################################
     ################################################################################
 
-    def _linear_initializer(self,
-                           monotonicities: List[Monotonicity] = None,
-                           unimodalities = None,
+    def _linear_initializer(
+        self,
+        monotonicities: List[Monotonicity] = None,
+        unimodalities=None,
     ) -> torch.Tensor:
         """Creates initial weights tensor for linear initialization.
 
@@ -128,19 +128,22 @@ class Lattice(torch.nn.Module):
         dim_range = float(self.output_max - self.output_min) / num_constraint_dims
         one_d_weights = []
 
-        for monotonicity, unimodality, dim_size in zip(monotonicities, unimodalities,
-                                                       self.lattice_sizes):
+        for monotonicity, unimodality, dim_size in zip(
+            monotonicities, unimodalities, self.lattice_sizes
+        ):
             if monotonicity != 0:
                 one_d = np.linspace(start=0.0, stop=dim_range, num=dim_size)
             elif unimodality != 0:
-                decreasing = np.linspace(start=dim_range, stop=0.0,
-                                         num=(dim_size + 1) // 2)
-                increasing = np.linspace(start=0.0, stop=dim_range,
-                                         num=(dim_size + 1) // 2)
+                decreasing = np.linspace(
+                    start=dim_range, stop=0.0, num=(dim_size + 1) // 2
+                )
+                increasing = np.linspace(
+                    start=0.0, stop=dim_range, num=(dim_size + 1) // 2
+                )
                 if unimodality == 1:
-                    one_d = np.concatenate((decreasing, increasing[dim_size % 2:]))
+                    one_d = np.concatenate((decreasing, increasing[dim_size % 2 :]))
                 else:
-                    one_d = np.concatenate((increasing, decreasing[dim_size % 2:]))
+                    one_d = np.concatenate((increasing, decreasing[dim_size % 2 :]))
             else:
                 one_d = np.array([0.0] * dim_size)
 
@@ -188,8 +191,8 @@ class Lattice(torch.nn.Module):
         )
         if self.units == 1:
             return torch.matmul(interpolation_weights, self.kernel)
-        else:
-            return torch.sum(interpolation_weights * self.kernel.t(), dim=-1)
+
+        return torch.sum(interpolation_weights * self.kernel.t(), dim=-1)
 
     def _compute_interpolation_weights(
         self, inputs: Union[torch.Tensor, List[torch.Tensor]], clip_inputs: bool = True
@@ -226,9 +229,11 @@ class Lattice(torch.nn.Module):
         if all(size == 2 for size in self.lattice_sizes) and not isinstance(
             inputs, list
         ):
+            # pylint: disable=invalid-name
             w = torch.stack([(1.0 - inputs), inputs], dim=-1)
             if clip_inputs:
                 w = torch.clamp(w, min=0, max=1)
+            # pylint: enable=invalid-name
             one_d_interpolation_weights = list(torch.unbind(w, dim=-2))
             return self._batch_outer_operation(one_d_interpolation_weights)
 
@@ -239,7 +244,7 @@ class Lattice(torch.nn.Module):
         dim_keypoints = {}
         for dim_size in set(self.lattice_sizes):
             dim_keypoints[dim_size] = torch.tensor(
-                [i for i in range(dim_size)], dtype=input_dtype
+                list(range(dim_size)), dtype=input_dtype
             )
         bucketized_inputs = self._bucketize_consecutive_equal_dims(inputs)
         one_d_interpolation_weights = []
@@ -260,8 +265,8 @@ class Lattice(torch.nn.Module):
 
     @staticmethod
     def _batch_outer_operation(
-            list_of_tensors: List[torch.Tensor],
-            operation: Union[str, Callable] = "auto",
+        list_of_tensors: List[torch.Tensor],
+        operation: Union[str, Callable] = "auto",
     ) -> torch.Tensor:
         """Computes the flattened outer product of a list of tensors.
 
@@ -279,10 +284,12 @@ class Lattice(torch.nn.Module):
         result = torch.unsqueeze(list_of_tensors[0], dim=-1)
 
         for i, tensor in enumerate(list_of_tensors[1:]):
+            # pylint: disable=invalid-name
             if operation == "auto":
                 op = torch.mul if i < 6 else torch.matmul
             else:
                 op = operation
+            # pylint: enable=invalid-name
 
             result = op(result, torch.unsqueeze(tensor, dim=-2))
             shape = [-1] + [int(size) for size in result.shape[1:]]
