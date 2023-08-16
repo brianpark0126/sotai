@@ -26,6 +26,26 @@ def test_initialization(
     assert lattice.clip_inputs == True
     assert lattice.units == 1
 
+@pytest.mark.parametrize(
+    "lattice_sizes, min, max, units, expected_out",
+    [
+        ([2], 0.0, 1.0, 1, torch.Tensor([[0], [1]])),
+        ([2, 2], 0.0, 1.0, 1, torch.Tensor([[0], [0.5], [0.5], [1]])),
+        ([2, 3], 0.2, 3.1, 2, torch.Tensor([[0.2, 0.2], [0.925, 0.925], [1.65, 1.65],
+                                            [1.65, 1.65], [2.375, 2.375], [3.1, 3.1]])),
+    ],
+)
+def test_linear_initialization(
+    lattice_sizes,
+    min,
+    max,
+    units,
+    expected_out,
+):
+    """Tests that linear initialization generates correct values."""
+    lattice = Lattice(lattice_sizes, output_min=min, output_max=max, units=units)
+    assert torch.allclose(lattice.kernel, expected_out.double())
+
 
 @pytest.mark.parametrize(
     "input_point, lattice_size, expected_out",
