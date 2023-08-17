@@ -76,7 +76,8 @@ class Lattice(torch.nn.Module):
                 return self._linear_initializer()
             if self.kernel_init == LatticeInit.RANDOM_MONOTONIC:
                 raise NotImplementedError(
-                    "Random monotonic initialization not yet implemented.")
+                    "Random monotonic initialization not yet implemented."
+                )
             raise ValueError(f"Unknown kernel init: {self.kernel_init}")
 
         self.kernel = torch.nn.Parameter(initialize_kernel())
@@ -93,7 +94,7 @@ class Lattice(torch.nn.Module):
               `len(lattice_sizes)` tensors of same shape `(batch_size, ..., units, 1)`.
 
         Raises:
-            ValueError: If `interpolation == simplex`, as yet not implemented.
+            NotImplementedError: If `interpolation == simplex`, as yet not implemented.
             ValueError: If interpolation unknown.
 
         Returns:
