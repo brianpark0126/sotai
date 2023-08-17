@@ -210,7 +210,7 @@ class NumericalFeatureConfig(BaseModel):
     """
 
     name: str = Field(...)
-    type: Literal[FeatureType.NUMERICAL] = FeatureType.NUMERICAL
+    type: Literal[FeatureType.NUMERICAL] = Field(default=FeatureType.NUMERICAL)
     num_keypoints: int = 10
     input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
     input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
@@ -228,7 +228,7 @@ class CategoricalFeatureConfig(BaseModel):
     """
 
     name: str = Field(...)
-    type: Literal[FeatureType.CATEGORICAL] = FeatureType.CATEGORICAL
+    type: Literal[FeatureType.CATEGORICAL] = Field(default=FeatureType.CATEGORICAL)
     categories: Union[List[int], List[str]] = Field(...)
     # TODO (will): add support for categorical monotonicity.
 
