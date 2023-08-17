@@ -28,12 +28,12 @@ class Lattice(torch.nn.Module):
     Example:
     `python
     lattice_sizes = [2, 2, 4, 3]
-    inputs = torch.tensor(...) # shape: (batch_size,len(lattice_sizes))
-    lattice = Lattice(
+    inputs=torch.tensor(...) # shape: (batch_size, len(lattice_sizes))
+    lattice=Lattice(
       lattice_sizes,
-      clip_inputs = True,
-      interpolation = Interpolation.Hypercube,
-      units = 1,
+      clip_inputs=True,
+      interpolation=Interpolation.Hypercube,
+      units=1,
     )
     outputs = Lattice(inputs)
     `
@@ -49,6 +49,17 @@ class Lattice(torch.nn.Module):
         interpolation: Interpolation = Interpolation.HYPERCUBE,
         units: int = 1,
     ) -> None:
+        """Initializes an instance of 'Lattice'.
+
+        Args:
+            lattice_sizes: List or tuple of size of lattice along each dimension.
+            output_min: Minimum output value for weights at vertices of lattice.
+            output_max: Maximum output value for weights at vertices of lattice.
+            kernel_init: Initialization scheme to use for the kernel.
+            clip_inputs: Whether input points should be clipped to the range of lattice.
+            interpolation: Interpolation scheme for a given input.
+            units: Dimensionality of weights stored at each vertex of lattice.
+        """
         super().__init__()
 
         self.lattice_sizes = lattice_sizes
@@ -64,8 +75,9 @@ class Lattice(torch.nn.Module):
             if self.kernel_init == LatticeInit.LINEAR:
                 return self._linear_initializer()
             if self.kernel_init == LatticeInit.RANDOM_MONOTONIC:
-                raise ValueError("Random monotonic initialization not yet implemented.")
-            raise ValueError("Other initializations not yet implemented.")
+                raise NotImplementedError(
+                    "Random monotonic initialization not yet implemented.")
+            raise ValueError(f"Unknown kernel init: {self.kernel_init}")
 
         self.kernel = torch.nn.Parameter(initialize_kernel())
 
@@ -91,7 +103,7 @@ class Lattice(torch.nn.Module):
         if self.interpolation == Interpolation.HYPERCUBE:
             return self._compute_hypercube_interpolation(x.double())
         if self.interpolation == Interpolation.SIMPLEX:
-            raise ValueError("Simplex interpolation not yet implemented.")
+            raise NotImplementedError("Simplex interpolation not yet implemented.")
         raise ValueError(f"Unknown interpolation type: {self.interpolation}")
 
     ################################################################################
@@ -114,13 +126,14 @@ class Lattice(torch.nn.Module):
         Returns:
             `torch.Tensor` of shape `(prod(lattice_sizes), units)`
         """
-
+        # TODO: convert counting logic of monotoncities/unimodalities to suit enums.
         if monotonicities is None:
             monotonicities = [0] * len(self.lattice_sizes)
         if unimodalities is None:
             unimodalities = [0] * len(self.lattice_sizes)
 
         num_constraint_dims = self._count_non_zeros(monotonicities, unimodalities)
+
         if num_constraint_dims == 0:
             monotonicities = [1] * len(self.lattice_sizes)
             num_constraint_dims = len(self.lattice_sizes)
@@ -186,7 +199,7 @@ class Lattice(torch.nn.Module):
             `torch.Tensor` of shape `(batch_size, ..., units)` containing interpolated
             values.
         """
-        interpolation_weights = self._compute_interpolation_weights(
+        interpolation_weights = self._compute_hypercube_interpolation_weights(
             inputs=inputs, clip_inputs=self.clip_inputs
         )
         if self.units == 1:
@@ -194,7 +207,7 @@ class Lattice(torch.nn.Module):
 
         return torch.sum(interpolation_weights * self.kernel.t(), dim=-1)
 
-    def _compute_interpolation_weights(
+    def _compute_hypercube_interpolation_weights(
         self, inputs: Union[torch.Tensor, List[torch.Tensor]], clip_inputs: bool = True
     ) -> torch.Tensor:
         """Computes weights for hypercube lattice interpolation.

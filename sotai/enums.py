@@ -185,7 +185,8 @@ class Interpolation(_Enum):
 class LatticeInit(_Enum):
     """Type of kernel initialization to use for CategoricalCalibrator.
 
-    - LINEAR: initialize the kernel with weights represented by a linear function.
+    - LINEAR: initialize the kernel with weights represented by a linear function,
+        conforming to monotonicity and unimodality constraints.
     - RANDOM_MONOTONIC: initialize the kernel with a uniformly random sampled
         lattice layer weight tensor.
     """
