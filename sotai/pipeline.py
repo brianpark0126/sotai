@@ -295,7 +295,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         """Returns a list of trained models trained according to the given configs.
 
         Args:
-            data: The raw dataframe to be trained on,.
+            data: The raw data to be prepared and trained on. If an int is provided,
+                it is assumed to be a dataset id and the corresponding dataset will be
+                used.
             hypertune_config: The config to be used for hypertuning the model.
             pipeline_config_id: The id of the pipeline config to be used for training.
                 If not provided, the current pipeline config will be versioned and used.
@@ -745,16 +747,42 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         return trained_model_response
 
     def _upload_dataset(
-        self, pipeline_uuid: str, dataset: Union[int, pd.DataFrame], pipeline_config_id
-    ):
+        self,
+        pipeline_uuid: str,
+        data: Union[int, pd.DataFrame],
+        pipeline_config_id: int,
+    ) -> Optional[str]:
+        """Uploads the dataset to the SOTAI web client.
+
+        If a dataset has already been uploaded, this function will return without
+        uploading the dataset again. This function requires an internet connection and a
+        SOTAI account. The dataset will be uploaded to the SOTAI web client for
+        inference.
+
+        Args:
+            pipeline_uuid: The uuid of the pipeline to upload the dataset to.
+            data: The raw data to be prepared and trained on. If an int is provided,
+                it is assumed to be a dataset id and the corresponding dataset will be
+                used.
+            pipeline_config_id: The id of the pipeline config to be used for training.
+                If not provided, the current pipeline config will be versioned and used.
+                If data is an int, this argument is ignored and the pipeline config used
+                to prepare the data with the given id will be used.
+
+        Returns:
+            If the dataset was successfully uploaded, the dataset UUID.
+            Otherwise, `None`.
+        """
         filepath = "/tmp/sotai"
         if not os.path.exists(filepath):
             os.makedirs("/tmp/sotai/")
 
-        if isinstance(dataset, int):
-            dataset = self.datasets[dataset]
+        if isinstance(data, int):
+            dataset = self.datasets[data]
+            if dataset.uuid is not None:
+                return dataset.uuid
         else:
-            dataset, new_pipeline_config = self.prepare(dataset, pipeline_config_id)
+            dataset, new_pipeline_config = self.prepare(data, pipeline_config_id)
             pipeline_config_id = new_pipeline_config.id
 
         if self.configs[pipeline_config_id].uuid is None:

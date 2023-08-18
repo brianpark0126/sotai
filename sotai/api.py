@@ -401,9 +401,15 @@ def post_dataset(
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
         files=[
-            ("files", open(test_filepath, "rb")),
-            ("files", open(train_filepath, "rb")),
-            ("files", open(validation_filepath, "rb")),
+            ("files", open(test_filepath, "rb")),  # pylint: disable=consider-using-with
+            (
+                "files",
+                open(train_filepath, "rb"),
+            ),  # pylint: disable=consider-using-with
+            (
+                "files",
+                open(validation_filepath, "rb"),
+            ),  # pylint: disable=consider-using-with
         ],
         data={
             "pipeline_config_uuid": pipeline_config_uuid,
