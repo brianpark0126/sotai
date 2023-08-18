@@ -484,3 +484,69 @@ def test_load_from_hosted(mock_get_pipeline):
     assert len(pipeline.feature_configs) == 2
     assert len(pipeline.configs) == 1
     assert len(pipeline.datasets) == 0
+
+
+@patch("sotai.pipeline.TrainedModel.from_hosted", return_value=None)
+@patch(
+    "sotai.pipeline.get_trained_model_uuids",
+    return_value=["test_model_uuid"],
+)
+@patch(
+    "sotai.pipeline.Pipeline._upload_model",
+    return_value=(APIStatus.SUCCESS),
+)
+@patch(
+    "sotai.pipeline.Pipeline.analysis",
+    return_value=(APIStatus.SUCCESS),
+)
+@patch(
+    "sotai.pipeline.Pipeline._upload_dataset",
+    return_value=(APIStatus.SUCCESS, "test_dataset_id"),
+)
+@patch(
+    "sotai.pipeline.Pipeline._post_pipeline_config",
+    return_value="test_pipeline_config_id",
+)
+@patch(
+    "sotai.pipeline.Pipeline.publish",
+    return_value=None,
+)
+def test_sync(
+    publish,
+    post_pipeline_config,
+    upload_dataset,
+    analysis,
+    upload_model,
+    get_trained_model_uuids,
+    from_hosted,
+    fixture_data,
+    fixture_feature_names,
+    fixture_target,
+):
+    """Tests that a pipeline can be synced."""
+    pipeline = Pipeline(
+        fixture_feature_names,
+        fixture_target,
+        TargetType.CLASSIFICATION,
+        default_allow_hosting=True,
+    )
+
+    pipeline.hypertune(
+        fixture_data,
+        hypertune_config=HypertuneConfig(
+            epochs=[100, 200],
+            batch_sizes=[32],
+            learning_rates=[0.01],
+            loss_type=LossType.BINARY_CROSSENTROPY,
+        ),
+        hosted=False,
+    )
+    pipeline.sync()
+
+    publish.assert_called_once()
+    from_hosted.assert_called_once()
+    upload_dataset.assert_called_once()
+    post_pipeline_config.assert_called_once()
+    analysis.assert_called()
+    upload_model.assert_called()
+    get_trained_model_uuids.assert_called_once()

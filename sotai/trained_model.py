@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import logging
 import pickle
 from typing import Optional, Tuple
 import numpy as np
@@ -46,6 +47,7 @@ class TrainedModel(TrainedModelMetadata):
     """
 
     model: CalibratedLinear = Field(...)
+    allow_model_hosting: bool = False
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         """Standard Pydantic BaseModel Config."""
@@ -106,6 +108,13 @@ class TrainedModel(TrainedModelMetadata):
         """
 
         metadata = get_trained_model_metadata(trained_model_uuid)
+        if metadata is None:
+            logging.error(
+                "Trained model %s not found. "
+                "Model training may still be in progress.",
+                trained_model_uuid,
+            )
+            return None
         downloaded_file_path = download_trained_model(trained_model_uuid)
         model = torch.load(downloaded_file_path)
         model.eval()

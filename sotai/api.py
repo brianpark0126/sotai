@@ -4,12 +4,14 @@ import os
 import tarfile
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
-
+import pandas as pd
 import requests
 
 from .constants import SOTAI_API_ENDPOINT, SOTAI_API_TIMEOUT, SOTAI_BASE_URL
 from .enums import APIStatus, InferenceConfigStatus
 from .types import (
+    Dataset,
+    PreparedData,
     CategoricalFeatureConfig,
     DatasetSplit,
     FeatureType,
@@ -375,10 +377,13 @@ def get_inference_results(inference_uuid: str, download_folder: str) -> APIStatu
 
 
 def post_dataset(
-    data_filepath: str,
+    train_filepath: str,
+    test_filepath: str,
+    validation_filepath: str,
     columns: List[str],
     categorical_columns: List[str],
-    pipeline_uuid: str,
+    pipeline_config_uuid: str,
+    dataset_id: int,
 ) -> Tuple[APIStatus, Optional[str]]:
     """Upload a dataset to th the SOTAI API.
 
@@ -392,18 +397,23 @@ def post_dataset(
         A tuple containing the status of the API call and the UUID of the created
         dataset. If unsuccessful, the UUID will be `None`.
     """
-    with open(data_filepath, "rb") as data_file:
-        response = requests.post(
-            f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
-            files={"file": data_file},
-            data={
-                "pipeline_uuid": pipeline_uuid,
-                "columns": columns,
-                "categorical_columns": categorical_columns,
-            },
-            headers=get_auth_headers(),
-            timeout=SOTAI_API_TIMEOUT,
-        )
+
+    response = requests.post(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
+        files=[
+            ("files", open(test_filepath, "rb")),
+            ("files", open(train_filepath, "rb")),
+            ("files", open(validation_filepath, "rb")),
+        ],
+        data={
+            "pipeline_config_uuid": pipeline_config_uuid,
+            "columns": columns,
+            "categorical_columns": categorical_columns,
+            "dataset_sdk_id": dataset_id,
+        },
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
     if response.status_code != 200:
         logging.error("Failed to upload dataset")
         logging.error(response.json())
@@ -470,7 +480,6 @@ def post_hypertune_job(
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
-
     if response.status_code != 200:
         logging.error("Failed to run hypertuning")
         logging.error(response.json())
@@ -516,6 +525,7 @@ def _parse_pipeline_config(
 
     pipeline_config["feature_configs"] = feature_configs
     pipeline_config["id"] = pipeline_config_json["pipeline_config_sdk_id"]
+    pipeline_config["allow_hosting"] = True
     return PipelineConfig(**pipeline_config)
 
 
@@ -537,7 +547,6 @@ def get_pipeline(
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
-
     pipeline_metadata = {
         "name": response.json()["name"],
         "target": response.json()["target"],
@@ -577,23 +586,27 @@ def get_trained_model_uuids(pipeline_uuid: str) -> List[str]:
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    return response.json()["trained_model_uuids"]
+    return [trained_model["uuid"] for trained_model in response.json()]
 
 
-def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
+def get_trained_model_metadata(
+    trained_model_uuid: str,
+) -> Optional[TrainedModelMetadata]:
     """Get the metadata for a TrainedModelfrom the SOTAI API.
 
     Args:
         trained_model_uuid: The UUID of the trained model to get.
 
     Returns:
-        The metadata for the trained model.
+        The metadata for the trained model if training is complete, otherwise `None`.
     """
     response = requests.get(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/trained-model/{trained_model_uuid}",
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
+    if response.json()["overall_model_results"] is None:
+        return APIStatus.ERROR, None
 
     trained_model_metadata_json = response.json()["trained_model_metadata"]
     overall_model_results = response.json()["overall_model_results"]
@@ -667,6 +680,7 @@ def get_trained_model_metadata(trained_model_uuid: str) -> TrainedModelMetadata:
             },
         ),
         "uuid": trained_model_uuid,
+        "allow_hosting": True,
     }
     return TrainedModelMetadata(**trained_model_metadata)
 
@@ -696,3 +710,62 @@ def download_trained_model(trained_model_uuid: str):
     with tarfile.open(download_path) as model_file:
         model_file.extractall(download_folder)
     return model_file_path
+
+
+def get_dataset_uuids(pipeline_uuid: str):
+    """Returns the UUIDs of the datasets for a pipeline from the SOTAI API.
+
+    Args:
+        pipeline_uuid: The UUID of the pipeline to get the datasets for.
+
+    Returns:
+        The UUIDs of the datasets for the pipeline.
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}/datasets",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    return response.json()
+
+
+def download_prepared_dataset(dataset_uuid: str) -> Dataset:
+    """Download a trained model from the SOTAI API to a local tmp directory.
+
+    Args:
+        trained_model_uuid: The UUID of the trained model to download.
+
+    Returns:
+        The path to the downloaded model.
+    """
+    response = requests.get(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets/{dataset_uuid}/download",
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+    download_folder = f"/tmp/sotai/pipeline/datasets/{dataset_uuid}"
+    train_download_path = f"{download_folder}/train.csv"
+    test_download_path = f"{download_folder}/test.csv"
+    validation_download_path = f"{download_folder}/validation.csv"
+    if not os.path.exists(download_folder):
+        os.makedirs(download_folder)
+
+    urllib.request.urlretrieve(
+        response.json()["train_download_url"], train_download_path
+    )
+    urllib.request.urlretrieve(response.json()["test_download_url"], test_download_path)
+    urllib.request.urlretrieve(
+        response.json()["validation_download_url"], validation_download_path
+    )
+
+    return Dataset(
+        prepared_data=PreparedData(
+            train=pd.read_csv(train_download_path),
+            val=pd.read_csv(validation_download_path),
+            test=pd.read_csv(test_download_path),
+        ),
+        id=response.json()["dataset_sdk_id"],
+        pipeline_config_id=response.json()["pipeline_config_sdk_id"],
+        allow_hosting=True,
+    )
