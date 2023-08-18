@@ -404,12 +404,12 @@ def post_dataset(
             ("files", open(test_filepath, "rb")),  # pylint: disable=consider-using-with
             (
                 "files",
-                open(train_filepath, "rb"),
-            ),  # pylint: disable=consider-using-with
+                open(train_filepath, "rb"),  # pylint: disable=consider-using-with
+            ),
             (
                 "files",
-                open(validation_filepath, "rb"),
-            ),  # pylint: disable=consider-using-with
+                open(validation_filepath, "rb"),  # pylint: disable=consider-using-with
+            ),
         ],
         data={
             "pipeline_config_uuid": pipeline_config_uuid,
