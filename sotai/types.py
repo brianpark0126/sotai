@@ -1,13 +1,13 @@
 """Pydantic models for Pipelines."""
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 import pandas as pd
 from pydantic import BaseModel, Field, root_validator
 
 from .enums import (
     FeatureType,
-    InputKeypointsInit,
     HypertuneMethod,
+    InputKeypointsInit,
     InputKeypointsType,
     LossType,
     Metric,
@@ -210,7 +210,7 @@ class NumericalFeatureConfig(BaseModel):
     """
 
     name: str = Field(...)
-    type: FeatureType = Field(FeatureType.NUMERICAL, const=True)
+    type: Literal[FeatureType.NUMERICAL] = Field(FeatureType.NUMERICAL, frozen=True)
     num_keypoints: int = 10
     input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
     input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
@@ -228,7 +228,7 @@ class CategoricalFeatureConfig(BaseModel):
     """
 
     name: str = Field(...)
-    type: FeatureType = Field(FeatureType.CATEGORICAL, const=True)
+    type: Literal[FeatureType.CATEGORICAL] = Field(FeatureType.CATEGORICAL, frozen=True)
     categories: Union[List[int], List[str]] = Field(...)
     # TODO (will): add support for categorical monotonicity.
 
