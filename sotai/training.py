@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 import torchmetrics
 from pydantic import BaseModel
+from tqdm import trange
 
 from .constants import MISSING_CATEGORY_VALUE, MISSING_NUMERICAL_VALUE
 from .data import CSVData
@@ -136,7 +137,7 @@ def train_model(  # pylint: disable=too-many-locals
     train_csv_data.prepare(features, target)
     val_csv_data.prepare(features, target)
     val_examples, val_targets = list(val_csv_data.batch(val_csv_data.num_examples))[0]
-    for _ in range(training_config.epochs):
+    for _ in trange(training_config.epochs, desc="Training Progress"):
         train_prediction_tensors = []
         train_target_tensors = []
         for example_batch, target_batch in train_csv_data.batch(

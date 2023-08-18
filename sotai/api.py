@@ -190,7 +190,7 @@ def post_trained_model_analysis(
         "epochs": trained_model.training_config.epochs,
         "batch_size": trained_model.training_config.batch_size,
         "learning_rate": trained_model.training_config.learning_rate,
-        "runtime_in_seconds": training_results.training_time,
+        "runtime_in_seconds": round(training_results.training_time),
         "train_loss_per_epoch": training_results.train_loss_by_epoch,
         "train_primary_metric_per_epoch": train_primary_metrics,
         "validation_loss_per_epoch": training_results.val_loss_by_epoch,

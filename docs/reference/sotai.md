@@ -7,16 +7,17 @@ SOTAI SDK.
 
 **Global Variables**
 ---------------
-- **enums**
-- **layers**
 - **constants**
+- **enums**
 - **types**
 - **api**
 - **features**
 - **data**
+- **demo**
+- **layers**
 - **models**
-- **trained_model**
 - **training**
+- **trained_model**
 - **pipeline**
 - **INFERENCE_POLLING_INTERVAL**
 - **SOTAI_BASE_URL**
