@@ -1,22 +1,23 @@
 """Tests for Trained Model."""
 
 from unittest.mock import patch
+
 import numpy as np
-from sotai.models import CalibratedLinear
 from sotai import (
+    DatasetSplit,
+    FeatureType,
+    LinearConfig,
+    LossType,
+    Metric,
+    NumericalFeatureConfig,
+    PipelineConfig,
     TargetType,
     TrainedModel,
-    PipelineConfig,
+    TrainedModelMetadata,
     TrainingConfig,
     TrainingResults,
-    TrainedModelMetadata,
-    LinearConfig,
-    DatasetSplit,
-    NumericalFeatureConfig,
-    Metric,
-    LossType,
-    FeatureType,
 )
+from sotai.models import CalibratedLinear
 
 from .utils import construct_trained_model
 
@@ -67,6 +68,7 @@ def test_trained_model_save_load(
     return_value=TrainedModelMetadata(
         **{
             "id": 0,
+            "dataset_id": 0,
             "model_config": LinearConfig(),
             "training_config": TrainingConfig(
                 loss_type=LossType.MSE,

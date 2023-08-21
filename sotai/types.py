@@ -232,9 +232,6 @@ class CategoricalFeatureConfig(BaseModel):
     categories: Union[List[int], List[str]] = Field(...)
     # TODO (will): add support for categorical monotonicity.
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
 
 class PipelineConfig(BaseModel):
     """A configuration object for a `Pipeline`.
@@ -303,10 +300,11 @@ class TrainedModelMetadata(BaseModel):
         if the trained model has not been analyzed under a pipeline.
     """
 
-    id: int = None
-    dataset_id: int = None
+    id: Optional[int] = None
+    dataset_id: Optional[int] = None
     pipeline_uuid: Optional[str] = None
     pipeline_config: PipelineConfig = Field(...)
+    # Note: model_config is protected in Pydantic >=2.0.0, so we use <2.0.0
     model_config: LinearConfig = Field(...)
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)

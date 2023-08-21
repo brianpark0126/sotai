@@ -7,7 +7,7 @@ name = "sotai"
 # This version must always be one version ahead of the current release, so it
 # matches the current state of development, which will always be ahead of the
 # current release. Use Semantic Versioning.
-version = "0.4.2"
+version = "0.4.3"
 description = "A Python Library For Calibrated Modeling Built With PyTorch"
 readme = "docs/README.md"
 license = {text = "MIT"}
@@ -35,7 +35,7 @@ dependencies = [
     "graphlib-backport>=1.0.3",
     "numpy<=1.23.5",
     "pandas>=1.5.3",
-    "pydantic>=1.10.8",
+    "pydantic>=1.10.8,<2.0.0",
     "torch>=2.0.0",
     "torchmetrics>=0.11.4",
     "torchvision>=0.15.1",

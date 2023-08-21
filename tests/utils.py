@@ -65,6 +65,7 @@ def construct_trained_model(
     model = create_model(features, model_config)
 
     return TrainedModel(
+        id=0,
         dataset_id=0,
         pipeline_config=PipelineConfig(
             id=0,
