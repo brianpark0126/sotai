@@ -204,7 +204,7 @@ class Lattice(torch.nn.Module):
 
         Returns:
             `torch.Tensor` of shape `(batch_size, ..., units)` containing interpolated
-            values.
+            value(s).
         """
         interpolation_weights = self._compute_hypercube_interpolation_weights(
             inputs=inputs, clip_inputs=self.clip_inputs
