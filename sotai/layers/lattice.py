@@ -59,6 +59,12 @@ class Lattice(torch.nn.Module):
             clip_inputs: Whether input points should be clipped to the range of lattice.
             interpolation: Interpolation scheme for a given input.
             units: Dimensionality of weights stored at each vertex of lattice.
+
+        Raises:
+            ValueError: if `kernel_init` is invalid.
+            ValueError: if `interpolation` is invalid.
+            NotImplementedError: if `kernel_init` is `RANDOM_MONOTONIC`
+            NotImplementedError: if `interpolation` is `SIMPLEX`
         """
         super().__init__()
 
@@ -93,13 +99,13 @@ class Lattice(torch.nn.Module):
               shape `(batch_size, ..., units, len(lattice_sizes))` or list of
               `len(lattice_sizes)` tensors of same shape `(batch_size, ..., units, 1)`.
 
-        Raises:
-            NotImplementedError: If `interpolation == simplex`, as yet not implemented.
-            ValueError: If interpolation unknown.
-
         Returns:
             torch.Tensor of shape `(batch_size, ..., units)` containing interpolated
             values.
+
+        Raises:
+            NotImplementedError: If `interpolation == simplex`, as yet not implemented.
+            ValueError: If the type of interpolation is unknown.
         """
         if self.interpolation == Interpolation.HYPERCUBE:
             return self._compute_hypercube_interpolation(x.double())
@@ -122,7 +128,7 @@ class Lattice(torch.nn.Module):
             monotonicities: monotonicity constraints of lattice, enforced in
               initialization.
             unimodalities: unimodality constraints of lattice, enforced in
-            initialization.
+              initialization.
 
         Returns:
             `torch.Tensor` of shape `(prod(lattice_sizes), units)`
@@ -225,7 +231,6 @@ class Lattice(torch.nn.Module):
         Args:
             inputs: torch.Tensor of shape `(batch_size, ..., len(lattice_sizes)` or list
               of `len(lattice_sizes)` tensors of same shape `(batch_size, ..., 1)`
-
             clip_inputs: Boolean to determine whether input values outside lattice
               bounds should be clipped to the min or max supported values.
 
@@ -366,7 +371,6 @@ class Lattice(torch.nn.Module):
             contains individual values from "inputs" corresponding to its bucket, the
             first `int` is bucket size, and the second `int` is size of the dimension of
             the bucket.
-
         """
         if not isinstance(inputs, list):
             bucket_sizes = []
