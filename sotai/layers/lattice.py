@@ -62,6 +62,7 @@ class Lattice(torch.nn.Module):
 
         Raises:
             ValueError: if `kernel_init` is invalid.
+            NotImplementedError: Random monotonic initialization not yet implemented.
         """
         super().__init__()
 
