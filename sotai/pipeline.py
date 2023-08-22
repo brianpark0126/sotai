@@ -334,7 +334,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             _ = self._post_pipeline_config(pipeline_config=pipeline_config)
 
             dataset_uuid = self._upload_dataset(self.uuid, data, pipeline_config_id)
-            if dataset_uuid is not None:
+            if dataset_uuid is None:
                 return []
 
             hypertune_response, trained_model_uuids = post_hypertune_job(

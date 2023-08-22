@@ -369,7 +369,7 @@ def test_await_inference_results(
 )
 @patch(
     "sotai.pipeline.Pipeline._upload_dataset",
-    return_value=(APIStatus.SUCCESS, "test_dataset_id"),
+    return_value="test_dataset_id",
 )
 @patch(
     "sotai.pipeline.Pipeline._post_pipeline_config",

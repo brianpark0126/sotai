@@ -660,7 +660,7 @@ def test_get_trained_model_metadata(mock_get_api_key, mock_get):
 @patch("sotai.api.get_api_key", return_value="test_api_key")
 def test_get_dataset_uuids(mock_get_api_key, mock_get):
     """Tests that inference config retrieval is handled correctly."""
-    dataset_uuids = get_dataset_uuids("test_uuid")
+    _, dataset_uuids = get_dataset_uuids("test_uuid")
 
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/test_uuid/datasets",
@@ -692,7 +692,7 @@ def test_download_prepared_dataset(
     mock_get_api_key, mock_get, mock_urlretrieve, mock_pd
 ):
     """Tests that inference config retrieval is handled correctly."""
-    dataset = download_prepared_dataset("test_uuid")
+    _, dataset = download_prepared_dataset("test_uuid")
 
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets/test_uuid/download",
