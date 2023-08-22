@@ -188,7 +188,8 @@ class LatticeInit(_Enum):
     - LINEAR: initialize the kernel with weights represented by a linear function,
         conforming to monotonicity and unimodality constraints.
     - RANDOM_MONOTONIC: initialize the kernel with a uniformly random sampled
-        lattice layer weight tensor.
+        lattice layer weight tensor, conforming to monotonicity and unimodality
+        constraints.
     """
 
     LINEAR = "linear"

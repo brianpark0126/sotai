@@ -62,9 +62,6 @@ class Lattice(torch.nn.Module):
 
         Raises:
             ValueError: if `kernel_init` is invalid.
-            ValueError: if `interpolation` is invalid.
-            NotImplementedError: if `kernel_init` is `RANDOM_MONOTONIC`
-            NotImplementedError: if `interpolation` is `SIMPLEX`
         """
         super().__init__()
 
