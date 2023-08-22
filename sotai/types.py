@@ -1,13 +1,13 @@
 """Pydantic models for Pipelines."""
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 import pandas as pd
 from pydantic import BaseModel, Field, root_validator
 
 from .enums import (
     FeatureType,
-    InputKeypointsInit,
     HypertuneMethod,
+    InputKeypointsInit,
     InputKeypointsType,
     LossType,
     Metric,
@@ -212,7 +212,7 @@ class NumericalFeatureConfig(BaseModel):
     """
 
     name: str = Field(...)
-    type: FeatureType = Field(FeatureType.NUMERICAL, const=True)
+    type: Literal[FeatureType.NUMERICAL] = Field(FeatureType.NUMERICAL, frozen=True)
     num_keypoints: int = 10
     input_keypoints_init: InputKeypointsInit = InputKeypointsInit.QUANTILES
     input_keypoints_type: InputKeypointsType = InputKeypointsType.FIXED
@@ -230,12 +230,9 @@ class CategoricalFeatureConfig(BaseModel):
     """
 
     name: str = Field(...)
-    type: FeatureType = Field(FeatureType.CATEGORICAL, const=True)
+    type: Literal[FeatureType.CATEGORICAL] = Field(FeatureType.CATEGORICAL, frozen=True)
     categories: Union[List[int], List[str]] = Field(...)
     # TODO (will): add support for categorical monotonicity.
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
 
 class PipelineConfig(BaseModel):
@@ -306,10 +303,11 @@ class TrainedModelMetadata(BaseModel):
         if the trained model has not been analyzed under a pipeline.
     """
 
-    id: int = None
-    dataset_id: int = None
+    id: Optional[int] = None
+    dataset_id: Optional[int] = None
     pipeline_uuid: Optional[str] = None
     pipeline_config: PipelineConfig = Field(...)
+    # Note: model_config is protected in Pydantic >=2.0.0, so we use <2.0.0
     model_config: LinearConfig = Field(...)
     training_config: TrainingConfig = Field(...)
     training_results: TrainingResults = Field(...)

@@ -203,25 +203,13 @@ Configuration for a categorical feature.
  - <b>`type`</b>:  The type of the feature. Always `FeatureType.CATEGORICAL`. 
  - <b>`categories`</b>:  The categories for the feature. 
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L235"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>method</kbd> `__init__`
-
-```python
-__init__(**kwargs)
-```
-
-
-
-
-
 
 
 
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L239"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L236"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `PipelineConfig`
 A configuration object for a `Pipeline`. 
@@ -246,7 +234,7 @@ A configuration object for a `Pipeline`.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L270"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L267"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `HypertuneConfig`
 A configuration object for hypertuning. 
@@ -267,7 +255,7 @@ A configuration object for hypertuning.
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L288"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/types.py#L285"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `TrainedModelMetadata`
 Metadata for a trained model. 

@@ -169,3 +169,28 @@ class HypertuneMethod(_Enum):
     """
 
     GRID = "grid"
+
+
+class Interpolation(_Enum):
+    """Enum for interpolation method of lattice.
+
+    - HYPERCUBE: n-dimensional hypercube surrounding input point(s).
+    - SIMPLEX: uses only one of the n! simplices in the n-dim hypercube.
+    """
+
+    HYPERCUBE = "hypercube"
+    SIMPLEX = "simplex"
+
+
+class LatticeInit(_Enum):
+    """Type of kernel initialization to use for CategoricalCalibrator.
+
+    - LINEAR: initialize the kernel with weights represented by a linear function,
+        conforming to monotonicity and unimodality constraints.
+    - RANDOM_MONOTONIC: initialize the kernel with a uniformly random sampled
+        lattice layer weight tensor, conforming to monotonicity and unimodality
+        constraints.
+    """
+
+    LINEAR = "linear"
+    RANDOM_MONOTONIC = "random_monotonic"
