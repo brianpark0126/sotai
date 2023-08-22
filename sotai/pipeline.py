@@ -96,7 +96,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         categories: Optional[Dict[str, Union[List[int], List[str]]]] = None,
         primary_metric: Optional[Metric] = None,
         name: Optional[str] = None,
-        default_allow_hosting: bool = False,
+        default_allow_hosting: bool = True,
     ):
         """Initializes an instance of `Pipeline`.
 
@@ -114,6 +114,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
             primary_metric: The primary metric to use for training and evaluation.
             name: The name of the pipeline. If not provided, the name will be set to
                 `{target}_{target_type}`.
+            default_allow_hosting: Whether or not to allow hosting by default for
+                datasets and models created by this pipeline.
         """
         self.name: str = name if name else f"{target}_{target_type}"
         self.target: str = target
@@ -331,10 +333,8 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
 
             _ = self._post_pipeline_config(pipeline_config=pipeline_config)
 
-            upload_status, dataset_uuid = self._upload_dataset(
-                self.uuid, data, pipeline_config_id
-            )
-            if upload_status == APIStatus.ERROR:
+            dataset_uuid = self._upload_dataset(self.uuid, data, pipeline_config_id)
+            if dataset_uuid is not None:
                 return []
 
             hypertune_response, trained_model_uuids = post_hypertune_job(
@@ -592,8 +592,9 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if include_datasets:
             _, dataset_uuids = get_dataset_uuids(pipeline_uuid)
             for dataset_uuid in dataset_uuids:
-                dataset = download_prepared_dataset(dataset_uuid)
-                pipeline.datasets[dataset.id] = dataset
+                _, dataset = download_prepared_dataset(dataset_uuid)
+                if dataset is not None:
+                    pipeline.datasets[dataset.id] = dataset
 
         pipeline._next_config_id = len(pipeline.configs) + 1
         if len(pipeline.trained_models) != 0:
@@ -798,7 +799,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         dataset.prepared_data.test.to_csv("/tmp/sotai/test.csv")
         dataset.prepared_data.val.to_csv("/tmp/sotai/validation.csv")
         columns = dataset.prepared_data.train.columns.tolist()
-        dataset_response, dataset_uuid = post_dataset(
+        _, dataset_uuid = post_dataset(
             "/tmp/sotai/train.csv",
             "/tmp/sotai/test.csv",
             "/tmp/sotai/validation.csv",
@@ -809,7 +810,7 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         )
         dataset.uuid = dataset_uuid
 
-        return dataset_response, dataset_uuid
+        return dataset_uuid
 
     def _post_pipeline_config(self, pipeline_config: PipelineConfig) -> str:
         """Posts a pipeline config to the SOTAI web client.

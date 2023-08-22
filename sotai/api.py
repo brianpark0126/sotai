@@ -691,7 +691,7 @@ def get_trained_model_metadata(
     return TrainedModelMetadata(**trained_model_metadata)
 
 
-def download_trained_model(trained_model_uuid: str):
+def download_trained_model(trained_model_uuid: str) -> str:
     """Download a trained model from the SOTAI API to a local tmp directory.
 
     Args:
@@ -718,14 +718,15 @@ def download_trained_model(trained_model_uuid: str):
     return model_file_path
 
 
-def get_dataset_uuids(pipeline_uuid: str):
+def get_dataset_uuids(pipeline_uuid: str) -> Tuple[APIStatus, List[str]]:
     """Returns the UUIDs of the datasets for a pipeline from the SOTAI API.
 
     Args:
         pipeline_uuid: The UUID of the pipeline to get the datasets for.
 
     Returns:
-        The UUIDs of the datasets for the pipeline.
+        A tuple containing the status of the API call and the UUIDs of the datasets for
+        the pipeline. If unsuccessful, the UUIDs will be `None`.
     """
     response = requests.get(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}/datasets",
@@ -733,23 +734,34 @@ def get_dataset_uuids(pipeline_uuid: str):
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    return response.json()
+    if response.status_code != 200:
+        logging.error("Failed to get uuids of datasets")
+        logging.error(response.json())
+        return APIStatus.ERROR, None
+
+    return APIStatus.SUCCESS, response.json()
 
 
-def download_prepared_dataset(dataset_uuid: str) -> Dataset:
-    """Download a trained model from the SOTAI API to a local tmp directory.
+def download_prepared_dataset(dataset_uuid: str) -> Tuple[APIStatus, Optional[Dataset]]:
+    """Download a dataset from the SOTAI API.
 
     Args:
         trained_model_uuid: The UUID of the trained model to download.
 
     Returns:
-        The path to the downloaded model.
+        A tuple containing the status of the API call and the downloaded Dataset. If
+        unsuccessful, the dataset will be `None`.
     """
     response = requests.get(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets/{dataset_uuid}/download",
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
+    if response.status_code != 200:
+        logging.error("Failed to download dataset")
+        logging.error(response.json())
+        return APIStatus.ERROR, None
+
     download_folder = f"/tmp/sotai/pipeline/datasets/{dataset_uuid}"
     train_download_path = f"{download_folder}/train.csv"
     test_download_path = f"{download_folder}/test.csv"
@@ -765,7 +777,7 @@ def download_prepared_dataset(dataset_uuid: str) -> Dataset:
         response.json()["validation_download_url"], validation_download_path
     )
 
-    return Dataset(
+    return APIStatus.SUCCESS, Dataset(
         prepared_data=PreparedData(
             train=pd.read_csv(train_download_path),
             val=pd.read_csv(validation_download_path),
