@@ -70,6 +70,8 @@ class Dataset(BaseModel):
     id: int = Field(...)
     pipeline_config_id: int = Field(...)
     prepared_data: PreparedData = Field(...)
+    uuid: Optional[str] = None
+    allow_hosting: bool = False
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         """Standard Pydantic BaseModel Config."""
@@ -262,6 +264,7 @@ class PipelineConfig(BaseModel):
     shuffle_data: bool = Field(...)
     drop_empty_percentage: int = Field(...)
     dataset_split: DatasetSplit = Field(...)
+    allow_hosting: bool = False
 
 
 class HypertuneConfig(BaseModel):
@@ -310,3 +313,4 @@ class TrainedModelMetadata(BaseModel):
     training_results: TrainingResults = Field(...)
     uuid: Optional[str] = None
     analysis_url: Optional[str] = None
+    allow_hosting: bool = False

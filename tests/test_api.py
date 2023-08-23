@@ -1,7 +1,10 @@
 """Tests for api."""
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
+import pandas as pd
 
 from sotai.api import (
+    download_prepared_dataset,
+    get_dataset_uuids,
     get_inference_results,
     get_inference_status,
     post_inference,
@@ -278,18 +281,25 @@ def test_post_dataset(
     mock_open_data,
 ):
     """Tests that feature configs are posted correctly."""
-    mock_open_data.return_value.__enter__.return_value = "data"
+    mock_open_data.return_value = "data"
     pipeline_response = post_dataset(
-        "/tmp/dataset/dataset.csv", ["age", "chol"], [], "test_pipeline_uuid"
+        "/tmp/dataset/train.csv",
+        "/tmp/dataset/test.csv",
+        "/tmp/dataset/validation.csv",
+        ["age", "chol"],
+        [],
+        "test_pipeline_uuid",
+        1,
     )
 
     mock_post.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
-        files={"file": "data"},
+        files=[("files", "data"), ("files", "data"), ("files", "data")],
         data={
-            "pipeline_uuid": "test_pipeline_uuid",
+            "pipeline_config_uuid": "test_pipeline_uuid",
             "columns": ["age", "chol"],
             "categorical_columns": [],
+            "dataset_sdk_id": 1,
         },
         headers={"sotai-api-key": "test_api_key"},
         timeout=10,
@@ -644,3 +654,67 @@ def test_get_trained_model_metadata(mock_get_api_key, mock_get):
         trained_model_metadata.training_config.loss_type == LossType.BINARY_CROSSENTROPY
     )
     assert trained_model_metadata.uuid == "test_uuid"
+
+
+@patch("requests.get", return_value=MockResponse(["test_dataset_uuid"], 200))
+@patch("sotai.api.get_api_key", return_value="test_api_key")
+def test_get_dataset_uuids(mock_get_api_key, mock_get):
+    """Tests that inference config retrieval is handled correctly."""
+    _, dataset_uuids = get_dataset_uuids("test_uuid")
+
+    mock_get.assert_called_with(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/test_uuid/datasets",
+        headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
+    )
+
+    assert dataset_uuids[0] == "test_dataset_uuid"
+    mock_get_api_key.assert_called_once()
+
+
+@patch("pandas.read_csv", return_value=pd.DataFrame())
+@patch("urllib.request.urlretrieve", return_value=None)
+@patch(
+    "requests.get",
+    return_value=MockResponse(
+        {
+            "train_download_url": "test.com",
+            "validation_download_url": "test.com",
+            "test_download_url": "test.com",
+            "dataset_sdk_id": 1,
+            "pipeline_config_sdk_id": 2,
+        },
+        200,
+    ),
+)
+@patch("sotai.api.get_api_key", return_value="test_api_key")
+def test_download_prepared_dataset(
+    mock_get_api_key, mock_get, mock_urlretrieve, mock_pd
+):
+    """Tests that inference config retrieval is handled correctly."""
+    _, dataset = download_prepared_dataset("test_uuid")
+
+    mock_get.assert_called_with(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets/test_uuid/download",
+        headers={"sotai-api-key": "test_api_key"},
+        timeout=10,
+    )
+
+    assert dataset.id == 1
+    assert dataset.pipeline_config_id == 2
+
+    mock_get_api_key.assert_called_once()
+    mock_urlretrieve.assert_has_calls(
+        [
+            call("test.com", "/tmp/sotai/pipeline/datasets/test_uuid/train.csv"),
+            call("test.com", "/tmp/sotai/pipeline/datasets/test_uuid/test.csv"),
+            call("test.com", "/tmp/sotai/pipeline/datasets/test_uuid/validation.csv"),
+        ]
+    )
+    mock_pd.assert_has_calls(
+        [
+            call("/tmp/sotai/pipeline/datasets/test_uuid/train.csv"),
+            call("/tmp/sotai/pipeline/datasets/test_uuid/validation.csv"),
+            call("/tmp/sotai/pipeline/datasets/test_uuid/test.csv"),
+        ]
+    )
