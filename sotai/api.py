@@ -4,6 +4,7 @@ import os
 import tarfile
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
+import importlib
 import pandas as pd
 import requests
 
@@ -44,7 +45,27 @@ def get_auth_headers() -> Dict[str, str]:
     """Returns the authentication headers for a pipeline."""
     return {
         "sotai-api-key": get_api_key(),
+        "sotai-sdk-version": importlib.metadata.version("sotai"),
     }
+
+
+def extract_response(
+    api_call: str, response: requests.Response
+) -> Tuple[APIStatus, Optional[Any]]:
+    """Extract the response from a requests response.
+
+    Args:
+        api_call: The name of the API call.
+        response: The requests response.
+
+    Returns:
+        A tuple containing the status of the API call and JSON response encoded content.
+        If unsuccessful, the response will be `None`.
+    """
+    if response.status_code != 200:
+        logging.error("API call %s failed. %s", api_call, response.json()["detail"])
+        return APIStatus.ERROR, None
+    return APIStatus.SUCCESS, response.json()
 
 
 def post_pipeline(pipeline) -> Tuple[APIStatus, Optional[str]]:
@@ -68,10 +89,12 @@ def post_pipeline(pipeline) -> Tuple[APIStatus, Optional[str]]:
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
-    if response.status_code != 200:
-        logging.error("Failed to create pipeline")
-        return APIStatus.ERROR, None
-    return APIStatus.SUCCESS, response.json()["uuid"]
+
+    api_status, response_json = extract_response("post_pipeline", response)
+    if api_status == APIStatus.ERROR:
+        return api_status, None
+
+    return api_status, response_json["uuid"]
 
 
 def post_pipeline_config(
@@ -101,11 +124,11 @@ def post_pipeline_config(
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    if response.status_code != 200:
-        logging.error("Failed to create pipeline config")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
-    return APIStatus.SUCCESS, response.json()["uuid"]
+    api_status, response_json = extract_response("post_pipeline_config", response)
+    if api_status == APIStatus.ERROR:
+        return api_status, None
+
+    return APIStatus.SUCCESS, response_json["uuid"]
 
 
 def post_pipeline_feature_configs(
@@ -154,12 +177,9 @@ def post_pipeline_feature_configs(
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    if response.status_code != 200:
-        logging.error("Failed to create pipeline feature configs")
-        logging.error(response.json())
-        return APIStatus.ERROR
+    api_status, _ = extract_response("post_pipeline_feature_configs", response)
 
-    return APIStatus.SUCCESS
+    return api_status
 
 
 def post_trained_model_analysis(
@@ -252,12 +272,7 @@ def post_trained_model_analysis(
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    if response.status_code != 200:
-        logging.error("Failed to create trained model analysis")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
-
-    return APIStatus.SUCCESS, response.json()
+    return extract_response("post_trained_model_analysis", response)
 
 
 def post_trained_model(trained_model_path: str, trained_model_uuid: str) -> APIStatus:
@@ -284,12 +299,8 @@ def post_trained_model(trained_model_path: str, trained_model_uuid: str) -> APIS
             timeout=SOTAI_API_TIMEOUT,
         )
 
-    if response.status_code != 200:
-        logging.error("Failed to create trained model")
-        logging.error(response.json())
-        return APIStatus.ERROR
-
-    return APIStatus.SUCCESS
+    api_status, _ = extract_response("post_trained_model", response)
+    return api_status
 
 
 def post_inference(
@@ -315,12 +326,11 @@ def post_inference(
             timeout=SOTAI_API_TIMEOUT,
         )
 
-    if response.status_code != 200:
-        logging.error("Failed to create inference")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
+    api_status, response_json = extract_response("post_trained_model", response)
+    if api_status == APIStatus.ERROR:
+        return api_status, None
 
-    return APIStatus.SUCCESS, response.json()["inference_config_uuid"]
+    return api_status, response_json["inference_config_uuid"]
 
 
 def get_inference_status(
@@ -341,12 +351,7 @@ def get_inference_status(
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    if response.status_code != 200:
-        logging.error("Failed to get inference")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
-
-    return APIStatus.SUCCESS, response.json()
+    return extract_response("get_inference_status", response)
 
 
 def get_inference_results(inference_uuid: str, download_folder: str) -> APIStatus:
@@ -364,16 +369,14 @@ def get_inference_results(inference_uuid: str, download_folder: str) -> APIStatu
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    if response.status_code != 200:
-        logging.error("Failed to get inference")
-        logging.error(response.json())
-        return APIStatus.ERROR
+    api_status, response_json = extract_response("get_inference_results", response)
+    if api_status == APIStatus.ERROR:
+        return api_status
 
     urllib.request.urlretrieve(
-        response.json(), f"{download_folder}/inference_results.csv"
+        response_json, f"{download_folder}/inference_results.csv"
     )
-
-    return APIStatus.SUCCESS
+    return api_status
 
 
 def post_dataset(
@@ -420,12 +423,11 @@ def post_dataset(
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
-    if response.status_code != 200:
-        logging.error("Failed to upload dataset")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
 
-    return APIStatus.SUCCESS, response.json()["uuid"]
+    api_status, response_json = extract_response("post_dataset", response)
+    if api_status == APIStatus.ERROR:
+        return api_status, None
+    return api_status, response_json["uuid"]
 
 
 def post_hypertune_job(
@@ -486,12 +488,11 @@ def post_hypertune_job(
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
-    if response.status_code != 200:
-        logging.error("Failed to run hypertuning")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
 
-    return APIStatus.SUCCESS, response.json()["trained_model_metadata_uuids"]
+    api_status, response_json = extract_response("post_hypertune_job", response)
+    if api_status == APIStatus.ERROR:
+        return api_status, None
+    return api_status, response_json["trained_model_metadata_uuids"]
 
 
 def _parse_pipeline_config(
@@ -537,7 +538,7 @@ def _parse_pipeline_config(
 
 def get_pipeline(
     pipeline_uuid: str,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], List[str]]:
+) -> Union[None, Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], List[str]]]:
     """Get a pipeline from the SOTAI API.
 
     Args:
@@ -546,26 +547,31 @@ def get_pipeline(
     Returns:
         A tuple containing the metadata for the pipeline, the id for the most recent
         config of the pipeline, the pipeline configs for the pipeline, and the UUIDs
-        of the trainedmodels for the pipeline.
+        of the trainedmodels for the pipeline. If unsuccessful, returns `None`.
     """
     response = requests.get(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/{pipeline_uuid}",
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
+
+    api_status, response_json = extract_response("get_pipeline", response)
+    if api_status == APIStatus.ERROR:
+        return None
+
     pipeline_metadata = {
-        "name": response.json()["name"],
-        "target": response.json()["target"],
-        "target_type": response.json()["target_type"],
-        "primary_metric": response.json()["primary_metric"],
-        "shuffle_data": response.json()["shuffle_data"],
-        "drop_empty_percentage": response.json()["drop_empty_percentage"],
+        "name": response_json["name"],
+        "target": response_json["target"],
+        "target_type": response_json["target_type"],
+        "primary_metric": response_json["primary_metric"],
+        "shuffle_data": response_json["shuffle_data"],
+        "drop_empty_percentage": response_json["drop_empty_percentage"],
     }
 
     last_config_id = -1
     pipeline_configs = {}
 
-    for pipeline_config_json in response.json()["pipeline_configs"]:
+    for pipeline_config_json in response_json["pipeline_configs"]:
         pipeline_config = _parse_pipeline_config(
             pipeline_config_json, pipeline_metadata
         )
@@ -573,7 +579,7 @@ def get_pipeline(
         pipeline_configs[pipeline_config.id] = pipeline_config
     last_config = pipeline_configs[last_config_id]
     pipeline_metadata["dataset_split"] = last_config.dataset_split
-    trained_model_uuids = response.json()["trained_model_metadata_uuids"]
+    trained_model_uuids = response_json["trained_model_metadata_uuids"]
     return pipeline_metadata, last_config_id, pipeline_configs, trained_model_uuids
 
 
@@ -591,6 +597,10 @@ def get_trained_model_uuids(pipeline_uuid: str) -> List[str]:
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
+
+    api_status, _ = extract_response("get_trained_model_uuids", response)
+    if api_status == APIStatus.ERROR:
+        return []
 
     return [trained_model["uuid"] for trained_model in response.json()]
 
@@ -611,14 +621,16 @@ def get_trained_model_metadata(
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
-    if response.json()["overall_model_results"] is None:
+
+    _, response_json = extract_response("get_trained_model_metadata", response)
+    if response_json["overall_model_results"] is None:
         return APIStatus.ERROR, None
 
-    trained_model_metadata_json = response.json()["trained_model_metadata"]
-    overall_model_results = response.json()["overall_model_results"]
-    model_config = response.json()["model_config"]
-    pipeline_config_json = response.json()["pipeline_config"]
-    feature_analyses = response.json()["feature_analyses"]
+    trained_model_metadata_json = response_json["trained_model_metadata"]
+    overall_model_results = response_json["overall_model_results"]
+    model_config = response_json["model_config"]
+    pipeline_config_json = response_json["pipeline_config"]
+    feature_analyses = response_json["feature_analyses"]
     trained_model_metadata = {
         "id": trained_model_metadata_json["trained_model_sdk_id"],
         "model_config": LinearConfig(
@@ -734,12 +746,7 @@ def get_dataset_uuids(pipeline_uuid: str) -> Tuple[APIStatus, List[str]]:
         timeout=SOTAI_API_TIMEOUT,
     )
 
-    if response.status_code != 200:
-        logging.error("Failed to get uuids of datasets")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
-
-    return APIStatus.SUCCESS, response.json()
+    return extract_response("get_dataset_uuids", response)
 
 
 def download_prepared_dataset(dataset_uuid: str) -> Tuple[APIStatus, Optional[Dataset]]:
@@ -757,10 +764,10 @@ def download_prepared_dataset(dataset_uuid: str) -> Tuple[APIStatus, Optional[Da
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
-    if response.status_code != 200:
-        logging.error("Failed to download dataset")
-        logging.error(response.json())
-        return APIStatus.ERROR, None
+
+    api_status, response_json = extract_response("download_prepared_dataset", response)
+    if api_status == APIStatus.ERROR:
+        return api_status, None
 
     download_folder = f"/tmp/sotai/pipeline/datasets/{dataset_uuid}"
     train_download_path = f"{download_folder}/train.csv"
@@ -769,12 +776,10 @@ def download_prepared_dataset(dataset_uuid: str) -> Tuple[APIStatus, Optional[Da
     if not os.path.exists(download_folder):
         os.makedirs(download_folder)
 
+    urllib.request.urlretrieve(response_json["train_download_url"], train_download_path)
+    urllib.request.urlretrieve(response_json["test_download_url"], test_download_path)
     urllib.request.urlretrieve(
-        response.json()["train_download_url"], train_download_path
-    )
-    urllib.request.urlretrieve(response.json()["test_download_url"], test_download_path)
-    urllib.request.urlretrieve(
-        response.json()["validation_download_url"], validation_download_path
+        response_json["validation_download_url"], validation_download_path
     )
 
     return APIStatus.SUCCESS, Dataset(
@@ -783,7 +788,7 @@ def download_prepared_dataset(dataset_uuid: str) -> Tuple[APIStatus, Optional[Da
             val=pd.read_csv(validation_download_path),
             test=pd.read_csv(test_download_path),
         ),
-        id=response.json()["dataset_sdk_id"],
-        pipeline_config_id=response.json()["pipeline_config_sdk_id"],
+        id=response_json["dataset_sdk_id"],
+        pipeline_config_id=response_json["pipeline_config_sdk_id"],
         allow_hosting=True,
     )

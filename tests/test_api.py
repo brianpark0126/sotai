@@ -26,7 +26,8 @@ from .utils import MockResponse
 
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_post_pipeline(mock_get_api_key, mock_post, fixture_pipeline):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_post_pipeline(mock_version, mock_get_api_key, mock_post, fixture_pipeline):
     """Tests that a pipeline is posted correctly.""" ""
     pipeline_response = post_pipeline(fixture_pipeline)
 
@@ -38,18 +39,23 @@ def test_post_pipeline(mock_get_api_key, mock_post, fixture_pipeline):
             "target_column_type": "classification",
             "primary_metric": "auc",
         },
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
 
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
+    mock_version.assert_called_once()
     assert pipeline_response[1] == "test_uuid"
     assert mock_post.call_count == 1
 
 
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_post_pipeline_config(mock_get_api_key, mock_post, fixture_pipeline_config):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_post_pipeline_config(
+    mock_version, mock_get_api_key, mock_post, fixture_pipeline_config
+):
     """Tests that a pipeline config is posted correctly."""
     pipeline_config_response = post_pipeline_config(
         "test_uuid", fixture_pipeline_config
@@ -65,16 +71,19 @@ def test_post_pipeline_config(mock_get_api_key, mock_post, fixture_pipeline_conf
             "test_percentage": 20,
             "pipeline_config_sdk_id": 1,
         },
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
     assert pipeline_config_response[1] == "test_uuid"
 
 
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
+@patch("importlib.metadata.version", return_value="0.0.0")
 def test_post_feature_configs(
+    mock_version,
     mock_get_api_key,
     mock_post,
     fixture_pipeline_config,
@@ -108,18 +117,20 @@ def test_post_feature_configs(
                 "categories_int": fixture_categories_ints,
             },
         ],
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
     assert pipeline_config_response == "success"
 
 
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
+@patch("importlib.metadata.version", return_value="0.0.0")
 def test_post_trained_model_analysis(
-    mock_get_api_key, mock_post, fixture_trained_model
+    mock_version, mock_get_api_key, mock_post, fixture_trained_model
 ):
     """Tests that a trained model is posted correctly."""
     fixture_trained_model.id = 1
@@ -175,18 +186,20 @@ def test_post_trained_model_analysis(
                 "trained_model_sdk_id": 1,
             },
         },
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
 
 @patch("tarfile.open")
 @patch("builtins.open")
 @patch("requests.post", return_value=MockResponse({"uuid": "test_uuid"}))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
+@patch("importlib.metadata.version", return_value="0.0.0")
 def test_post_trained_model(
-    mock_get_api_key, mock_post, mock_open_data, mock_tarfile_open
+    mock_version, mock_get_api_key, mock_post, mock_open_data, mock_tarfile_open
 ):
     """Tests that feature configs are posted correctly."""
     mock_add = MagicMock()
@@ -198,10 +211,11 @@ def test_post_trained_model(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/models",
         files={"file": "data"},
         data={"trained_model_metadata_uuid": "test_uuid"},
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
     assert pipeline_response == "success"
 
@@ -212,7 +226,9 @@ def test_post_trained_model(
     return_value=MockResponse({"inference_config_uuid": "test_inference_uuid"}),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
+@patch("importlib.metadata.version", return_value="0.0.0")
 def test_post_inference(
+    mock_version,
     mock_get_api_key,
     mock_post,
     mock_open_data,
@@ -225,10 +241,11 @@ def test_post_inference(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences",
         files={"file": "data"},
         data={"trained_model_metadata_uuid": "test_uuid"},
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
     assert pipeline_response[1] == "test_inference_uuid"
     assert pipeline_response[0] == "success"
@@ -236,36 +253,42 @@ def test_post_inference(
 
 @patch("requests.get", return_value=MockResponse("initializing", 200))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_get_inference_status(mock_get_api_key, mock_get):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_get_inference_status(mock_version, mock_get_api_key, mock_get):
     """Tests that inference config retrieval is handled correctly."""
     inference_status = get_inference_status("test_uuid")
 
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences/test_uuid/status",
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
 
     assert inference_status[1] == "initializing"
     assert inference_status[0] == "success"
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
 
 @patch("urllib.request.urlretrieve", return_value=None)
 @patch("requests.get", return_value=MockResponse("test.com", 200))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_get_inference_result(mock_get_api_key, mock_get, mock_urlretrieve):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_get_inference_result(
+    mock_version, mock_get_api_key, mock_get, mock_urlretrieve
+):
     """Tests that inference file retrieval is handled correctly."""
     inference_status = get_inference_results("test_uuid", "/tmp")
 
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/inferences/test_uuid/download",
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
 
     assert inference_status == "success"
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
     mock_urlretrieve.assert_called_with("test.com", "/tmp/inference_results.csv")
 
 
@@ -275,7 +298,9 @@ def test_get_inference_result(mock_get_api_key, mock_get, mock_urlretrieve):
     return_value=MockResponse({"uuid": "test_dataset_uuid"}),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
+@patch("importlib.metadata.version", return_value="0.0.0")
 def test_post_dataset(
+    mock_version,
     mock_get_api_key,
     mock_post,
     mock_open_data,
@@ -301,10 +326,11 @@ def test_post_dataset(
             "categorical_columns": [],
             "dataset_sdk_id": 1,
         },
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
     assert pipeline_response[1] == "test_dataset_uuid"
     assert pipeline_response[0] == "success"
@@ -317,7 +343,10 @@ def test_post_dataset(
     ),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_post_hypertune(mock_get_api_key, mock_post, fixture_pipeline_config):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_post_hypertune(
+    mock_version, mock_get_api_key, mock_post, fixture_pipeline_config
+):
     """Tests that a trained model is posted correctly."""
 
     hypertune_config = HypertuneConfig(
@@ -368,10 +397,11 @@ def test_post_hypertune(mock_get_api_key, mock_post, fixture_pipeline_config):
             },
             "next_model_id": 1,
         },
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
 
 @patch(
@@ -431,7 +461,8 @@ def test_post_hypertune(mock_get_api_key, mock_post, fixture_pipeline_config):
     ),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_get_pipeline(mock_get_api_key, mock_get):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_get_pipeline(mock_version, mock_get_api_key, mock_get):
     """Tests that a trained model is posted correctly."""
 
     (
@@ -442,10 +473,11 @@ def test_get_pipeline(mock_get_api_key, mock_get):
     ) = get_pipeline("test_uuid")
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/test_uuid",
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
     assert trained_model_uuids[0] == "test_model_uuid"
     assert pipeline_configs[1].uuid == "test_pipeline_config_uuid"
     assert pipeline_metadata["name"] == "target_classification"
@@ -640,16 +672,18 @@ def test_get_pipeline(mock_get_api_key, mock_get):
     ),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_get_trained_model_metadata(mock_get_api_key, mock_get):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_get_trained_model_metadata(mock_version, mock_get_api_key, mock_get):
     """Tests that a trained model is posted correctly."""
 
     trained_model_metadata = get_trained_model_metadata("test_uuid")
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/trained-model/test_uuid",
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
     assert (
         trained_model_metadata.training_config.loss_type == LossType.BINARY_CROSSENTROPY
     )
@@ -658,18 +692,20 @@ def test_get_trained_model_metadata(mock_get_api_key, mock_get):
 
 @patch("requests.get", return_value=MockResponse(["test_dataset_uuid"], 200))
 @patch("sotai.api.get_api_key", return_value="test_api_key")
-def test_get_dataset_uuids(mock_get_api_key, mock_get):
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_get_dataset_uuids(mock_version, mock_get_api_key, mock_get):
     """Tests that inference config retrieval is handled correctly."""
     _, dataset_uuids = get_dataset_uuids("test_uuid")
 
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/pipelines/test_uuid/datasets",
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
 
     assert dataset_uuids[0] == "test_dataset_uuid"
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
 
 
 @patch("pandas.read_csv", return_value=pd.DataFrame())
@@ -688,15 +724,16 @@ def test_get_dataset_uuids(mock_get_api_key, mock_get):
     ),
 )
 @patch("sotai.api.get_api_key", return_value="test_api_key")
+@patch("importlib.metadata.version", return_value="0.0.0")
 def test_download_prepared_dataset(
-    mock_get_api_key, mock_get, mock_urlretrieve, mock_pd
+    mock_version, mock_get_api_key, mock_get, mock_urlretrieve, mock_pd
 ):
     """Tests that inference config retrieval is handled correctly."""
     _, dataset = download_prepared_dataset("test_uuid")
 
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets/test_uuid/download",
-        headers={"sotai-api-key": "test_api_key"},
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
     )
 
@@ -704,6 +741,7 @@ def test_download_prepared_dataset(
     assert dataset.pipeline_config_id == 2
 
     mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
     mock_urlretrieve.assert_has_calls(
         [
             call("test.com", "/tmp/sotai/pipeline/datasets/test_uuid/train.csv"),
