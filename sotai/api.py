@@ -63,7 +63,10 @@ def extract_response(
         If unsuccessful, the response will be `None`.
     """
     if response.status_code != 200:
-        logging.error("API call %s failed. %s", api_call, response.json()["detail"])
+        if response.headers.get("content-type") == "application/json":
+            logging.error("API call %s failed. %s", api_call, response.json()["detail"])
+        else:
+            logging.error("API call %s failed.", api_call)
         return APIStatus.ERROR, None
     return APIStatus.SUCCESS, response.json()
 
