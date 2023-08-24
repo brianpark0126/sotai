@@ -4,7 +4,7 @@ import os
 import tarfile
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
-from importlib.metadata import version
+import importlib
 import pandas as pd
 import requests
 
@@ -45,7 +45,7 @@ def get_auth_headers() -> Dict[str, str]:
     """Returns the authentication headers for a pipeline."""
     return {
         "sotai-api-key": get_api_key(),
-        "sotai-sdk-version": version("sotai"),
+        "sotai-sdk-version": importlib.metadata.version("sotai"),
     }
 
 
