@@ -4,9 +4,9 @@ import os
 import tarfile
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from importlib.metadata import version
 import pandas as pd
 import requests
-from importlib.metadata import version
 
 from .constants import SOTAI_API_ENDPOINT, SOTAI_API_TIMEOUT, SOTAI_BASE_URL
 from .enums import APIStatus, InferenceConfigStatus
