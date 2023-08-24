@@ -43,10 +43,9 @@ def get_api_key() -> str:
 
 def get_auth_headers() -> Dict[str, str]:
     """Returns the authentication headers for a pipeline."""
-    print(version("sotai"))
     return {
         "sotai-api-key": get_api_key(),
-        # "sotai-sdk-version": version("sotai"),
+        "sotai-sdk-version": version("sotai"),
     }
 
 
