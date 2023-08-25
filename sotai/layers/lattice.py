@@ -219,20 +219,24 @@ class Lattice(torch.nn.Module):
 
         # Strides are the index shift (with respect to flattened kernel data) of each
         # dimension.
-        strides = torch.tensor(np.cumprod([1] + self.lattice_sizes[::-1][:-1])[::-1].copy())
+        strides = torch.tensor(
+            np.cumprod([1] + self.lattice_sizes[::-1][:-1])[::-1].copy()
+        )
         print(f"strides = {strides}")
 
         lower_corner_offset = None
         if not all_size_2:
             lower_corner_coordinates = inputs.int()
-            lower_corner_coordinates = torch.min(lower_corner_coordinates,
-                                                 torch.tensor(self.lattice_sizes) - 2)
+            lower_corner_coordinates = torch.min(
+                lower_corner_coordinates, torch.tensor(self.lattice_sizes) - 2
+            )
 
             # The dot product of lower coordinates and strides gives index (with respect
             # to flattened parameters) of the lower corner of the hypercube which
             # contains input.
-            lower_corner_offset = (lower_corner_coordinates * strides).sum(dim=-1,
-                                                                           keepdim=True)
+            lower_corner_offset = (lower_corner_coordinates * strides).sum(
+                dim=-1, keepdim=True
+            )
             inputs = inputs - lower_corner_coordinates.float()
 
         sorted_indices = torch.argsort(inputs, descending=True)
@@ -242,38 +246,45 @@ class Lattice(torch.nn.Module):
         # within the context of its containing hypercube.
         no_padding_dims = [(0, 0)] * (input_dim - 1)
         flat_no_padding = [item for sublist in no_padding_dims for item in sublist]
-        sorted_inputs_padded_left = torch.nn.functional.pad(sorted_inputs,
-                                                            [1, 0] + flat_no_padding,
-                                                            value=1.)
-        sorted_inputs_padded_right = torch.nn.functional.pad(sorted_inputs,
-                                                             [0, 1] + flat_no_padding,
-                                                             value=0.)
+        sorted_inputs_padded_left = torch.nn.functional.pad(
+            sorted_inputs, [1, 0] + flat_no_padding, value=1.0
+        )
+        sorted_inputs_padded_right = torch.nn.functional.pad(
+            sorted_inputs, [0, 1] + flat_no_padding, value=0.0
+        )
         weights = sorted_inputs_padded_left - sorted_inputs_padded_right
 
         # Calculate cumsum over the strides of sorted dimensions to get index of
         # simplex vertices into the flattened lattice parameters. (todo: change)
         sorted_strides = torch.gather(strides, 0, sorted_indices.view(-1)).view(
-            sorted_indices.shape)
+            sorted_indices.shape
+        )
 
         if all_size_2:
-            corner_offset_and_sorted_strides = torch.nn.functional.pad(sorted_strides, [1, 0] + flat_no_padding)
+            corner_offset_and_sorted_strides = torch.nn.functional.pad(
+                sorted_strides, [1, 0] + flat_no_padding
+            )
         else:
             corner_offset_and_sorted_strides = torch.cat(
-                [lower_corner_offset, sorted_strides], dim=-1)
+                [lower_corner_offset, sorted_strides], dim=-1
+            )
         indices = torch.cumsum(corner_offset_and_sorted_strides, dim=-1)
         print(f"indices: {indices}")
 
         # Get parameters values of simplex indices. (todo: change)
         if self.units == 1:
-            gathered_params = torch.index_select(self.kernel.view(-1), 0,
-                                                 indices.view(-1)).view(indices.shape)
+            gathered_params = torch.index_select(
+                self.kernel.view(-1), 0, indices.view(-1)
+            ).view(indices.shape)
             print(f"gathered_params: {gathered_params}")
         else:
-            unit_offset = torch.tensor([[i] * (lattice_rank + 1) for i in range(self.units)])
+            unit_offset = torch.tensor(
+                [[i] * (lattice_rank + 1) for i in range(self.units)]
+            )
             flat_indices = indices * self.units + unit_offset
-            gathered_params = torch.index_select(self.kernel.view(-1), 0,
-                                                 flat_indices.view(-1)).view(
-                indices.shape)
+            gathered_params = torch.index_select(
+                self.kernel.view(-1), 0, flat_indices.view(-1)
+            ).view(indices.shape)
 
         # Dot product with interpolation weights. (todo: change)
         return (gathered_params * weights).sum(dim=-1, keepdim=(self.units == 1))

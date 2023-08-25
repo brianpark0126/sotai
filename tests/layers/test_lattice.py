@@ -100,8 +100,7 @@ def test_forward_hypercube(
         ((2, 2), torch.tensor([[0.3, 0.6]]), torch.tensor([[1.2]]).double()),
         ((3, 3), torch.tensor([[0.7, 1.2]]), torch.tensor([[3.3]]).double()),
         ((2, 2, 2), torch.tensor([[0.1, 0.2, 0.3]]), torch.tensor([[1.1]]).double()),
-        ((2, 3, 4), torch.tensor([[0.1, 1.2, 2.3]]), torch.tensor([[8.3]]).double())
-
+        ((2, 3, 4), torch.tensor([[0.1, 1.2, 2.3]]), torch.tensor([[8.3]]).double()),
     ],
 )
 def test_forward_simplex(
@@ -116,11 +115,20 @@ def test_forward_simplex(
     lattice.kernel.data = torch.arange(0, vertices, dtype=torch.double).view(-1, 1)
     assert torch.allclose(lattice.forward(input), expected_out, atol=1e-4)
 
+
 @pytest.mark.parametrize(
     "lattice_size, input, expected_out",
     [
-        ((2, 2), torch.tensor([[0.3, 0.6], [0.3, 0.6]]), torch.tensor([[1.2, 2.2]]).double()),
-        ((2, 3, 4), torch.tensor([[0.1, 1.2, 2.3], [0.1, 1.2, 2.3]]), torch.tensor([[8.3, 9.3]]).double())
+        (
+            (2, 2),
+            torch.tensor([[0.3, 0.6], [0.3, 0.6]]),
+            torch.tensor([[1.2, 2.2]]).double(),
+        ),
+        (
+            (2, 3, 4),
+            torch.tensor([[0.1, 1.2, 2.3], [0.1, 1.2, 2.3]]),
+            torch.tensor([[8.3, 9.3]]).double(),
+        ),
     ],
 )
 def test_forward_simplex_2_units(
@@ -134,9 +142,8 @@ def test_forward_simplex_2_units(
     lattice.interpolation = Interpolation.SIMPLEX
     vertices = np.prod(lattice_size)
     tensor = torch.arange(0, vertices, dtype=torch.double).view(-1, 1)
-    lattice.kernel.data = torch.cat([tensor, tensor+1], dim=1)
+    lattice.kernel.data = torch.cat([tensor, tensor + 1], dim=1)
     assert torch.allclose(lattice.forward(input), expected_out, atol=1e-4)
-
 
 
 @pytest.mark.parametrize(
