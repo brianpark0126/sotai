@@ -4,7 +4,7 @@ import os
 import tarfile
 import urllib
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
-import importlib
+import importlib.metadata
 import pandas as pd
 import requests
 
@@ -260,7 +260,7 @@ def post_trained_model_analysis(
         "primary_metric": trained_model.pipeline_config.primary_metric.value,
         "target_column_type": trained_model.pipeline_config.target_type.value,
         "target_column": trained_model.pipeline_config.target,
-        "model_config_name": "Model 1",
+        "model_config_name": f"Model {trained_model.id}",
     }
 
     response = requests.post(
