@@ -8,6 +8,7 @@ Layers used in calibrated modeling implemented as `torch.nn.Module`.
 **Global Variables**
 ---------------
 - **categorical_calibrator**
+- **lattice**
 - **linear**
 - **numerical_calibrator**
 
