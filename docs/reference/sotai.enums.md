@@ -194,6 +194,36 @@ Type of hyperparameter optimzation method.
 
 
 
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L174"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>class</kbd> `Interpolation`
+Enum for interpolation method of lattice. 
+
+
+- HYPERCUBE: n-dimensional hypercube surrounding input point(s). 
+- SIMPLEX: uses only one of the n! simplices in the n-dim hypercube. 
+
+
+
+
+
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/enums.py#L185"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>class</kbd> `LatticeInit`
+Type of kernel initialization to use for CategoricalCalibrator. 
+
+
+- LINEAR: initialize the kernel with weights represented by a linear function,  conforming to monotonicity and unimodality constraints. 
+- RANDOM_MONOTONIC: initialize the kernel with a uniformly random sampled  lattice layer weight tensor, conforming to monotonicity and unimodality  constraints. 
+
+
+
+
+
 
 
 ---
