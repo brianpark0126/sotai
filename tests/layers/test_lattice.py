@@ -23,7 +23,7 @@ def test_initialization(
     """Tests that Lattice Initialization works properly."""
     lattice = Lattice(lattice_sizes)
     assert lattice.kernel.data.size() == expected_size
-    assert lattice.interpolation == "hypercube"
+    assert lattice.interpolation == Interpolation.HYPERCUBE
     assert lattice.clip_inputs
     assert lattice.units == 1
 
@@ -72,9 +72,8 @@ def test_linear_initialization(
         (torch.tensor([[0.0, 0.0]]), (3, 3), torch.tensor([[0.0]]).double()),
         (torch.tensor([[1.0, 1.0]]), (3, 3), torch.tensor([[4.0]]).double()),
         (torch.tensor([[2.0, 2.0]]), (3, 3), torch.tensor([[8.0]]).double()),
-        (torch.tensor([[1.2, 1.3]]), (2, 2), torch.tensor([[3.0]]).double()),
         (torch.tensor([[0.0, 0.4, 0.8]]), (2, 2, 2), torch.tensor([[1.6]]).double()),
-        (torch.tensor([[0.2, 0.4, 1.2]]), (2, 2, 2), torch.tensor([[2.6]]).double()),
+        (torch.tensor([[0.2, 0.4, 1.0]]), (2, 2, 2), torch.tensor([[2.6]]).double()),
         (
             torch.tensor([[0.2, 0.7, 1.8, 2.1]]),
             (2, 2, 3, 4),
@@ -95,7 +94,7 @@ def test_forward_hypercube(
 
 
 @pytest.mark.parametrize(
-    "lattice_size, input, expected_out",
+    "lattice_size, inputs, expected_out",
     [
         ((2, 2), torch.tensor([[0.3, 0.6]]), torch.tensor([[1.2]]).double()),
         ((3, 3), torch.tensor([[0.7, 1.2]]), torch.tensor([[3.3]]).double()),
@@ -105,7 +104,7 @@ def test_forward_hypercube(
 )
 def test_forward_simplex(
     lattice_size,
-    input,
+    inputs,
     expected_out,
 ):
     """Tests complete lattice layer for units=1 and simplex interpolation."""
@@ -113,11 +112,11 @@ def test_forward_simplex(
     lattice.interpolation = Interpolation.SIMPLEX
     vertices = np.prod(lattice_size)
     lattice.kernel.data = torch.arange(0, vertices, dtype=torch.double).view(-1, 1)
-    assert torch.allclose(lattice.forward(input), expected_out, atol=1e-4)
+    assert torch.allclose(lattice.forward(inputs), expected_out, atol=1e-4)
 
 
 @pytest.mark.parametrize(
-    "lattice_size, input, expected_out",
+    "lattice_size, inputs, expected_out",
     [
         (
             (2, 2),
@@ -133,7 +132,7 @@ def test_forward_simplex(
 )
 def test_forward_simplex_2_units(
     lattice_size,
-    input,
+    inputs,
     expected_out,
 ):
     """Tests complete lattice layer for units=2 and simplex interpolation."""
@@ -143,7 +142,7 @@ def test_forward_simplex_2_units(
     vertices = np.prod(lattice_size)
     tensor = torch.arange(0, vertices, dtype=torch.double).view(-1, 1)
     lattice.kernel.data = torch.cat([tensor, tensor + 1], dim=1)
-    assert torch.allclose(lattice.forward(input), expected_out, atol=1e-4)
+    assert torch.allclose(lattice.forward(inputs), expected_out, atol=1e-4)
 
 
 @pytest.mark.parametrize(
@@ -173,6 +172,50 @@ def test_forward_hypercube_2_units(
     weights2 = torch.arange(1, vertices + 1, dtype=torch.double).view(-1, 1)
     lattice.kernel.data = torch.stack((weights1, weights2), dim=-1).squeeze(1)
     assert torch.allclose(lattice.forward(input_point), expected_out, atol=1e-4)
+
+
+@pytest.mark.parametrize(
+    "lattice_size, input1, input2",
+    [
+        ((2, 2), torch.tensor([[0.3, 1.6]]), torch.tensor([[0.3, 1.0]])),
+        ((2, 3, 4), torch.tensor([[3.1, -0.2, 5.2]]), torch.tensor([[2.0, 0.0, 4.0]])),
+    ],
+)
+@pytest.mark.parametrize(
+    "interpolation",
+    [
+        Interpolation.HYPERCUBE,
+        Interpolation.SIMPLEX,
+    ],
+)
+@pytest.mark.parametrize(
+    "units",
+    [
+        1,
+        2,
+        5,
+    ],
+)
+def test_clip_onto_lattice_range(
+    lattice_size,
+    input1,
+    input2,
+    interpolation,
+    units,
+):
+    """Tests clipping for coordinates out of lattice bounds."""
+    lattice = Lattice(lattice_size)
+    lattice.interpolation = interpolation
+    lattice.units = units
+    vertices = np.prod(lattice_size)
+    tensor = torch.arange(0, vertices, dtype=torch.double).view(-1, 1)
+    if units == 1:
+        lattice.kernel.data = tensor
+    else:
+        lattice.kernel.data = torch.cat([tensor for _ in range(units)], dim=1)
+        input1 = input1.repeat(units, 1)
+        input2 = input2.repeat(units, 1)
+    assert torch.allclose(lattice.forward(input1), lattice.forward(input2), atol=1e-4)
 
 
 @pytest.mark.parametrize(

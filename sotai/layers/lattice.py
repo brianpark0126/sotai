@@ -186,14 +186,28 @@ class Lattice(torch.nn.Module):
                 result += sum(1 for element in iterable if element != 0)
         return result
 
+    # pylint: disable=too-many-locals
     def _compute_simplex_interpolation(self, inputs: torch.Tensor) -> torch.Tensor:
         """Evaluates a lattice using simplex interpolation.
 
-        Each unit hypercube of the lattice can be partitioned into d! disjoint simplices
-        and the vertices of the simplex containing the input point are used for
-        interpolation, where the weight of any vertex is proportional to the
-        hyper-volume of the simplex created by using input point instead of the vertex
-        as well as the remaining vertices in the original simplex.
+        Each `d`-dimensional unit hypercube of the lattice can be partitioned into `d!`
+        disjoint simplices with `d+1` vertices. `S` is the unique simplex which contains
+        input point `P`, and `S` has vertices `ABCD...`. For any vertex such as `A`, a
+        new simplex `S'` can be created using the vertices `PBCD...`. The weight of `A`
+        within the interpolation is then `vol(S')/vol(S)`. This process is repeated
+        for every vertex in `S`, and the resulting values are summed.
+
+        This interpolation can be computed in `O(D log(D))` time because it is only
+        necessary to compute the volume of the simplex containing input point `P`. For
+        context, the unit hypercube can be partitioned into `d!` simplices by starting
+        at `(0,0,...,0)` and incrementing `0` to `1` dimension-by-dimensionuntil one
+        reaches `(1,1,...,1)`. There are `d!` possible paths from `(0,0,...,0)` to
+        `(1,1,...,1)`, which account for the number of unique, disjoint simplices
+        created by the method. There are `d` steps for each possible path where each
+        step comprises the vertices of one simplex. Thus, one can find the containing
+        simplex for input `P` by argsorting the coordinates of `P` in descending order
+        and pathing along said order. To compute the intepolation weights simply take
+        the deltas from `[1, desc_sort(P_coords), 0]`.
 
         Args:
             inputs: input tensor. If `units == 1`, tensor of shape:
@@ -204,8 +218,7 @@ class Lattice(torch.nn.Module):
 
         Returns:
             `torch.Tensor` of shape `(batch_size, ..., units)` containing interpolated
-            values
-        ...
+            values.
         """
         if isinstance(inputs, list):
             inputs = torch.cat(inputs, dim=-1)
@@ -218,22 +231,22 @@ class Lattice(torch.nn.Module):
         all_size_2 = all(size == 2 for size in self.lattice_sizes)
 
         # Strides are the index shift (with respect to flattened kernel data) of each
-        # dimension.
+        # dimension, which can be used in a dot product with multi-dimensional
+        # coordinates to give an index for the flattened lattice weights.
+        # Ex): for lattice_sizes = [4, 3, 2], we get strides = [6, 2, 1]: when looking
+        # at lattice coords (i, j, k) and kernel data flattened into 1-D, incrementing i
+        # corresponds to a shift of 6 in flattened kernel data, j corresponds to a shift
+        # of 2, and k corresponds to a shift of 1. Consequently, we can do
+        # (coords * strides) for any coordinates to obtain the flattened index.
         strides = torch.tensor(
             np.cumprod([1] + self.lattice_sizes[::-1][:-1])[::-1].copy()
         )
-        print(f"strides = {strides}")
-
         lower_corner_offset = None
         if not all_size_2:
             lower_corner_coordinates = inputs.int()
             lower_corner_coordinates = torch.min(
                 lower_corner_coordinates, torch.tensor(self.lattice_sizes) - 2
             )
-
-            # The dot product of lower coordinates and strides gives index (with respect
-            # to flattened parameters) of the lower corner of the hypercube which
-            # contains input.
             lower_corner_offset = (lower_corner_coordinates * strides).sum(
                 dim=-1, keepdim=True
             )
@@ -242,8 +255,7 @@ class Lattice(torch.nn.Module):
         sorted_indices = torch.argsort(inputs, descending=True)
         sorted_inputs = torch.sort(inputs, descending=True).values
 
-        # Simplex interpolation weights are the deltas between coordinates of input
-        # within the context of its containing hypercube.
+        # Pad the 1 and 0 onto the ends of sorted coordinates and compute deltas.
         no_padding_dims = [(0, 0)] * (input_dim - 1)
         flat_no_padding = [item for sublist in no_padding_dims for item in sublist]
         sorted_inputs_padded_left = torch.nn.functional.pad(
@@ -254,12 +266,10 @@ class Lattice(torch.nn.Module):
         )
         weights = sorted_inputs_padded_left - sorted_inputs_padded_right
 
-        # Calculate cumsum over the strides of sorted dimensions to get index of
-        # simplex vertices into the flattened lattice parameters. (todo: change)
+        # Use strides to find indices of simplex vertices in flattened form.
         sorted_strides = torch.gather(strides, 0, sorted_indices.view(-1)).view(
             sorted_indices.shape
         )
-
         if all_size_2:
             corner_offset_and_sorted_strides = torch.nn.functional.pad(
                 sorted_strides, [1, 0] + flat_no_padding
@@ -269,9 +279,8 @@ class Lattice(torch.nn.Module):
                 [lower_corner_offset, sorted_strides], dim=-1
             )
         indices = torch.cumsum(corner_offset_and_sorted_strides, dim=-1)
-        print(f"indices: {indices}")
 
-        # Get parameters values of simplex indices. (todo: change)
+        # Get kernel data from corresponding simplex vertices.
         if self.units == 1:
             gathered_params = torch.index_select(
                 self.kernel.view(-1), 0, indices.view(-1)
@@ -286,8 +295,9 @@ class Lattice(torch.nn.Module):
                 self.kernel.view(-1), 0, flat_indices.view(-1)
             ).view(indices.shape)
 
-        # Dot product with interpolation weights. (todo: change)
-        return (gathered_params * weights).sum(dim=-1, keepdim=(self.units == 1))
+        return (gathered_params * weights).sum(dim=-1, keepdim=self.units == 1)
+
+    # pylint: enable=too-many-locals
 
     def _compute_hypercube_interpolation(
         self,
