@@ -15,6 +15,7 @@ from sotai.api import (
     post_pipeline_feature_configs,
     post_trained_model,
     post_dataset,
+    post_external_inference,
     post_hypertune_job,
     post_trained_model_analysis,
 )
@@ -756,3 +757,41 @@ def test_download_prepared_dataset(
             call("/tmp/sotai/pipeline/datasets/test_uuid/test.csv"),
         ]
     )
+
+
+@patch("builtins.open")
+@patch(
+    "requests.post",
+    return_value=MockResponse({"uuid": "test_shap_uuid"}),
+)
+@patch("sotai.api.get_api_key", return_value="test_api_key")
+@patch("importlib.metadata.version", return_value="0.0.0")
+def test_post_external_inference(
+    mock_version,
+    mock_get_api_key,
+    mock_post,
+    mock_open_data,
+):
+    """Tests that feature configs are posted correctly."""
+    mock_open_data.return_value = "data"
+    pipeline_response = post_external_inference(
+        "/tmp/sotai/external/shapley_values.csv",
+        "/tmp/sotai/external/base_values.csv",
+        "/tmp/sotai/external/inference_predictions.csv",
+        "test",
+    )
+
+    mock_post.assert_called_with(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/shapley-values",
+        files=[("files", "data"), ("files", "data"), ("files", "data")],
+        data={
+            "external_shapley_value_name": "test",
+        },
+        headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
+        timeout=10,
+    )
+    mock_get_api_key.assert_called_once()
+    mock_version.assert_called()
+
+    assert pipeline_response[1] == "test_shap_uuid"
+    assert pipeline_response[0] == "success"

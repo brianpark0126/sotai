@@ -795,3 +795,46 @@ def download_prepared_dataset(dataset_uuid: str) -> Tuple[APIStatus, Optional[Da
         pipeline_config_id=response_json["pipeline_config_sdk_id"],
         allow_hosting=True,
     )
+
+
+def post_external_inference(
+    shap_filepath: str,
+    base_filepath: str,
+    inference_filepath: str,
+    external_shapley_value_name: str,
+) -> Tuple[APIStatus, Optional[str]]:
+    """Upload inference + shap values to the SOTAI API.
+
+    Args:
+        shap_filepath: The path to the shap values file to push to the API.
+        base_filepath: The path to the base file to push to the API.
+        inference_filepath: The path to the inference file to push to the API.
+        external_shapley_value_name: The name of the external shapley value to create.
+
+    Returns:
+        A tuple containing the status of the API call and the UUID of the created
+        inference job. If unsuccessful, the UUID will be `None`.
+    """
+
+    response = requests.post(
+        f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/shapley-values",
+        files=[
+            ("files", open(shap_filepath, "rb")),  # pylint: disable=consider-using-with
+            (
+                "files",
+                open(base_filepath, "rb"),  # pylint: disable=consider-using-with
+            ),
+            (
+                "files",
+                open(inference_filepath, "rb"),  # pylint: disable=consider-using-with
+            ),
+        ],
+        data={"external_shapley_value_name": external_shapley_value_name},
+        headers=get_auth_headers(),
+        timeout=SOTAI_API_TIMEOUT,
+    )
+
+    api_status, response_json = extract_response("post_external_inference", response)
+    if api_status == APIStatus.ERROR:
+        return api_status, None
+    return api_status, response_json["uuid"]
