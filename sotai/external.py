@@ -10,8 +10,18 @@ def shap(
     shapley_values: np.ndarray,
     base_values: np.ndarray,
     name: str,
-):
-    """Uploads a set of shapley values, base values, and inference data to the SOTAI API"""
+) -> str:
+    """Uploads the shapley values, base values, and inference data to the SOTAI API.
+    
+    Args:
+        inference_data: The data used for inference.
+        shapley_values: The shapley values for the inference data.
+        base_values: The base values for the inference data.
+        name: The name of the shapley values.
+            
+    Returns:
+        The UUID of the uploaded shapley values.    
+    """
 
     shapley_values_df = pd.DataFrame(shapley_values)
     base_values_df = pd.DataFrame(base_values)
