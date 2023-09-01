@@ -1,6 +1,6 @@
 """Tests for Pipeline."""
 from unittest.mock import patch
-
+import pandas as pd
 import pytest
 
 from sotai import (
@@ -309,6 +309,12 @@ def test_analysis(
 
 
 @patch(
+    "pandas.read_csv",
+    return_value=pd.DataFrame(
+        [[1, 2, 3]], columns=["categorical_ints", "numerical", "categorical_strs"]
+    ),
+)
+@patch(
     "sotai.pipeline.post_inference",
     return_value=(APIStatus.SUCCESS, "test_inference_uuid"),
 )
@@ -316,6 +322,7 @@ def test_analysis(
 def test_run_inference(
     get_api_key,
     post_inference,
+    read_csv,
     fixture_data,
     fixture_feature_names,
     fixture_target,
@@ -329,6 +336,7 @@ def test_run_inference(
 
     pipeline.inference("/tmp/data.csv", trained_model)
 
+    read_csv.assert_called_once_with("/tmp/data.csv")
     get_api_key.assert_called_once()
     post_inference.assert_called_once_with("/tmp/data.csv", "test_uuid")
 
