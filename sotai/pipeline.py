@@ -189,6 +189,15 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         else:
             pipeline_config = self.configs[pipeline_config_id]
 
+        if (
+            pipeline_config.target_type == TargetType.CLASSIFICATION
+            and data[pipeline_config.target].dtype != np.int64
+            and data[pipeline_config.target].unique().sort() != [0, 1]
+        ):
+            raise ValueError(
+                "Target column must be of type int64 with values [0,1] for classification."
+            )
+
         # Select only the features defined in the pipeline config.
         data = data[list(pipeline_config.feature_configs.keys()) + [self.target]]
         # Drop rows with too many missing values according to the drop empty percent.
