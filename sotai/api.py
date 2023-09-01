@@ -527,7 +527,7 @@ def _parse_pipeline_config(
                 feature["categories"] = feature["categories_str"]
                 del feature["categories_str"]
             else:
-                feature["categories_int"] = feature["categories_int"]
+                feature["categories"] = feature["categories_int"]
                 del feature["categories_int"]
             feature_configs[feature["name"]] = CategoricalFeatureConfig(**feature)
         else:
