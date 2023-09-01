@@ -458,6 +458,13 @@ class Pipeline:  # pylint: disable=too-many-instance-attributes
         if trained_model.uuid is None:
             self.analysis(trained_model)
 
+        data = pd.read_csv(filepath)
+        expected_columns = list(trained_model.pipeline_config.feature_configs.keys())
+        if not set(expected_columns) <= set(data.columns):
+            raise ValueError(
+                "Inference data must have columns for all features to run inference."
+            )
+
         inference_response_status, inference_uuid = post_inference(
             filepath, trained_model.uuid
         )
