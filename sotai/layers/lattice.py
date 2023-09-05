@@ -285,7 +285,6 @@ class Lattice(torch.nn.Module):
             gathered_params = torch.index_select(
                 self.kernel.view(-1), 0, indices.view(-1)
             ).view(indices.shape)
-            print(f"gathered_params: {gathered_params}")
         else:
             unit_offset = torch.tensor(
                 [[i] * (lattice_rank + 1) for i in range(self.units)]
