@@ -28,7 +28,7 @@ Layer performs interpolation using one of 'units' d-dimensional lattices with ar
 
 
 **Example:**
- `python lattice_sizes = [2, 2, 4, 3] inputs=torch.tensor(...) # shape: (batch_size, len(lattice_sizes)) lattice=Lattice( lattice_sizes, clip_inputs=True, interpolation=Interpolation.Hypercube, units=1, ) outputs = Lattice(inputs) ` 
+ `python lattice_sizes = [2, 2, 4, 3] inputs=torch.tensor(...) # shape: (batch_size, len(lattice_sizes)) lattice=Lattice( lattice_sizes, clip_inputs=True, interpolation=Interpolation.HYPERCUBE, units=1, ) outputs = Lattice(inputs) ` 
 
 <a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/layers/lattice.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
@@ -98,7 +98,6 @@ Calculates interpolation from input, using method of self.interpolation.
 
 **Raises:**
  
- - <b>`NotImplementedError`</b>:  If `interpolation == simplex`, as yet not implemented. 
  - <b>`ValueError`</b>:  If the type of interpolation is unknown. 
 
 

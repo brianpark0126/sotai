@@ -3,9 +3,9 @@
 # This version must always be one version ahead of the current release, so it
 # matches the current state of development, which will always be ahead of the
 # current release. Use Semantic Versioning.
-__version__ = "0.5.1"
+__version__ = "0.6.0"
 
-from . import api, constants, data, demo, features, layers, models, training, external
+from . import api, constants, data, demo, external, features, layers, models, training
 from .enums import *
 from .pipeline import *
 from .trained_model import *
