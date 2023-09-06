@@ -524,6 +524,38 @@ Download a dataset from the SOTAI API.
  A tuple containing the status of the API call and the downloaded Dataset. If unsuccessful, the dataset will be `None`. 
 
 
+---
+
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/api.py#L800"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `post_external_inference`
+
+```python
+post_external_inference(
+    shap_filepath: str,
+    base_filepath: str,
+    inference_filepath: str,
+    external_shapley_value_name: str
+) → Tuple[APIStatus, Optional[str]]
+```
+
+Upload inference + shap values to the SOTAI API. 
+
+
+
+**Args:**
+ 
+ - <b>`shap_filepath`</b>:  The path to the shap values file to push to the API. 
+ - <b>`base_filepath`</b>:  The path to the base file to push to the API. 
+ - <b>`inference_filepath`</b>:  The path to the inference file to push to the API. 
+ - <b>`external_shapley_value_name`</b>:  The name of the external shapley value to create. 
+
+
+
+**Returns:**
+ A tuple containing the status of the API call and the UUID of the created inference job. If unsuccessful, the UUID will be `None`. 
+
+
 
 
 ---

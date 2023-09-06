@@ -14,6 +14,7 @@ SOTAI SDK.
 - **features**
 - **data**
 - **demo**
+- **external**
 - **layers**
 - **models**
 - **training**

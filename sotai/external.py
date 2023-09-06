@@ -1,7 +1,9 @@
-"""This module contains functions for external models to interact with the SOTAI API"""
+"""This module contains functions for external models to interact with the SOTAI API."""
 import os
+
 import numpy as np
 import pandas as pd
+
 from .api import post_external_inference
 
 
@@ -12,15 +14,15 @@ def shap(
     name: str,
 ) -> str:
     """Uploads the shapley values, base values, and inference data to the SOTAI API.
-    
+
     Args:
         inference_data: The data used for inference.
         shapley_values: The shapley values for the inference data.
         base_values: The base values for the inference data.
         name: The name of the shapley values.
-            
+
     Returns:
-        The UUID of the uploaded shapley values.    
+        The UUID of the uploaded shapley values.
     """
 
     shapley_values_df = pd.DataFrame(shapley_values)
