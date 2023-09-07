@@ -7,7 +7,7 @@ name = "sotai"
 # This version must always be one version ahead of the current release, so it
 # matches the current state of development, which will always be ahead of the
 # current release. Use Semantic Versioning.
-version = "0.6.0"
+version = "0.6.1"
 description = "A Python Library For Calibrated Modeling Built With PyTorch"
 readme = "docs/README.md"
 license = {text = "MIT"}
@@ -39,6 +39,7 @@ dependencies = [
     "torch>=2.0.0",
     "torchmetrics>=0.11.4",
     "torchvision>=0.15.1",
+    "tqdm>=4.65.0",
 ]
 
 [project.urls]
