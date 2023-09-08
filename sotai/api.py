@@ -802,6 +802,8 @@ def post_external_inference(
     base_filepath: str,
     inference_filepath: str,
     external_shapley_value_name: str,
+    target: str,
+    dataset_name,
 ) -> Tuple[APIStatus, Optional[str]]:
     """Upload inference + shap values to the SOTAI API.
 
@@ -810,6 +812,8 @@ def post_external_inference(
         base_filepath: The path to the base file to push to the API.
         inference_filepath: The path to the inference file to push to the API.
         external_shapley_value_name: The name of the external shapley value to create.
+        target: The target column of the dataset.
+        dataset_name: The name of the dataset.
 
     Returns:
         A tuple containing the status of the API call and the UUID of the created
@@ -829,7 +833,11 @@ def post_external_inference(
                 open(inference_filepath, "rb"),  # pylint: disable=consider-using-with
             ),
         ],
-        data={"external_shapley_value_name": external_shapley_value_name},
+        data={
+            "external_shapley_value_name": external_shapley_value_name,
+            "target": target,
+            "dataset_name": dataset_name,
+        },
         headers=get_auth_headers(),
         timeout=SOTAI_API_TIMEOUT,
     )
