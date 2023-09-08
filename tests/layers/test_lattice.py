@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from sotai.layers import Lattice
-from sotai.enums import Interpolation
+from sotai.enums import Interpolation, Monotonicity
 
 
 @pytest.mark.parametrize(
@@ -287,7 +287,7 @@ def test_batch_outer_operation(
     inputs,
     expected_out,
 ):
-    """Tests batch_outer_operation works correctly"""
+    """Tests _batch_outer_operation works correctly"""
     # pylint: disable=protected-access
     assert torch.allclose(
         Lattice._batch_outer_operation(inputs), expected_out, atol=1e-4
@@ -330,7 +330,7 @@ def test_bucketize_consecutive_inputs(
     lattice_sizes,
     expected_out,
 ):
-    """Tests bucketize_consecutive_inputs works correctly"""
+    """Tests _bucketize_consecutive_inputs works correctly"""
     lattice = Lattice(lattice_sizes)
     # pylint: disable=protected-access
     actual_out = list(
@@ -345,3 +345,98 @@ def test_bucketize_consecutive_inputs(
         assert torch.allclose(expected_tensor, actual_tensor)
         assert expected_int1 == actual_int1
         assert expected_int2 == actual_int2
+
+
+@pytest.mark.parametrize(
+    "monotonicities, expected_out",
+    [
+        (
+            [Monotonicity.INCREASING, Monotonicity.INCREASING],
+            torch.tensor([[2.5, 2.5], [2.5, 2.5]]),
+        ),
+        (
+            [Monotonicity.INCREASING, Monotonicity.NONE],
+            torch.tensor([[3.0, 2.0], [3.0, 2.0]]),
+        ),
+        (
+            [Monotonicity.NONE, Monotonicity.INCREASING],
+            torch.tensor([[3.5, 3.5], [1.5, 1.5]]),
+        ),
+        (
+            [Monotonicity.NONE, Monotonicity.NONE],
+            torch.tensor([[4.0, 3.0], [2.0, 1.0]]),
+        ),
+    ],
+)
+def test_project_monotonicity_simple(
+    monotonicities,
+    expected_out,
+):
+    """Tests _project_monotonicity with a simple 2x2, 1-unit example."""
+    lattice = Lattice(lattice_sizes=[2, 2], monotonicities=monotonicities)
+    lattice.kernel.data = torch.tensor([[4], [3], [2], [1]]).double()
+    lattice._constrain()
+    assert torch.allclose(lattice.kernel.data, expected_out.view(-1, 1).double())
+
+
+@pytest.mark.parametrize(
+    "monotonicities, expected_out",
+    [
+        (
+            [Monotonicity.INCREASING, Monotonicity.INCREASING, Monotonicity.INCREASING],
+            torch.tensor(
+                [
+                    [
+                        [[6.5, 18.5], [6.5, 18.5], [6.5, 18.5]],
+                        [[6.5, 18.5], [6.5, 18.5], [6.5, 18.5]],
+                    ],
+                    [
+                        [[6.5, 18.5], [6.5, 18.5], [6.5, 18.5]],
+                        [[6.5, 18.5], [6.5, 18.5], [6.5, 18.5]],
+                    ],
+                ]
+            ),
+        ),
+        (
+            [Monotonicity.INCREASING, Monotonicity.NONE, Monotonicity.NONE],
+            torch.tensor(
+                [
+                    [
+                        [[9.0, 21.0], [8.0, 20.0], [7.0, 19.0]],
+                        [[6.0, 18.0], [5.0, 17.0], [4.0, 16.0]],
+                    ],
+                    [
+                        [[9.0, 21.0], [8.0, 20.0], [7.0, 19.0]],
+                        [[6.0, 18.0], [5.0, 17.0], [4.0, 16.0]],
+                    ],
+                ]
+            ),
+        ),
+        (
+            [Monotonicity.INCREASING, Monotonicity.NONE, Monotonicity.INCREASING],
+            torch.tensor(
+                [
+                    [
+                        [[8.0, 20.0], [8.0, 20.0], [8.0, 20.0]],
+                        [[5.0, 17.0], [5.0, 17.0], [5.0, 17.0]],
+                    ],
+                    [
+                        [[8.0, 20.0], [8.0, 20.0], [8.0, 20.0]],
+                        [[5.0, 17.0], [5.0, 17.0], [5.0, 17.0]],
+                    ],
+                ]
+            ),
+        ),
+    ],
+)
+def test_project_monotonicity_complex(
+    monotonicities,
+    expected_out,
+):
+    """Tests _project_monotonicity with more complex 2x2x3, 2-unit example."""
+    lattice = Lattice(lattice_sizes=[2, 2, 3], monotonicities=monotonicities, units=2)
+    col1 = torch.arange(12, 0, -1).reshape(-1, 1).double()
+    col2 = torch.arange(24, 12, -1).reshape(-1, 1).double()
+    lattice.kernel.data = torch.cat((col1, col2), dim=1)
+    lattice._constrain()
+    assert torch.allclose(lattice.kernel.data, expected_out.view(-1, 2).double())
