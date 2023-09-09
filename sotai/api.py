@@ -803,7 +803,7 @@ def post_external_inference(
     inference_filepath: str,
     external_shapley_value_name: str,
     target: str,
-    dataset_name,
+    dataset_name: str,
 ) -> Tuple[APIStatus, Optional[str]]:
     """Upload inference + shap values to the SOTAI API.
 
