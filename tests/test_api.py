@@ -779,6 +779,8 @@ def test_post_external_inference(
         "/tmp/sotai/external/base_values.csv",
         "/tmp/sotai/external/inference_predictions.csv",
         "test",
+        "target",
+        "dataset_name",
     )
 
     mock_post.assert_called_with(
@@ -786,6 +788,8 @@ def test_post_external_inference(
         files=[("files", "data"), ("files", "data"), ("files", "data")],
         data={
             "external_shapley_value_name": "test",
+            "target": "target",
+            "dataset_name": "dataset_name",
         },
         headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},
         timeout=10,
