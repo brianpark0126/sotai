@@ -375,7 +375,7 @@ def test_project_monotonicity_simple(
     """Tests _project_monotonicity with a simple 2x2, 1-unit example."""
     lattice = Lattice(lattice_sizes=[2, 2], monotonicities=monotonicities)
     lattice.kernel.data = torch.tensor([[4], [3], [2], [1]]).double()
-    lattice._constrain()
+    lattice.constrain()
     assert torch.allclose(lattice.kernel.data, expected_out.view(-1, 1).double())
 
 
@@ -438,5 +438,60 @@ def test_project_monotonicity_complex(
     col1 = torch.arange(12, 0, -1).reshape(-1, 1).double()
     col2 = torch.arange(24, 12, -1).reshape(-1, 1).double()
     lattice.kernel.data = torch.cat((col1, col2), dim=1)
-    lattice._constrain()
+    lattice.constrain()
     assert torch.allclose(lattice.kernel.data, expected_out.view(-1, 2).double())
+
+
+@pytest.mark.parametrize(
+    "lattice_size, monotonicities, kernel_data, expected_out",
+    [
+        (
+            (2, 2),
+            [Monotonicity.INCREASING, Monotonicity.INCREASING],
+            torch.tensor([[1.0], [2.0], [3.0], [4.0]]),
+            [],
+        ),
+        (
+            (2, 2),
+            [Monotonicity.INCREASING, Monotonicity.NONE],
+            torch.tensor([[4.0], [3.0], [2.0], [1.0]]),
+            ["Monotonicity violated at feature index 0."],
+        ),
+        (
+            (2, 2),
+            [Monotonicity.NONE, Monotonicity.INCREASING],
+            torch.tensor([[4.0], [3.0], [2.0], [1.0]]),
+            ["Monotonicity violated at feature index 1."],
+        ),
+        (
+            (2, 2, 3),
+            [Monotonicity.INCREASING, Monotonicity.NONE, Monotonicity.INCREASING],
+            torch.tensor(
+                [
+                    [4.0, 2.8],
+                    [3.0, 4.2],
+                    [7.0, 1.2],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                    [5.0, 5.0],
+                ]
+            ),
+            [
+                "Monotonicity violated at feature index 0.",
+                "Monotonicity violated at feature index 2.",
+                "Monotonicity violated at feature index 2.",
+            ],
+        ),
+    ],
+)
+def test_assert_constraints(lattice_size, monotonicities, kernel_data, expected_out):
+    """Tests lattice layer's assert_constraints() function."""
+    lattice = Lattice(lattice_size, monotonicities=monotonicities)
+    lattice.kernel.data = kernel_data
+    assert lattice.assert_constraints() == expected_out

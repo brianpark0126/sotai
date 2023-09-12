@@ -115,6 +115,62 @@ class Lattice(torch.nn.Module):
             return self._compute_simplex_interpolation(x.double())
         raise ValueError(f"Unknown interpolation type: {self.interpolation}")
 
+    @torch.no_grad()
+    def assert_constraints(self, eps=1e-6) -> List[str]:
+        """Asserts that layer satisfies specified constraints.
+
+        This checks that weights follow monotonicity constraints.
+
+        Args:
+            eps: the margin of error allowed
+
+        Returns:
+            A list of dicts describing violated constraints including indices of
+            monotonicity violations. If no constraints violated, the list will be empty.
+        """
+        messages = []
+        lattice_sizes = self.lattice_sizes
+        monotonicities = self.monotonicities
+        weights = self.kernel.data.clone()
+
+        if weights.shape[1] > 1:
+            lattice_sizes = lattice_sizes + [int(weights.shape[1])]
+            if monotonicities:
+                monotonicities = monotonicities + [Monotonicity.NONE]
+
+        # Reshape weights to match lattice sizes
+        weights = weights.reshape(*lattice_sizes)
+
+        for i in range(len(monotonicities or [])):
+            if monotonicities[i] != Monotonicity.INCREASING:
+                continue
+            weights_layers = torch.unbind(weights, dim=i)
+
+            for j in range(1, len(weights_layers)):
+                diff = torch.min(weights_layers[j] - weights_layers[j - 1])
+                if diff.item() < -eps:
+                    messages.append(f"Monotonicity violated at feature index {i}.")
+
+        return messages
+
+    @torch.no_grad()
+    def constrain(self) -> None:
+        """Aggregate function for enforcing constraints of lattice."""
+        if self._count_non_zeros(self.monotonicities) == 0:
+            return
+        lattice_sizes = self.lattice_sizes
+        monotonicities = self.monotonicities
+        if self.units > 1:
+            lattice_sizes = lattice_sizes + [int(self.units)]
+            if self.monotonicities:
+                monotonicities = monotonicities + [Monotonicity.NONE]
+
+        weights = self.kernel.clone()
+        weights = weights.reshape(*lattice_sizes)
+        weights = self._project_monotonicity(weights, lattice_sizes, monotonicities)
+
+        self.kernel.data = weights.view(-1, self.units)
+
     ################################################################################
     ############################## PRIVATE METHODS #################################
     ################################################################################
@@ -513,24 +569,6 @@ class Lattice(torch.nn.Module):
             bucket_dim_sizes = self.lattice_sizes
 
         return zip(inputs, bucket_sizes, bucket_dim_sizes)
-
-    def _constrain(self) -> None:
-        """Aggregate function for enforcing constraints of lattice."""
-        if self._count_non_zeros(self.monotonicities) == 0:
-            return
-        lattice_sizes = self.lattice_sizes
-        monotonicities = self.monotonicities
-        if self.units > 1:
-            lattice_sizes = lattice_sizes + [int(self.units)]
-            if self.monotonicities:
-                monotonicities = monotonicities + [Monotonicity.NONE]
-
-        weights = self.kernel.clone()
-        weights = weights.reshape(*lattice_sizes)
-        weights = self._project_monotonicity(weights, lattice_sizes, monotonicities)
-
-        self.kernel.data = weights.view(-1, self.units)
-        return
 
     def _project_monotonicity(
         self,
