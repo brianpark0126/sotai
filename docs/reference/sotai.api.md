@@ -535,7 +535,9 @@ post_external_inference(
     shap_filepath: str,
     base_filepath: str,
     inference_filepath: str,
-    external_shapley_value_name: str
+    external_shapley_value_name: str,
+    target: str,
+    dataset_name: str
 ) → Tuple[APIStatus, Optional[str]]
 ```
 
@@ -549,6 +551,8 @@ Upload inference + shap values to the SOTAI API.
  - <b>`base_filepath`</b>:  The path to the base file to push to the API. 
  - <b>`inference_filepath`</b>:  The path to the inference file to push to the API. 
  - <b>`external_shapley_value_name`</b>:  The name of the external shapley value to create. 
+ - <b>`target`</b>:  The target column of the dataset. 
+ - <b>`dataset_name`</b>:  The name of the dataset. 
 
 
 
