@@ -447,6 +447,12 @@ def test_project_monotonicity_complex(
     [
         (
             (2, 2),
+            None,
+            torch.tensor([[4.0], [3.0], [2.0], [1.0]]),
+            [],
+        ),
+        (
+            (2, 2),
             [Monotonicity.INCREASING, Monotonicity.INCREASING],
             torch.tensor([[1.0], [2.0], [3.0], [4.0]]),
             [],
@@ -490,8 +496,77 @@ def test_project_monotonicity_complex(
         ),
     ],
 )
-def test_assert_constraints(lattice_size, monotonicities, kernel_data, expected_out):
+def test_assert_constraints_monotonicity(
+    lattice_size, monotonicities, kernel_data, expected_out
+):
     """Tests lattice layer's assert_constraints() function."""
     lattice = Lattice(lattice_size, monotonicities=monotonicities)
     lattice.kernel.data = kernel_data
     assert lattice.assert_constraints() == expected_out
+
+
+@pytest.mark.parametrize(
+    "min, max, kernel_data, expected_out",
+    [
+        (
+            0.0,
+            1.0,
+            torch.tensor([[0.0, 0.0], [-1.0, 0.0], [0.0, 2.0], [-1.0, 2.0]]),
+            ["Max weight greater than output_max.", "Min weight less than output_min."],
+        ),
+        (
+            None,
+            1.0,
+            torch.tensor([[0.0, 0.0], [-1.0, 0.0], [0.0, 2.0], [-1.0, 2.0]]),
+            ["Max weight greater than output_max."],
+        ),
+        (
+            0.0,
+            None,
+            torch.tensor([[0.0, 0.0], [-1.0, 0.0], [0.0, 2.0], [-1.0, 2.0]]),
+            ["Min weight less than output_min."],
+        ),
+        (
+            0.0,
+            1.0,
+            torch.tensor(
+                [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.0 - 1e-7, 1.0 + 1e-7]]
+            ),
+            [],
+        ),
+    ],
+)
+def test_assert_constraints_bounds(min, max, kernel_data, expected_out):
+    lattice = Lattice(lattice_sizes=[2, 2], output_max=max, output_min=min)
+    lattice.kernel.data = kernel_data
+    assert lattice.assert_constraints() == expected_out
+
+
+@pytest.mark.parametrize(
+    "min, max, kernel_data, expected_out",
+    [
+        (
+            0.0,
+            1.0,
+            torch.tensor([[0.0, 0.0], [-1.0, 0.0], [0.0, 2.0], [-1.0, 2.0]]),
+            torch.tensor([[0.0, 0.0], [0.0, 0.0], [0.0, 1.0], [0.0, 1.0]]),
+        ),
+        (
+            None,
+            1.0,
+            torch.tensor([[0.0, 0.0], [-1.0, 0.0], [0.0, 2.0], [-1.0, 2.0]]),
+            torch.tensor([[0.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [-1.0, 1.0]]),
+        ),
+        (
+            0.0,
+            None,
+            torch.tensor([[0.0, 0.0], [-1.0, 0.0], [0.0, 2.0], [-1.0, 2.0]]),
+            torch.tensor([[0.0, 0.0], [0.0, 0.0], [0.0, 2.0], [0.0, 2.0]]),
+        ),
+    ],
+)
+def test_constrain_clipping_functionality(min, max, kernel_data, expected_out):
+    lattice = Lattice([2, 2], units=2, output_max=max, output_min=min)
+    lattice.kernel.data = kernel_data
+    lattice.constrain()
+    assert torch.allclose(lattice.kernel.data, expected_out)

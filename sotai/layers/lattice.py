@@ -4,7 +4,7 @@ PyTorch implementation of a lattice layer.
 This layer takes one or more d-dimensional inputs and outputs the interpolated value
 according the specified interpolation method.
 """
-from typing import Iterator, Tuple, Union, List, Callable
+from typing import Iterator, Tuple, Union, List, Callable, Optional
 
 import numpy as np
 import torch
@@ -42,10 +42,10 @@ class Lattice(torch.nn.Module):
     def __init__(
         self,
         lattice_sizes: Union[List[int], Tuple[int]],
-        output_min: float = 0.0,
-        output_max: float = 1.0,
+        output_min: Optional[float] = None,
+        output_max: Optional[float] = None,
         kernel_init: LatticeInit = LatticeInit.LINEAR,
-        monotonicities=None,
+        monotonicities: List[Monotonicity] = None,
         clip_inputs: bool = True,
         interpolation: Interpolation = Interpolation.HYPERCUBE,
         units: int = 1,
@@ -74,10 +74,24 @@ class Lattice(torch.nn.Module):
         self.output_min = output_min
         self.output_max = output_max
         self.kernel_init = kernel_init
-        self.monotonicities = monotonicities
         self.clip_inputs = clip_inputs
         self.interpolation = interpolation
         self.units = units
+
+        if monotonicities is None:
+            self.monotonicities = [Monotonicity.NONE] * len(lattice_sizes)
+        else:
+            self.monotonicities = monotonicities
+
+        if output_min is not None and output_max is not None:
+            output_init_min, output_init_max = self.output_min, self.output_max
+        elif output_min is not None:
+            output_init_min, output_init_max = self.output_min, self.output_min + 4.0
+        elif output_max is not None:
+            output_init_min, output_init_max = self.output_max - 4.0, self.output_max
+        else:
+            output_init_min, output_init_max = -2.0, 2.0
+        self._output_init_min, self._output_init_max = output_init_min, output_init_max
 
         @torch.no_grad()
         def initialize_kernel() -> torch.Tensor:
@@ -119,7 +133,7 @@ class Lattice(torch.nn.Module):
     def assert_constraints(self, eps=1e-6) -> List[str]:
         """Asserts that layer satisfies specified constraints.
 
-        This checks that weights follow monotonicity constraints.
+        This checks that weights follow monotonicity and bounds constraints.
 
         Args:
             eps: the margin of error allowed
@@ -151,23 +165,33 @@ class Lattice(torch.nn.Module):
                 if diff.item() < -eps:
                     messages.append(f"Monotonicity violated at feature index {i}.")
 
+        if self.output_max is not None and torch.max(weights) > self.output_max + eps:
+            messages.append("Max weight greater than output_max.")
+        if self.output_min is not None and torch.min(weights) < self.output_min - eps:
+            messages.append("Min weight less than output_min.")
+
         return messages
 
     @torch.no_grad()
     def constrain(self) -> None:
         """Aggregate function for enforcing constraints of lattice."""
-        if self._count_non_zeros(self.monotonicities) == 0:
-            return
-        lattice_sizes = self.lattice_sizes
-        monotonicities = self.monotonicities
-        if self.units > 1:
-            lattice_sizes = lattice_sizes + [int(self.units)]
-            if self.monotonicities:
-                monotonicities = monotonicities + [Monotonicity.NONE]
-
         weights = self.kernel.clone()
-        weights = weights.reshape(*lattice_sizes)
-        weights = self._project_monotonicity(weights, lattice_sizes, monotonicities)
+
+        if self._count_non_zeros(self.monotonicities):
+            lattice_sizes = self.lattice_sizes
+            monotonicities = self.monotonicities
+            if self.units > 1:
+                lattice_sizes = lattice_sizes + [int(self.units)]
+                if self.monotonicities:
+                    monotonicities = monotonicities + [Monotonicity.NONE]
+
+            weights = weights.reshape(*lattice_sizes)
+            weights = self._project_monotonicity(weights, lattice_sizes, monotonicities)
+
+        if self.output_min is not None:
+            weights = torch.clamp_min(weights, self.output_min)
+        if self.output_max is not None:
+            weights = torch.clamp_max(weights, self.output_max)
 
         self.kernel.data = weights.view(-1, self.units)
 
@@ -177,7 +201,6 @@ class Lattice(torch.nn.Module):
 
     def _linear_initializer(
         self,
-        monotonicities: List[Monotonicity] = None,
         unimodalities=None,
     ) -> torch.Tensor:
         """Creates initial weights tensor for linear initialization.
@@ -191,7 +214,9 @@ class Lattice(torch.nn.Module):
         Returns:
             `torch.Tensor` of shape `(prod(lattice_sizes), units)`
         """
-        # TODO: convert counting logic of monotoncities/unimodalities to suit enums.
+        monotonicities = self.monotonicities[:]
+
+        # TODO: convert counting logic of unimodalities to suit enums.
         if monotonicities is None:
             monotonicities = [Monotonicity.NONE] * len(self.lattice_sizes)
         if unimodalities is None:
@@ -203,7 +228,9 @@ class Lattice(torch.nn.Module):
             monotonicities = [1] * len(self.lattice_sizes)
             num_constraint_dims = len(self.lattice_sizes)
 
-        dim_range = float(self.output_max - self.output_min) / num_constraint_dims
+        dim_range = (
+            float(self._output_init_max - self._output_init_min) / num_constraint_dims
+        )
         one_d_weights = []
 
         for monotonicity, unimodality, dim_size in zip(
@@ -228,7 +255,7 @@ class Lattice(torch.nn.Module):
             one_d_weights.append(torch.tensor(one_d, dtype=torch.double).unsqueeze(0))
 
         weights = self._batch_outer_operation(one_d_weights, operation=torch.add)
-        weights = (weights + self.output_min).view(-1, 1)
+        weights = (weights + self._output_init_min).view(-1, 1)
         if self.units > 1:
             weights = weights.repeat(1, self.units)
 
