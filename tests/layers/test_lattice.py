@@ -506,7 +506,7 @@ def test_assert_constraints_monotonicity(
 
 
 @pytest.mark.parametrize(
-    "min, max, kernel_data, expected_out",
+    "out_min, out_max, kernel_data, expected_out",
     [
         (
             0.0,
@@ -536,14 +536,15 @@ def test_assert_constraints_monotonicity(
         ),
     ],
 )
-def test_assert_constraints_bounds(min, max, kernel_data, expected_out):
-    lattice = Lattice(lattice_sizes=[2, 2], output_max=max, output_min=min)
+def test_assert_constraints_bounds(out_min, out_max, kernel_data, expected_out):
+    """Tests that assert_constraints() detects out of output_min/max bounds."""
+    lattice = Lattice(lattice_sizes=[2, 2], output_max=out_max, output_min=out_min)
     lattice.kernel.data = kernel_data
     assert lattice.assert_constraints() == expected_out
 
 
 @pytest.mark.parametrize(
-    "min, max, kernel_data, expected_out",
+    "out_min, out_max, kernel_data, expected_out",
     [
         (
             0.0,
@@ -565,8 +566,9 @@ def test_assert_constraints_bounds(min, max, kernel_data, expected_out):
         ),
     ],
 )
-def test_constrain_clipping_functionality(min, max, kernel_data, expected_out):
-    lattice = Lattice([2, 2], units=2, output_max=max, output_min=min)
+def test_constrain_clipping_functionality(out_min, out_max, kernel_data, expected_out):
+    """Tests that constrain() method clips out of bounds weights to output min/max."""
+    lattice = Lattice([2, 2], units=2, output_max=out_max, output_min=out_min)
     lattice.kernel.data = kernel_data
     lattice.constrain()
     assert torch.allclose(lattice.kernel.data, expected_out)
