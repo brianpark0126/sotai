@@ -45,7 +45,7 @@ class Lattice(torch.nn.Module):
         output_min: Optional[float] = None,
         output_max: Optional[float] = None,
         kernel_init: LatticeInit = LatticeInit.LINEAR,
-        monotonicities: List[Monotonicity] = None,
+        monotonicities: Optional[List[Monotonicity]] = None,
         clip_inputs: bool = True,
         interpolation: Interpolation = Interpolation.HYPERCUBE,
         units: int = 1,
@@ -59,7 +59,9 @@ class Lattice(torch.nn.Module):
             kernel_init: Initialization scheme to use for the kernel.
             monotonicities: `None` or `List` of `Monotonicity.NONE` or
               `Monotonicity.INCREASING` of length `len(lattice_sizes)` specifying
-               monotonicity of each feature of lattice.
+              monotonicity of each feature of lattice. A monotonically decreasing
+              feature should use `Monotonicity.INCREASING` in the lattice layer but
+              `Monotonicity.DECREASING` in the calibrator.
             clip_inputs: Whether input points should be clipped to the range of lattice.
             interpolation: Interpolation scheme for a given input.
             units: Dimensionality of weights stored at each vertex of lattice.
@@ -186,7 +188,9 @@ class Lattice(torch.nn.Module):
                     monotonicities = monotonicities + [Monotonicity.NONE]
 
             weights = weights.reshape(*lattice_sizes)
-            weights = self._project_monotonicity(weights, lattice_sizes, monotonicities)
+            weights = self._approximately_project_monotonicity(
+                weights, lattice_sizes, monotonicities
+            )
 
         if self.output_min is not None:
             weights = torch.clamp_min(weights, self.output_min)
@@ -597,13 +601,16 @@ class Lattice(torch.nn.Module):
 
         return zip(inputs, bucket_sizes, bucket_dim_sizes)
 
-    def _project_monotonicity(
+    def _approximately_project_monotonicity(
         self,
         weights: torch.Tensor,
         lattice_sizes: List[int],
         monotonicities: List[Monotonicity],
     ) -> torch.Tensor:
         """Projects weights of lattice to meet monotonicity constraints.
+
+        Note that this projection is an approximation which guarantees monotonicity
+        constraints but is not an exact projection with respect to the L2 norm.
 
         Algorithm:
         1. `max_projection`: For each vertex V in the lattice, the weight is adjusted to
