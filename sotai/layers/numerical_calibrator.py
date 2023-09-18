@@ -155,7 +155,7 @@ class NumericalCalibrator(torch.nn.Module):
     def assert_constraints(self, eps=1e-6) -> List[str]:
         """Asserts that layer satisfies specified constraints.
 
-        This checks that weights follow the layer's monotonicity and that the output is
+        This checks that weights follow monotonicity constraints and that the output is
         within bounds.
 
         Args:
