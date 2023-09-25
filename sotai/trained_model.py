@@ -11,7 +11,7 @@ import torch
 from pydantic import Field
 
 from .data import CSVData, replace_missing_values
-from .enums import TargetType
+from .enums import TargetType, APIStatus
 from .models import CalibratedLinear
 from .types import TrainedModelMetadata
 from .api import get_trained_model_metadata, download_trained_model
@@ -107,8 +107,8 @@ class TrainedModel(TrainedModelMetadata):
             A `TrainedModel` instance.
         """
 
-        metadata = get_trained_model_metadata(trained_model_uuid)
-        if metadata is None:
+        api_status, metadata = get_trained_model_metadata(trained_model_uuid)
+        if api_status == APIStatus.ERROR or metadata.training_results.test_loss is not None:
             logging.error(
                 "Trained model %s not found. "
                 "Model training may still be in progress.",

@@ -677,7 +677,7 @@ def test_get_pipeline(mock_version, mock_get_api_key, mock_get):
 def test_get_trained_model_metadata(mock_version, mock_get_api_key, mock_get):
     """Tests that a trained model is posted correctly."""
 
-    trained_model_metadata = get_trained_model_metadata("test_uuid")
+    _, trained_model_metadata = get_trained_model_metadata("test_uuid")
     mock_get.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/trained-model/test_uuid",
         headers={"sotai-api-key": "test_api_key", "sotai-sdk-version": "0.0.0"},

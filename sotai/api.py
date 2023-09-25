@@ -610,7 +610,7 @@ def get_trained_model_uuids(pipeline_uuid: str) -> List[str]:
 
 def get_trained_model_metadata(
     trained_model_uuid: str,
-) -> Optional[TrainedModelMetadata]:
+) -> Tuple[APIStatus, Optional[TrainedModelMetadata]]:
     """Get the metadata for a TrainedModelfrom the SOTAI API.
 
     Args:
@@ -703,7 +703,7 @@ def get_trained_model_metadata(
         "uuid": trained_model_uuid,
         "allow_hosting": True,
     }
-    return TrainedModelMetadata(**trained_model_metadata)
+    return APIStatus.SUCCESS, TrainedModelMetadata(**trained_model_metadata)
 
 
 def download_trained_model(trained_model_uuid: str) -> str:

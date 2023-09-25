@@ -120,7 +120,7 @@ def test_load_from_hosted(
     )
     trained_model.save(tmp_path)
     mock_download_trained_model.return_value = f"{tmp_path}/trained_ptcm_model.pt"
-    trained_model = TrainedModel.from_hosted("test_uuid")
+    _, trained_model = TrainedModel.from_hosted("test_uuid")
     mock_get_trained_model.assert_called_once()
     mock_download_trained_model.assert_called_once()
     assert isinstance(trained_model, TrainedModel)
