@@ -17,6 +17,7 @@ from sotai import (
     TrainingConfig,
     TrainingResults,
 )
+from sotai.enums import APIStatus
 from sotai.models import CalibratedLinear
 
 from .utils import construct_trained_model
@@ -65,46 +66,49 @@ def test_trained_model_save_load(
 @patch("sotai.trained_model.download_trained_model")
 @patch(
     "sotai.trained_model.get_trained_model_metadata",
-    return_value=TrainedModelMetadata(
-        **{
-            "id": 0,
-            "dataset_id": 0,
-            "model_config": LinearConfig(),
-            "training_config": TrainingConfig(
-                loss_type=LossType.MSE,
-                epochs=1,
-                batch_size=1,
-                learning_rate=1,
-            ),
-            "training_results": TrainingResults(
-                training_time=1,
-                train_loss_by_epoch=[1],
-                train_primary_metric_by_epoch=[1],
-                val_loss_by_epoch=[1],
-                val_primary_metric_by_epoch=[1],
-                evaluation_time=1,
-                test_loss=1,
-                test_primary_metric=1,
-                feature_analyses={},
-                linear_coefficients={},
-            ),
-            "uuid": "test_uuid",
-            "pipeline_config": PipelineConfig(
-                id=0,
-                target="target",
-                target_type=TargetType.CLASSIFICATION,
-                primary_metric=Metric.MSE,
-                feature_configs={
-                    "age": NumericalFeatureConfig(
-                        name="age",
-                        type=FeatureType.NUMERICAL,
-                    ),
-                },
-                shuffle_data=False,
-                drop_empty_percentage=70,
-                dataset_split=DatasetSplit(train=80, val=10, test=10),
-            ),
-        }
+    return_value=(
+        APIStatus.SUCCESS,
+        TrainedModelMetadata(
+            **{
+                "id": 0,
+                "dataset_id": 0,
+                "model_config": LinearConfig(),
+                "training_config": TrainingConfig(
+                    loss_type=LossType.MSE,
+                    epochs=1,
+                    batch_size=1,
+                    learning_rate=1,
+                ),
+                "training_results": TrainingResults(
+                    training_time=1,
+                    train_loss_by_epoch=[1],
+                    train_primary_metric_by_epoch=[1],
+                    val_loss_by_epoch=[1],
+                    val_primary_metric_by_epoch=[1],
+                    evaluation_time=1,
+                    test_loss=1,
+                    test_primary_metric=1,
+                    feature_analyses={},
+                    linear_coefficients={},
+                ),
+                "uuid": "test_uuid",
+                "pipeline_config": PipelineConfig(
+                    id=0,
+                    target="target",
+                    target_type=TargetType.CLASSIFICATION,
+                    primary_metric=Metric.MSE,
+                    feature_configs={
+                        "age": NumericalFeatureConfig(
+                            name="age",
+                            type=FeatureType.NUMERICAL,
+                        ),
+                    },
+                    shuffle_data=False,
+                    drop_empty_percentage=70,
+                    dataset_split=DatasetSplit(train=80, val=10, test=10),
+                ),
+            }
+        ),
     ),
 )
 def test_load_from_hosted(
@@ -120,7 +124,7 @@ def test_load_from_hosted(
     )
     trained_model.save(tmp_path)
     mock_download_trained_model.return_value = f"{tmp_path}/trained_ptcm_model.pt"
-    _, trained_model = TrainedModel.from_hosted("test_uuid")
+    trained_model = TrainedModel.from_hosted("test_uuid")
     mock_get_trained_model.assert_called_once()
     mock_download_trained_model.assert_called_once()
     assert isinstance(trained_model, TrainedModel)
