@@ -108,7 +108,10 @@ class TrainedModel(TrainedModelMetadata):
         """
 
         api_status, metadata = get_trained_model_metadata(trained_model_uuid)
-        if api_status == APIStatus.ERROR or metadata.training_results.test_loss is not None:
+        if (
+            api_status == APIStatus.ERROR
+            or metadata.training_results.test_loss is not None
+        ):
             logging.error(
                 "Trained model %s not found. "
                 "Model training may still be in progress.",
