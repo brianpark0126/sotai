@@ -11,7 +11,7 @@ from .utils.shap_utils import (
 from .api import post_external_inference
 
 
-def shap( # pylint: disable=too-many-locals
+def shap(  # pylint: disable=too-many-locals
     inference_data: pd.DataFrame,
     shapley_values: np.ndarray,
     base_values: np.ndarray,
@@ -33,6 +33,10 @@ def shap( # pylint: disable=too-many-locals
         The UUID of the uploaded shapley values.
     """
 
+    external_directory = "/tmp/sotai/external/"
+    if not os.path.exists(external_directory):
+        os.makedirs(external_directory)
+
     beeswarm_data = calculate_beeswarm(inference_data, shapley_values, target)
     scatter_data = calculate_scatter(inference_data, shapley_values)
     feature_importance = calculate_feature_importance(
@@ -53,9 +57,6 @@ def shap( # pylint: disable=too-many-locals
     shapley_values_df = pd.DataFrame(shapley_values)
     base_values_df = pd.DataFrame(base_values)
 
-    external_directory = "/tmp/sotai/external/"
-    if not os.path.exists(external_directory):
-        os.makedirs(external_directory)
     shapley_value_filepath = "/tmp/sotai/external/shapley_values.csv"
     base_values_filepath = "/tmp/sotai/external/base_values.csv"
     inference_data_filepath = "/tmp/sotai/external/inference_predictions.csv"

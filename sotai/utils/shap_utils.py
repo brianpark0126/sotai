@@ -31,7 +31,6 @@ from shap.plots._utils import convert_ordering
 from shap.utils._exceptions import DimensionError
 
 
-
 def calculate_feature_importance(
     shapley_values: np.ndarray, feature_names: List[str]
 ) -> List[Dict[str, Any]]:
@@ -209,7 +208,7 @@ def calculate_beeswarm(  # pylint: disable-msg=too-many-locals,too-many-branches
                 fvalues = np.array(
                     fvalues, dtype=np.float64
                 )  # make sure this can be numeric
-        except Exception: # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             colored_feature = False
         nbins = 100
         quant = np.round(
@@ -276,7 +275,9 @@ def calculate_beeswarm(  # pylint: disable-msg=too-many-locals,too-many-branches
     return res
 
 
-def calculate_scatter(features: pd.DataFrame, shap_values: np.ndarray): # pylint: disable-msg=too-many-locals
+def calculate_scatter(
+    features: pd.DataFrame, shap_values: np.ndarray
+):  # pylint: disable-msg=too-many-locals
     """Calculate scatter plot data for all possible feature combinations.
 
     Args:
@@ -337,8 +338,12 @@ def calculate_scatter(features: pd.DataFrame, shap_values: np.ndarray): # pylint
                 continue
 
             # Plot limits
-            xmin = np.nanmin(x_values) - (np.nanmax(x_values) - np.nanmin(x_values)) / 20
-            xmax = np.nanmax(x_values) + (np.nanmax(x_values) - np.nanmin(x_values)) / 20
+            xmin = (
+                np.nanmin(x_values) - (np.nanmax(x_values) - np.nanmin(x_values)) / 20
+            )
+            xmax = (
+                np.nanmax(x_values) + (np.nanmax(x_values) - np.nanmin(x_values)) / 20
+            )
             y1min = np.nanmin(cvals_imp)
             y1max = np.nanmax(cvals_imp)
 
@@ -360,7 +365,9 @@ def calculate_scatter(features: pd.DataFrame, shap_values: np.ndarray): # pylint
                     bin_edges = 10
                 else:
                     bin_edges = 5
-            hist_data, bin_edges_data = np.histogram(x_values[~np.isnan(x_values)], bin_edges)
+            hist_data, bin_edges_data = np.histogram(
+                x_values[~np.isnan(x_values)], bin_edges
+            )
 
             scatter_plot_data_list.append(
                 {
