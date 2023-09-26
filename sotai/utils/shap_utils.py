@@ -109,7 +109,7 @@ def calculate_beeswarm(  # pylint: disable-msg=too-many-locals,too-many-branches
             "pass an explanation matrix with many instances!"
         )
         raise ValueError(emsg)
-    elif len(sv_shape) > 2:
+    if len(sv_shape) > 2:
         emsg = (
             "The beeswarm plot does not support plotting explanations with "
             "instances that have more than one dimension!"
@@ -237,8 +237,7 @@ def calculate_beeswarm(  # pylint: disable-msg=too-many-locals,too-many-branches
                 if vmin == vmax:
                     vmin = np.min(fvalues)
                     vmax = np.max(fvalues)
-            if vmin > vmax:  # fixes rare numerical precision issues
-                vmin = vmax
+            vmin = min(vmin, vmax)
             assert fvalues.shape[0] == len(
                 shaps
             ), "Feature and SHAP matrices must have the same number of rows!"

@@ -1,5 +1,6 @@
 """This module contains functions for external models to interact with the SOTAI API."""
 import os
+import pickle
 import numpy as np
 import pandas as pd
 from .utils.shap_utils import (
@@ -8,10 +9,9 @@ from .utils.shap_utils import (
     calculate_feature_importance,
 )
 from .api import post_external_inference
-import pickle
 
 
-def shap(
+def shap( # pylint: disable=too-many-locals
     inference_data: pd.DataFrame,
     shapley_values: np.ndarray,
     base_values: np.ndarray,
@@ -43,9 +43,12 @@ def shap(
     scatter_filepath = "/tmp/sotai/external/scatter_data.pkl"
     feature_importance_filepath = "/tmp/sotai/external/feature_importance_data.pkl"
 
-    pickle.dump(beeswarm_data, open(beeswarm_filepath, "wb"))
-    pickle.dump(scatter_data, open(scatter_filepath, "wb"))
-    pickle.dump(feature_importance, open(feature_importance_filepath, "wb"))
+    with open(beeswarm_filepath, "wb") as beeswarm_file:
+        pickle.dump(beeswarm_data, beeswarm_file)
+    with open(scatter_filepath, "wb") as scatter_file:
+        pickle.dump(scatter_data, scatter_file)
+    with open(feature_importance_filepath, "wb") as feature_importance_file:
+        pickle.dump(feature_importance, feature_importance_file)
 
     shapley_values_df = pd.DataFrame(shapley_values)
     base_values_df = pd.DataFrame(base_values)

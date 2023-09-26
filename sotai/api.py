@@ -845,9 +845,9 @@ def post_external_inference(
             ),
             (
                 "files",
-                open(
+                open( # pylint: disable=consider-using-with
                     feature_importance_filepath, "rb"
-                ),  # pylint: disable=consider-using-with
+                ),
             ),
         ],
         data={
