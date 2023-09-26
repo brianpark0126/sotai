@@ -6,9 +6,10 @@ import numpy as np
 from sotai.external import shap
 
 
+@patch("pickle.dump", return_value="test")
 @patch("pandas.DataFrame.to_csv", return_value="test")
 @patch("sotai.external.post_external_inference", return_value="test_uuid")
-def test_shap(mock_post_external_inference, mock_to_csv):
+def test_shap(mock_post_external_inference, mock_to_csv, mock_dump):
     """Tests that a pipeline is posted correctly.""" ""
 
     test_inference_data = pd.DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
@@ -37,3 +38,4 @@ def test_shap(mock_post_external_inference, mock_to_csv):
         dataset_name="test",
     )
     mock_to_csv.assert_called()
+    mock_dump.assert_called()
