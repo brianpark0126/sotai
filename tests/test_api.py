@@ -778,6 +778,9 @@ def test_post_external_inference(
         "/tmp/sotai/external/shapley_values.csv",
         "/tmp/sotai/external/base_values.csv",
         "/tmp/sotai/external/inference_predictions.csv",
+        "/tmp/sotai/external/beeswarm_data.pkl",
+        "/tmp/sotai/external/scatter_data.pkl",
+        "/tmp/sotai/external/feature_importance_data.pkl",
         "test",
         "target",
         "dataset_name",
@@ -785,7 +788,14 @@ def test_post_external_inference(
 
     mock_post.assert_called_with(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/shapley-values",
-        files=[("files", "data"), ("files", "data"), ("files", "data")],
+        files=[
+            ("files", "data"),
+            ("files", "data"),
+            ("files", "data"),
+            ("files", "data"),
+            ("files", "data"),
+            ("files", "data"),
+        ],
         data={
             "external_shapley_value_name": "test",
             "target": "target",

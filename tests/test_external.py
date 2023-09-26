@@ -30,6 +30,9 @@ def test_shap(mock_post_external_inference, mock_to_csv):
         shap_filepath="/tmp/sotai/external/shapley_values.csv",
         base_filepath="/tmp/sotai/external/base_values.csv",
         inference_filepath="/tmp/sotai/external/inference_predictions.csv",
+        beeswarm_filepath="/tmp/sotai/external/beeswarm_data.pkl",
+        scatter_filepath="/tmp/sotai/external/scatter_data.pkl",
+        feature_importance_filepath="/tmp/sotai/external/feature_importance_data.pkl",
         target="target",
         dataset_name="test",
     )

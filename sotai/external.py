@@ -2,7 +2,13 @@
 import os
 import numpy as np
 import pandas as pd
+from .utils.shap_utils import (
+    calculate_beeswarm,
+    calculate_scatter,
+    calculate_feature_importance,
+)
 from .api import post_external_inference
+import pickle
 
 
 def shap(
@@ -27,6 +33,20 @@ def shap(
         The UUID of the uploaded shapley values.
     """
 
+    beeswarm_data = calculate_beeswarm(inference_data, shapley_values, target)
+    scatter_data = calculate_scatter(inference_data, shapley_values)
+    feature_importance = calculate_feature_importance(
+        shapley_values, inference_data.columns
+    )
+
+    beeswarm_filepath = "/tmp/sotai/external/beeswarm_data.pkl"
+    scatter_filepath = "/tmp/sotai/external/scatter_data.pkl"
+    feature_importance_filepath = "/tmp/sotai/external/feature_importance_data.pkl"
+
+    pickle.dump(beeswarm_data, open(beeswarm_filepath, "wb"))
+    pickle.dump(scatter_data, open(scatter_filepath, "wb"))
+    pickle.dump(feature_importance, open(feature_importance_filepath, "wb"))
+
     shapley_values_df = pd.DataFrame(shapley_values)
     base_values_df = pd.DataFrame(base_values)
 
@@ -49,6 +69,9 @@ def shap(
         shap_filepath=shapley_value_filepath,
         base_filepath=base_values_filepath,
         inference_filepath=inference_data_filepath,
+        beeswarm_filepath=beeswarm_filepath,
+        scatter_filepath=scatter_filepath,
+        feature_importance_filepath=feature_importance_filepath,
         target=target,
         dataset_name=dataset_name,
     )

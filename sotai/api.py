@@ -801,6 +801,9 @@ def post_external_inference(
     shap_filepath: str,
     base_filepath: str,
     inference_filepath: str,
+    beeswarm_filepath: str,
+    scatter_filepath: str,
+    feature_importance_filepath: str,
     external_shapley_value_name: str,
     target: str,
     dataset_name: str,
@@ -831,6 +834,20 @@ def post_external_inference(
             (
                 "files",
                 open(inference_filepath, "rb"),  # pylint: disable=consider-using-with
+            ),
+            (
+                "files",
+                open(beeswarm_filepath, "rb"),  # pylint: disable=consider-using-with
+            ),
+            (
+                "files",
+                open(scatter_filepath, "rb"),  # pylint: disable=consider-using-with
+            ),
+            (
+                "files",
+                open(
+                    feature_importance_filepath, "rb"
+                ),  # pylint: disable=consider-using-with
             ),
         ],
         data={
