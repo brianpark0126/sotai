@@ -1,4 +1,8 @@
-"""Shap utils
+"""SHAP utility functions.
+
+Note that this code is based on code from the SHAP package, so we are including
+the license below:
+
 The MIT License (MIT)
 
 Copyright (c) 2018 Scott Lundberg

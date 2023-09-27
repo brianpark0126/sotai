@@ -1,3 +1,4 @@
+# pylint: disable=consider-using-with
 """This module contains the API functions for interacting with the SOTAI API.""" ""
 import logging
 import os
@@ -407,14 +408,14 @@ def post_dataset(
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
         files=[
-            ("files", open(test_filepath, "rb")),  # pylint: disable=consider-using-with
+            ("files", open(test_filepath, "rb")),
             (
                 "files",
-                open(train_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(train_filepath, "rb"),
             ),
             (
                 "files",
-                open(validation_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(validation_filepath, "rb"),
             ),
         ],
         data={
@@ -826,28 +827,26 @@ def post_external_inference(
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/shapley-values",
         files=[
-            ("files", open(shap_filepath, "rb")),  # pylint: disable=consider-using-with
+            ("files", open(shap_filepath, "rb")),
             (
                 "files",
-                open(base_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(base_filepath, "rb"),
             ),
             (
                 "files",
-                open(inference_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(inference_filepath, "rb"),
             ),
             (
                 "files",
-                open(beeswarm_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(beeswarm_filepath, "rb"),
             ),
             (
                 "files",
-                open(scatter_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(scatter_filepath, "rb"),
             ),
             (
                 "files",
-                open(  # pylint: disable=consider-using-with
-                    feature_importance_filepath, "rb"
-                ),
+                open(feature_importance_filepath, "rb"),
             ),
         ],
         data={
