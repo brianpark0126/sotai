@@ -406,17 +406,19 @@ def post_dataset(
 
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
+        # pylint: disable=consider-using-with
         files=[
-            ("files", open(test_filepath, "rb")),  # pylint: disable=consider-using-with
+            ("files", open(test_filepath, "rb")),
             (
                 "files",
-                open(train_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(train_filepath, "rb"),
             ),
             (
                 "files",
-                open(validation_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(validation_filepath, "rb"),
             ),
         ],
+        # pylint: enable=consider-using-with
         data={
             "pipeline_config_uuid": pipeline_config_uuid,
             "columns": columns,
@@ -801,6 +803,9 @@ def post_external_inference(
     shap_filepath: str,
     base_filepath: str,
     inference_filepath: str,
+    beeswarm_filepath: str,
+    scatter_filepath: str,
+    feature_importance_filepath: str,
     external_shapley_value_name: str,
     target: str,
     dataset_name: str,
@@ -823,15 +828,29 @@ def post_external_inference(
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/shapley-values",
         files=[
-            ("files", open(shap_filepath, "rb")),  # pylint: disable=consider-using-with
+            # pylint: disable=consider-using-with
+            ("files", open(shap_filepath, "rb")),
             (
                 "files",
-                open(base_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(base_filepath, "rb"),
             ),
             (
                 "files",
-                open(inference_filepath, "rb"),  # pylint: disable=consider-using-with
+                open(inference_filepath, "rb"),
             ),
+            (
+                "files",
+                open(beeswarm_filepath, "rb"),
+            ),
+            (
+                "files",
+                open(scatter_filepath, "rb"),
+            ),
+            (
+                "files",
+                open(feature_importance_filepath, "rb"),
+            ),
+            # pylint: enable=consider-using-with
         ],
         data={
             "external_shapley_value_name": external_shapley_value_name,
