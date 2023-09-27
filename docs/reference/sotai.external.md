@@ -8,7 +8,7 @@ This module contains functions for external models to interact with the SOTAI AP
 
 ---
 
-<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/external.py#L8"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/SOTAI-Labs/sotai/tree/main/sotai/external.py#L14"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `shap`
 
