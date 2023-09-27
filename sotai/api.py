@@ -1,4 +1,3 @@
-# pylint: disable=consider-using-with
 """This module contains the API functions for interacting with the SOTAI API.""" ""
 import logging
 import os
@@ -407,6 +406,7 @@ def post_dataset(
 
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/datasets",
+        # pylint: disable=consider-using-with
         files=[
             ("files", open(test_filepath, "rb")),
             (
@@ -418,6 +418,7 @@ def post_dataset(
                 open(validation_filepath, "rb"),
             ),
         ],
+        # pylint: enable=consider-using-with
         data={
             "pipeline_config_uuid": pipeline_config_uuid,
             "columns": columns,
@@ -827,6 +828,7 @@ def post_external_inference(
     response = requests.post(
         f"{SOTAI_BASE_URL}/{SOTAI_API_ENDPOINT}/shapley-values",
         files=[
+            # pylint: disable=consider-using-with
             ("files", open(shap_filepath, "rb")),
             (
                 "files",
@@ -848,6 +850,7 @@ def post_external_inference(
                 "files",
                 open(feature_importance_filepath, "rb"),
             ),
+            # pylint: enable=consider-using-with
         ],
         data={
             "external_shapley_value_name": external_shapley_value_name,
