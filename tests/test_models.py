@@ -1,13 +1,14 @@
 """Tests for models."""
 import numpy as np
+import pandas as pd
 import pytest
 import torch
 
-from sotai import Monotonicity
+from sotai import Monotonicity, CSVData
 from sotai.features import CategoricalFeature, NumericalFeature
-from sotai.models import CalibratedLinear
+from sotai.models import CalibratedLinear, CalibratedLattice
 
-from .utils import train_calibrated_module
+from .utils import train_calibrated_module, train_calibrated_module_tqdm
 
 
 @pytest.mark.parametrize(
@@ -385,3 +386,121 @@ def test_training():  # pylint: disable=too-many-locals
 
     assert trained_loss < initial_loss
     assert trained_loss < 0.02
+
+
+def test_training_lattice():  # pylint: disable=too-many-locals
+    """Tests `CalibratedLattice` training on data from f(x) = 0.7|x_1| + 0.3x_2."""
+    num_examples, num_categories = 3000, 3
+    output_min, output_max = 0.0, num_categories - 1
+    x_1_numpy = np.random.uniform(-output_max, output_max, size=num_examples)
+    x_1 = torch.from_numpy(x_1_numpy)[:, None]
+    num_examples_per_category = num_examples // num_categories
+    x2_numpy = np.concatenate(
+        [[c] * num_examples_per_category for c in range(num_categories)]
+    )
+    x_2 = torch.from_numpy(x2_numpy)[:, None]
+    training_examples = torch.column_stack((x_1, x_2))
+    linear_coefficients = torch.tensor([0.7, 0.3]).double()
+    training_labels = torch.sum(
+        torch.column_stack((torch.absolute(x_1), x_2)) * linear_coefficients,
+        dim=1,
+        keepdim=True,
+    )
+    randperm = torch.randperm(training_examples.size()[0])
+    training_examples = training_examples[randperm]
+    training_labels = training_labels[randperm]
+
+    calibrated_lattice = CalibratedLattice(
+        features=[
+            NumericalFeature(
+                "x1",
+                x_1_numpy,
+                num_keypoints=4,
+            ),
+            CategoricalFeature("x2", [0, 1, 2], monotonicity_pairs=[(0, 1), (1, 2)]),
+        ],
+        output_min=output_min,
+        output_max=output_max,
+
+    )
+
+    loss_fn = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(calibrated_lattice.parameters(recurse=True), lr=1e-1)
+
+    with torch.no_grad():
+        initial_predictions = calibrated_lattice(training_examples)
+        initial_loss = loss_fn(initial_predictions, training_labels)
+
+    train_calibrated_module(
+        calibrated_lattice,
+        training_examples,
+        training_labels,
+        loss_fn,
+        optimizer,
+        500,
+        num_examples // 10,
+    )
+
+    with torch.no_grad():
+        trained_predictions = calibrated_lattice(training_examples)
+        trained_loss = loss_fn(trained_predictions, training_labels)
+
+    assert trained_loss < initial_loss
+    assert trained_loss < 0.02
+
+
+def test_training_lattice_loan():
+    """Tests `CalibratedLattice` on 5 features from loan approval data."""
+
+    data = pd.read_csv(
+        "https://github.com/SOTAI-Labs/datasets/raw/main/loan_approval.csv")
+    data["loan_status"] = data["loan_status"].apply(lambda x: 0 if x == "Rejected" else 1)
+    csv_data = CSVData(data)
+    batch_size = 512
+
+    feature_configs = [
+        NumericalFeature("income_annum", data=csv_data("income_annum"),
+                         monotonicity=Monotonicity.INCREASING),
+        NumericalFeature("loan_amount", csv_data("loan_amount")),
+        NumericalFeature("bank_asset_value", csv_data("bank_asset_value"),
+                         monotonicity=Monotonicity.INCREASING),
+        NumericalFeature("cibil_score", csv_data("cibil_score"),
+                         monotonicity=Monotonicity.INCREASING),
+        NumericalFeature("no_of_dependents", csv_data("no_of_dependents")),
+        NumericalFeature("luxury_assets_value", csv_data("luxury_assets_value")),
+        CategoricalFeature("education", ["Not Graduate", "Graduate"],
+                           monotonicity_pairs=[("Not Graduate", "Graduate")]),
+        CategoricalFeature("self_employed", ["No", "Yes"])
+    ]
+
+    csv_data.prepare(features=feature_configs, target_header="loan_status")
+    training_examples_tensor, labels_tensor = next(csv_data.batch(batch_size))
+
+    calibrated_lattice = CalibratedLattice(
+        features=feature_configs,
+        output_min=0.,
+        output_max=1.
+    )
+    loss_fn = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(calibrated_lattice.parameters(recurse=True), lr=1e-1)
+
+    with torch.no_grad():
+        initial_predictions = calibrated_lattice(training_examples_tensor)
+        initial_loss = loss_fn(initial_predictions, labels_tensor)
+
+    train_calibrated_module_tqdm(
+        calibrated_module=calibrated_lattice,
+        examples=csv_data,
+        labels=labels_tensor,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        epochs=25,
+        batch_size=batch_size
+    )
+
+    with torch.no_grad():
+        trained_predictions = calibrated_lattice(training_examples_tensor)
+        trained_loss = loss_fn(trained_predictions, labels_tensor)
+
+    assert trained_loss < initial_loss
+    print(f"initial loss: {initial_loss}, training loss: {trained_loss}")
