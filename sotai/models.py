@@ -4,7 +4,7 @@ PyTorch Calibrated Models make it easy to construct common calibrated model
 architectures. To construct a PyTorch Calibrated Model, pass a calibrated modeling
 config to the corresponding calibrated model.
 """
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import torch
@@ -13,7 +13,9 @@ from .enums import (
     CategoricalCalibratorInit,
     FeatureType,
     Monotonicity,
-    NumericalCalibratorInit, LatticeInit, Interpolation,
+    NumericalCalibratorInit,
+    LatticeInit,
+    Interpolation,
 )
 from .features import CategoricalFeature, NumericalFeature
 from .layers import Lattice
@@ -212,6 +214,7 @@ class CalibratedLinear(torch.nn.Module):
             self.output_calibrator.constrain()
 
 
+# pylint: disable-next=too-many-instance-attributes
 class CalibratedLattice(torch.nn.Module):
     """PyTorch Calibrated Lattice Model.
 

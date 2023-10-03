@@ -172,6 +172,7 @@ class NumericalCalibrator(torch.nn.Module):
             messages.append("Max weight greater than output_max.")
         if self.output_min is not None and torch.min(weights) < self.output_min - eps:
             messages.append("Min weight less than output_min.")
+            print(weights)
 
         diffs = weights[1:] - weights[:-1]
         violation_indices = []

@@ -33,6 +33,7 @@ class _Feature:
 
 
 # pylint: disable-next=too-few-public-methods
+# pylint: disable-next=too-many-instance-attributes
 class NumericalFeature(_Feature):
     """Feature configuration for numerical features.
 
