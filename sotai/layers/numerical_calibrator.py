@@ -168,13 +168,18 @@ class NumericalCalibrator(torch.nn.Module):
         weights = torch.squeeze(self.kernel.data)
         messages = []
 
-        if self.output_max is not None and torch.max(weights) > self.output_max + eps:
+        if (
+            self.output_max is not None
+            and torch.max(self.keypoints_outputs()) > self.output_max + eps
+        ):
             messages.append("Max weight greater than output_max.")
-        if self.output_min is not None and torch.min(weights) < self.output_min - eps:
+        if (
+            self.output_min is not None
+            and torch.min(self.keypoints_outputs()) < self.output_min - eps
+        ):
             messages.append("Min weight less than output_min.")
-            print(weights)
 
-        diffs = weights[1:] - weights[:-1]
+        diffs = weights[1:]
         violation_indices = []
 
         if self.monotonicity == Monotonicity.INCREASING:

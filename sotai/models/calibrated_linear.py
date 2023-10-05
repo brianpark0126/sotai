@@ -145,6 +145,10 @@ class CalibratedLinear(torch.nn.Module):
         linear_messages = self.linear.assert_constraints()
         if linear_messages:
             messages["linear"] = linear_messages
+        if self.output_calibrator:
+            output_calibrator_messages = self.output_calibrator.assert_constraints()
+            if output_calibrator_messages:
+                messages["output_calibrator"] = output_calibrator_messages
 
         return messages
 

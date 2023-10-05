@@ -1,4 +1,5 @@
 """Tests for calibrated lattice model."""
+from unittest.mock import patch, Mock
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,7 +10,6 @@ from sotai.features import CategoricalFeature, NumericalFeature
 from sotai.models import CalibratedLattice
 
 from ..utils import train_calibrated_module, train_calibrated_module_tqdm
-from unittest.mock import patch, Mock
 
 
 def test_init_required_args():
@@ -132,6 +132,39 @@ def test_init_full_args(
         assert calibrator.output_max == lattice_dim - 1
 
 
+def test_forward():
+    """Tests all parts of calibrated lattice forward pass are called."""
+    calibrated_lattice = CalibratedLattice(
+        features=[
+            NumericalFeature(
+                feature_name="n",
+                data=np.array([1.0, 2.0]),
+            ),
+            CategoricalFeature(
+                feature_name="c",
+                categories=["a", "b", "c"],
+            ),
+        ],
+        output_calibration_num_keypoints=10,
+    )
+
+    with patch(
+        "sotai.models.calibrated_lattice.calibrate_and_stack",
+        return_value=torch.tensor([[0.0]]),
+    ) as mock_calibrate_and_stack, patch.object(
+        calibrated_lattice.lattice, "forward", return_value=torch.tensor([[0.0]])
+    ) as mock_lattice, patch.object(
+        calibrated_lattice.output_calibrator,
+        "forward",
+        return_value=torch.tensor([[0.0]]),
+    ) as mock_output_calibrator:
+        calibrated_lattice.forward(torch.tensor([[1.0, 2.0]]))
+
+        mock_calibrate_and_stack.assert_called_once()
+        mock_lattice.assert_called_once()
+        mock_output_calibrator.assert_called_once()
+
+
 @pytest.mark.parametrize(
     "interpolation",
     [
@@ -147,9 +180,7 @@ def test_init_full_args(
         4,
     ],
 )
-def test_training_lattice(
-    interpolation, lattice_dim
-):  # pylint: disable=too-many-locals
+def test_training_(interpolation, lattice_dim):  # pylint: disable=too-many-locals
     """Tests `CalibratedLattice` training on data from f(x) = 0.7|x_1| + 0.3x_2."""
     num_examples, num_categories = 3000, 3
     output_min, output_max = 0.0, num_categories - 1
@@ -282,7 +313,7 @@ def test_training_lattice_loan():
     assert trained_loss < initial_loss
 
 
-def test_lattice_assert_constraints():
+def test_assert_constraints():
     """Tests `assert_constraints()` method calls internal assert_constraints."""
     calibrated_lattice = CalibratedLattice(
         features=[
@@ -297,7 +328,8 @@ def test_lattice_assert_constraints():
                 categories=["a", "b", "c"],
                 monotonicity_pairs=[("a", "b")],
             ),
-        ]
+        ],
+        output_calibration_num_keypoints=5,
     )
 
     with patch.object(
@@ -308,15 +340,18 @@ def test_lattice_assert_constraints():
             mock_assert = Mock()
             calibrator.assert_constraints = mock_assert
             mock_asserts.append(mock_assert)
+        mock_output_assert = Mock()
+        calibrated_lattice.output_calibrator.assert_constraints = mock_output_assert
 
         calibrated_lattice.assert_constraints()
 
         mock_lattice_assert_constraints.assert_called_once()
         for mock_assert in mock_asserts:
             mock_assert.assert_called_once()
+        mock_output_assert.assert_called_once()
 
 
-def test_lattice_constrain():
+def test_constrain():
     """Tests `constrain()` method calls internal constrain functions."""
     calibrated_lattice = CalibratedLattice(
         features=[

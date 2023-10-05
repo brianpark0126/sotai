@@ -156,6 +156,10 @@ class CalibratedLattice(torch.nn.Module):
         lattice_messages = self.lattice.assert_constraints()
         if lattice_messages:
             messages["lattice"] = lattice_messages
+        if self.output_calibrator:
+            output_calibrator_messages = self.output_calibrator.assert_constraints()
+            if output_calibrator_messages:
+                messages["output_calibrator"] = output_calibrator_messages
 
         return messages
 

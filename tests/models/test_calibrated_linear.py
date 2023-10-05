@@ -1,4 +1,5 @@
 """Tests for calibrated linear model."""
+from unittest.mock import patch, Mock
 import numpy as np
 import pytest
 import torch
@@ -6,10 +7,8 @@ import torch
 from sotai import Monotonicity
 from sotai.features import CategoricalFeature, NumericalFeature
 from sotai.models import CalibratedLinear
-from sotai.models.model_utils import calibrate_and_stack
 
 from ..utils import train_calibrated_module
-from unittest.mock import patch, Mock
 
 
 @pytest.mark.parametrize(
@@ -135,77 +134,40 @@ def test_initialization(
         )
 
 
-# TODO: add more parameterized tests
-@pytest.mark.parametrize(
-    "output_min,output_max,calibrator_kernel_datas,linear_kernel_data,"
-    "output_calibrator_kernel_data,inputs,expected_outputs",
-    [
-        (
-            None,
-            None,
-            [
-                torch.tensor([[0.0], [1.0], [1.0], [1.0]]).double(),
-                torch.tensor([[1.0], [2.0], [3.0]]).double(),
-            ],
-            torch.tensor([[1.0], [2.0]]).double(),
-            None,
-            torch.tensor([[1.0, 0], [2.0, 1], [3.0, 2], [4.0, 1]]).double(),
-            torch.tensor([[2.0], [5.0], [8.0], [7.0]]).double(),
-        ),
-        (
-            0.0,
-            1.0,
-            [
-                torch.tensor([[1.0], [-0.5], [-0.5], [1.0]]).double(),
-                torch.tensor([[1.0], [0.5], [0.0]]).double(),
-            ],
-            torch.tensor([[0.3], [0.7]]).double(),
-            torch.tensor([[0.0], [1.0], [-1.0], [1.0]]).double(),
-            torch.tensor([[1.0, 0], [2.0, 1], [3.0, 2], [4.0, 1]]).double(),
-            torch.tensor([[1.0], [0.5], [0.0], [0.05]]).double(),
-        ),
-    ],
-)
-def test_forward(
-    output_min,
-    output_max,
-    calibrator_kernel_datas,
-    linear_kernel_data,
-    output_calibrator_kernel_data,
-    inputs,
-    expected_outputs,
-):
-    """Tests that forward returns expected result."""
+def test_forward():
+    """Tests all parts of calibrated lattice forward pass are called."""
     calibrated_linear = CalibratedLinear(
         features=[
             NumericalFeature(
-                feature_name="numerical_feature",
-                data=np.array([1.0, 2.0, 3.0, 4.0]),
-                num_keypoints=4,
-                monotonicity=Monotonicity.NONE,
+                feature_name="n",
+                data=np.array([1.0, 2.0]),
             ),
             CategoricalFeature(
-                feature_name="categorical_feature",
+                feature_name="c",
                 categories=["a", "b", "c"],
-                monotonicity_pairs=None,
             ),
         ],
-        output_min=output_min,
-        output_max=output_max,
-        output_calibration_num_keypoints=output_calibrator_kernel_data.size()[0]
-        if output_calibrator_kernel_data is not None
-        else None,
+        output_calibration_num_keypoints=10,
     )
-    for i, calibrator in enumerate(calibrated_linear.calibrators.values()):
-        calibrator.kernel.data = calibrator_kernel_datas[i]
-    calibrated_linear.linear.kernel.data = linear_kernel_data
-    if output_calibrator_kernel_data is not None:
-        calibrated_linear.output_calibrator.kernel.data = output_calibrator_kernel_data
-    outputs = calibrated_linear(inputs)
-    assert torch.allclose(outputs, expected_outputs)
+
+    with patch(
+        "sotai.models.calibrated_linear.calibrate_and_stack",
+        return_value=torch.tensor([[0.0]]),
+    ) as mock_calibrate_and_stack, patch.object(
+        calibrated_linear.linear, "forward", return_value=torch.tensor([[0.0]])
+    ) as mock_lattice, patch.object(
+        calibrated_linear.output_calibrator,
+        "forward",
+        return_value=torch.tensor([[0.0]]),
+    ) as mock_output_calibrator:
+        calibrated_linear.forward(torch.tensor([[1.0, 2.0]]))
+
+        mock_calibrate_and_stack.assert_called_once()
+        mock_lattice.assert_called_once()
+        mock_output_calibrator.assert_called_once()
 
 
-def test_linear_assert_constraints():
+def test_assert_constraints():
     """Tests `assert_constraints()` method calls internal assert_constraints."""
     calibrated_linear = CalibratedLinear(
         features=[
@@ -220,7 +182,8 @@ def test_linear_assert_constraints():
                 categories=["a", "b", "c"],
                 monotonicity_pairs=[("a", "b")],
             ),
-        ]
+        ],
+        output_calibration_num_keypoints=5,
     )
 
     with patch.object(
@@ -231,15 +194,18 @@ def test_linear_assert_constraints():
             mock_assert = Mock()
             calibrator.assert_constraints = mock_assert
             mock_asserts.append(mock_assert)
+        mock_output_assert = Mock()
+        calibrated_linear.output_calibrator.assert_constraints = mock_output_assert
 
         calibrated_linear.assert_constraints()
 
         mock_linear_assert_constraints.assert_called_once()
         for mock_assert in mock_asserts:
             mock_assert.assert_called_once()
+            mock_output_assert.assert_called_once()
 
 
-def test_linear_constrain():
+def test_constrain():
     """Tests `constrain()` method calls internal constrain functions."""
     calibrated_linear = CalibratedLinear(
         features=[

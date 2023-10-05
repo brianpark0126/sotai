@@ -90,15 +90,19 @@ sotai/
 │   ├── notebooks/  # Jupyter Notebook examples.
 │   └── ...
 ├── sotai/  # SOTAI SDK.
-│   ├── layers/  # calibrated modeling layers
-│   │   ├── categorical_calibrator.py  # calibrator for categorical features
-│   │   ├── linear.py  # linear combination layer with constraints
-│   │   └── numerical_calibrator.py  # calibrator for numerical features
+│   ├── layers/  # calibrated modeling layers.
+│   │   ├── categorical_calibrator.py  # calibrator for categorical features.
+│   │   ├── linear.py  # linear combination layer with constraints.
+│   │   └── numerical_calibrator.py  # calibrator for numerical features.
+│   ├── models/  # premade calibrated model classes for easy modeling.
+│   │   ├── calibrated_linear.py  # calibrated linear model.
+│   │   ├── calibrated_lattice.py  # calibrated lattice model.
+│   │   └── model_utils.py # helper functions for calibrated models.
 │   ├── constants.py  # constants for the SDK.
 │   ├── data.py  # data utilities for handling data.
 │   ├── enums.py  # SDK enums.
+│   ├── external.py  # functions for external models to interact with SOTAI API.
 │   ├── features.py  # feature for calibrated modeling, defines how to create calibrator.
-│   ├── models.py  # premade calibrated model classes for easy modeling.
 │   ├── pipelines/  # Pipelines for calibrated.
 │   ├── training.py  # training utilities.
 │   ├── types.py  # type definitions for things like configs.
