@@ -241,7 +241,7 @@ def test_training_(interpolation, lattice_dim):  # pylint: disable=too-many-loca
         trained_loss = loss_fn(trained_predictions, training_labels)
 
     # calibrated_lattice.constrain()
-    print(calibrated_lattice.assert_constraints().items())
+    assert not len(calibrated_lattice.assert_constraints().items())
     assert trained_loss < initial_loss
     assert trained_loss < 0.08
 

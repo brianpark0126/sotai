@@ -300,5 +300,6 @@ def test_training():  # pylint: disable=too-many-locals
         trained_predictions = calibrated_linear(training_examples)
         trained_loss = loss_fn(trained_predictions, training_labels)
 
+    assert not len(calibrated_linear.assert_constraints().items())
     assert trained_loss < initial_loss
     assert trained_loss < 0.02
