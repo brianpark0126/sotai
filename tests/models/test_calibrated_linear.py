@@ -7,6 +7,7 @@ import torch
 from sotai import Monotonicity
 from sotai.features import CategoricalFeature, NumericalFeature
 from sotai.models import CalibratedLinear
+from sotai.layers import Linear, NumericalCalibrator
 
 from ..utils import train_calibrated_module
 
@@ -152,22 +153,39 @@ def test_forward():
 
     with patch(
         "sotai.models.calibrated_linear.calibrate_and_stack",
-        return_value=torch.tensor([[0.0]]),
     ) as mock_calibrate_and_stack, patch.object(
-        calibrated_linear.linear, "forward", return_value=torch.tensor([[0.0]])
-    ) as mock_lattice, patch.object(
+        calibrated_linear.linear,
+        "forward",
+    ) as mock_linear_forward, patch.object(
         calibrated_linear.output_calibrator,
         "forward",
-        return_value=torch.tensor([[0.0]]),
     ) as mock_output_calibrator:
-        calibrated_linear.forward(torch.tensor([[1.0, 2.0]]))
+        mock_calibrate_and_stack.return_value = torch.rand((1, 1))
+        mock_linear_forward.return_value = torch.rand((1, 1))
+        mock_output_calibrator.return_value = torch.rand((1, 1))
+        input_tensor = torch.rand((1, 2))
+
+        result = calibrated_linear.forward(input_tensor)
 
         mock_calibrate_and_stack.assert_called_once()
-        mock_lattice.assert_called_once()
+        assert torch.allclose(mock_calibrate_and_stack.call_args[0][0], input_tensor)
+        assert mock_calibrate_and_stack.call_args[0][1] == calibrated_linear.calibrators
+        mock_linear_forward.assert_called_once()
+        assert torch.allclose(
+            mock_linear_forward.call_args[0][0], mock_calibrate_and_stack.return_value
+        )
         mock_output_calibrator.assert_called_once()
+        assert torch.allclose(
+            mock_output_calibrator.call_args[0][0], mock_linear_forward.return_value
+        )
+        assert torch.allclose(result, mock_output_calibrator.return_value)
 
 
-def test_assert_constraints():
+@patch.object(Linear, "assert_constraints")
+@patch.object(NumericalCalibrator, "assert_constraints")
+def test_assert_constraints(
+    mock_linear_assert_constraints, mock_output_assert_constraints
+):
     """Tests `assert_constraints()` method calls internal assert_constraints."""
     calibrated_linear = CalibratedLinear(
         features=[
@@ -185,27 +203,23 @@ def test_assert_constraints():
         ],
         output_calibration_num_keypoints=5,
     )
+    mock_asserts = []
+    for calibrator in calibrated_linear.calibrators.values():
+        mock_assert = Mock()
+        calibrator.assert_constraints = mock_assert
+        mock_asserts.append(mock_assert)
 
-    with patch.object(
-        calibrated_linear.linear, "assert_constraints", Mock()
-    ) as mock_linear_assert_constraints:
-        mock_asserts = []
-        for calibrator in calibrated_linear.calibrators.values():
-            mock_assert = Mock()
-            calibrator.assert_constraints = mock_assert
-            mock_asserts.append(mock_assert)
-        mock_output_assert = Mock()
-        calibrated_linear.output_calibrator.assert_constraints = mock_output_assert
+    calibrated_linear.assert_constraints()
 
-        calibrated_linear.assert_constraints()
-
-        mock_linear_assert_constraints.assert_called_once()
-        for mock_assert in mock_asserts:
-            mock_assert.assert_called_once()
-            mock_output_assert.assert_called_once()
+    mock_linear_assert_constraints.assert_called_once()
+    mock_output_assert_constraints.assert_called_once()
+    for mock_assert in mock_asserts:
+        mock_assert.assert_called_once()
 
 
-def test_constrain():
+@patch.object(Linear, "constrain")
+@patch.object(NumericalCalibrator, "constrain")
+def test_constrain(mock_linear_constrain, mock_output_calibrator_constrain):
     """Tests `constrain()` method calls internal constrain functions."""
     calibrated_linear = CalibratedLinear(
         features=[
@@ -223,25 +237,18 @@ def test_constrain():
         ],
         output_calibration_num_keypoints=2,
     )
+    mock_constrains = []
+    for calibrator in calibrated_linear.calibrators.values():
+        mock_calibrator_constrain = Mock()
+        calibrator.constrain = mock_calibrator_constrain
+        mock_constrains.append(mock_calibrator_constrain)
 
-    with patch.object(
-        calibrated_linear.linear, "constrain", Mock()
-    ) as mock_lattice_constrain:
-        with patch.object(
-            calibrated_linear.output_calibrator, "constrain", Mock()
-        ) as mock_output_calibrator_constrain:
-            mock_constrains = []
-            for calibrator in calibrated_linear.calibrators.values():
-                mock_calibrator_constrain = Mock()
-                calibrator.constrain = mock_calibrator_constrain
-                mock_constrains.append(mock_calibrator_constrain)
+    calibrated_linear.constrain()
 
-            calibrated_linear.constrain()
-
-            mock_lattice_constrain.assert_called_once()
-            mock_output_calibrator_constrain.assert_called_once()
-            for mock_constrain in mock_constrains:
-                mock_constrain.assert_called_once()
+    mock_linear_constrain.assert_called_once()
+    mock_output_calibrator_constrain.assert_called_once()
+    for mock_constrain in mock_constrains:
+        mock_constrain.assert_called_once()
 
 
 def test_training():  # pylint: disable=too-many-locals

@@ -98,11 +98,11 @@ class CalibratedLattice(torch.nn.Module):
         self.calibrators = initialize_feature_calibrators(
             features=features,
             output_min=0,
-            output_max=[feature.output_keypoints - 1 for feature in features],
+            output_max=[feature.lattice_size - 1 for feature in features],
         )
 
         self.lattice = Lattice(
-            lattice_sizes=[feature.output_keypoints for feature in features],
+            lattice_sizes=[feature.lattice_size for feature in features],
             monotonicities=self.monotonicities,
             clip_inputs=self.clip_inputs,
             output_min=self.output_min,

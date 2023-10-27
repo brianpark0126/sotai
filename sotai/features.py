@@ -54,7 +54,7 @@ class NumericalFeature(_Feature):
         missing_input_value: Optional[float] = None,
         monotonicity: Monotonicity = Monotonicity.NONE,
         projection_iterations: int = 8,
-        output_keypoints: int = 2,
+        lattice_size: int = 2,
     ) -> None:
         """Initializes a `NumericalFeatureConfig` instance.
 
@@ -73,7 +73,7 @@ class NumericalFeature(_Feature):
             monotonicity: Monotonicity constraint for this feature, if any.
             projection_iterations: Number of times to run Dykstra's projection
                 algorithm when applying constraints.
-            output_keypoints: The default number of keypoints outputted by the
+            lattice_size: The default number of keypoints outputted by the
                 calibrator. Only used within `Lattice` models.
 
         Raises:
@@ -91,7 +91,7 @@ class NumericalFeature(_Feature):
         self.missing_input_value = missing_input_value
         self.monotonicity = monotonicity
         self.projection_iterations = projection_iterations
-        self.output_keypoints = output_keypoints
+        self.lattice_size = lattice_size
 
         sorted_unique_values = np.unique(data)
 
@@ -137,7 +137,7 @@ class CategoricalFeature(_Feature):
         categories: Union[List[int], List[str]],
         missing_input_value: Optional[float] = None,
         monotonicity_pairs: Optional[List[Tuple[str, str]]] = None,
-        output_keypoints: int = 2,
+        lattice_size: int = 2,
     ) -> None:
         """Initializes a `CategoricalFeatureConfig` instance.
 
@@ -152,7 +152,7 @@ class CategoricalFeature(_Feature):
             monotonicity_pairs: List of pairs of categories `(category_a, category_b)`
                 indicating that the calibrator output for `category_b` should be greater
                 than or equal to that of `category_a`.
-            output_keypoints: The default number of keypoints outputted by the
+            lattice_size: The default number of keypoints outputted by the
             calibrator. Only used within `Lattice` models.
         """
         super().__init__(feature_name, FeatureType.CATEGORICAL)
@@ -160,7 +160,7 @@ class CategoricalFeature(_Feature):
         self.categories = categories
         self.missing_input_value = missing_input_value
         self.monotonicity_pairs = monotonicity_pairs
-        self.output_keypoints = output_keypoints
+        self.lattice_size = lattice_size
 
         self.category_indices = {category: i for i, category in enumerate(categories)}
         self.monotonicity_index_pairs = [

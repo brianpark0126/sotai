@@ -1,15 +1,15 @@
 """Tests for calibrated lattice model."""
 from unittest.mock import patch, Mock
 import numpy as np
-import pandas as pd
 import pytest
 import torch
 
-from sotai import Monotonicity, CSVData, Interpolation, LatticeInit
+from sotai import Monotonicity, Interpolation, LatticeInit
 from sotai.features import CategoricalFeature, NumericalFeature
 from sotai.models import CalibratedLattice
+from sotai.layers import Lattice, NumericalCalibrator
 
-from ..utils import train_calibrated_module, train_calibrated_module_tqdm
+from ..utils import train_calibrated_module
 
 
 def test_init_required_args():
@@ -53,13 +53,13 @@ def test_init_required_args():
                     data=np.array([1.0, 2.0, 3.0, 4.0, 5.0]),
                     num_keypoints=5,
                     monotonicity=Monotonicity.DECREASING,
-                    output_keypoints=3,
+                    lattice_size=3,
                 ),
                 CategoricalFeature(
                     feature_name="categorical_feature",
                     categories=["a", "b", "c"],
                     monotonicity_pairs=[("a", "b")],
-                    output_keypoints=2,
+                    lattice_size=2,
                 ),
             ],
             0.5,
@@ -76,12 +76,12 @@ def test_init_required_args():
                     feature_name="numerical_feature",
                     data=np.array([1.0, 2.0, 3.0, 4.0, 5.0]),
                     num_keypoints=5,
-                    output_keypoints=4,
+                    lattice_size=4,
                 ),
                 CategoricalFeature(
                     feature_name="categorical_feature",
                     categories=["a", "b", "c"],
-                    output_keypoints=4,
+                    lattice_size=4,
                 ),
             ],
             -0.5,
@@ -147,22 +147,36 @@ def test_forward():
         ],
         output_calibration_num_keypoints=10,
     )
-
     with patch(
         "sotai.models.calibrated_lattice.calibrate_and_stack",
-        return_value=torch.tensor([[0.0]]),
     ) as mock_calibrate_and_stack, patch.object(
-        calibrated_lattice.lattice, "forward", return_value=torch.tensor([[0.0]])
-    ) as mock_lattice, patch.object(
+        calibrated_lattice.lattice,
+        "forward",
+    ) as mock_lattice_forward, patch.object(
         calibrated_lattice.output_calibrator,
         "forward",
-        return_value=torch.tensor([[0.0]]),
     ) as mock_output_calibrator:
-        calibrated_lattice.forward(torch.tensor([[1.0, 2.0]]))
+        mock_calibrate_and_stack.return_value = torch.rand((1, 1))
+        mock_lattice_forward.return_value = torch.rand((1, 1))
+        mock_output_calibrator.return_value = torch.rand((1, 1))
+        input_tensor = torch.rand((1, 2))
+
+        result = calibrated_lattice.forward(input_tensor)
 
         mock_calibrate_and_stack.assert_called_once()
-        mock_lattice.assert_called_once()
+        assert torch.allclose(mock_calibrate_and_stack.call_args[0][0], input_tensor)
+        assert (
+            mock_calibrate_and_stack.call_args[0][1] == calibrated_lattice.calibrators
+        )
+        mock_lattice_forward.assert_called_once()
+        assert torch.allclose(
+            mock_lattice_forward.call_args[0][0], mock_calibrate_and_stack.return_value
+        )
         mock_output_calibrator.assert_called_once()
+        assert torch.allclose(
+            mock_output_calibrator.call_args[0][0], mock_lattice_forward.return_value
+        )
+        assert torch.allclose(result, mock_output_calibrator.return_value)
 
 
 @pytest.mark.parametrize(
@@ -180,7 +194,7 @@ def test_forward():
         4,
     ],
 )
-def test_training_(interpolation, lattice_dim):  # pylint: disable=too-many-locals
+def test_training(interpolation, lattice_dim):  # pylint: disable=too-many-locals
     """Tests `CalibratedLattice` training on data from f(x) = 0.7|x_1| + 0.3x_2."""
     num_examples, num_categories = 3000, 3
     output_min, output_max = 0.0, num_categories - 1
@@ -205,13 +219,13 @@ def test_training_(interpolation, lattice_dim):  # pylint: disable=too-many-loca
     calibrated_lattice = CalibratedLattice(
         features=[
             NumericalFeature(
-                "x1", x_1_numpy, num_keypoints=4, output_keypoints=lattice_dim
+                "x1", x_1_numpy, num_keypoints=4, lattice_size=lattice_dim
             ),
             CategoricalFeature(
                 "x2",
                 [0, 1, 2],
                 monotonicity_pairs=[(0, 1), (1, 2)],
-                output_keypoints=lattice_dim,
+                lattice_size=lattice_dim,
             ),
         ],
         output_min=output_min,
@@ -246,74 +260,11 @@ def test_training_(interpolation, lattice_dim):  # pylint: disable=too-many-loca
     assert trained_loss < 0.08
 
 
-def test_training_lattice_loan():
-    """Tests `CalibratedLattice` on 5 features from loan approval data."""
-
-    data = pd.read_csv(
-        "https://github.com/SOTAI-Labs/datasets/raw/main/loan_approval.csv"
-    )
-    data["loan_status"] = data["loan_status"].apply(
-        lambda x: 0 if x == "Rejected" else 1
-    )
-    csv_data = CSVData(data)
-    batch_size = 512
-
-    feature_configs = [
-        NumericalFeature(
-            "income_annum",
-            data=csv_data("income_annum"),
-            monotonicity=Monotonicity.INCREASING,
-        ),
-        NumericalFeature("loan_amount", csv_data("loan_amount")),
-        NumericalFeature(
-            "bank_asset_value",
-            csv_data("bank_asset_value"),
-            monotonicity=Monotonicity.INCREASING,
-        ),
-        NumericalFeature(
-            "cibil_score", csv_data("cibil_score"), monotonicity=Monotonicity.INCREASING
-        ),
-        NumericalFeature("no_of_dependents", csv_data("no_of_dependents")),
-        NumericalFeature("luxury_assets_value", csv_data("luxury_assets_value")),
-        CategoricalFeature(
-            "education",
-            ["Not Graduate", "Graduate"],
-            monotonicity_pairs=[("Not Graduate", "Graduate")],
-        ),
-        CategoricalFeature("self_employed", ["No", "Yes"]),
-    ]
-
-    csv_data.prepare(features=feature_configs, target_header="loan_status")
-    training_examples_tensor, labels_tensor = next(csv_data.batch(batch_size))
-
-    calibrated_lattice = CalibratedLattice(
-        features=feature_configs, output_min=0.0, output_max=1.0
-    )
-    loss_fn = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(calibrated_lattice.parameters(recurse=True), lr=1e-1)
-
-    with torch.no_grad():
-        initial_predictions = calibrated_lattice(training_examples_tensor)
-        initial_loss = loss_fn(initial_predictions, labels_tensor)
-
-    train_calibrated_module_tqdm(
-        calibrated_module=calibrated_lattice,
-        examples=csv_data,
-        labels=labels_tensor,
-        loss_fn=loss_fn,
-        optimizer=optimizer,
-        epochs=25,
-        batch_size=batch_size,
-    )
-
-    with torch.no_grad():
-        trained_predictions = calibrated_lattice(training_examples_tensor)
-        trained_loss = loss_fn(trained_predictions, labels_tensor)
-
-    assert trained_loss < initial_loss
-
-
-def test_assert_constraints():
+@patch.object(Lattice, "assert_constraints")
+@patch.object(NumericalCalibrator, "assert_constraints")
+def test_assert_constraints(
+    mock_lattice_assert_constraints, mock_output_assert_constraints
+):
     """Tests `assert_constraints()` method calls internal assert_constraints."""
     calibrated_lattice = CalibratedLattice(
         features=[
@@ -332,26 +283,23 @@ def test_assert_constraints():
         output_calibration_num_keypoints=5,
     )
 
-    with patch.object(
-        calibrated_lattice.lattice, "assert_constraints", Mock()
-    ) as mock_lattice_assert_constraints:
-        mock_asserts = []
-        for calibrator in calibrated_lattice.calibrators.values():
-            mock_assert = Mock()
-            calibrator.assert_constraints = mock_assert
-            mock_asserts.append(mock_assert)
-        mock_output_assert = Mock()
-        calibrated_lattice.output_calibrator.assert_constraints = mock_output_assert
+    mock_asserts = []
+    for calibrator in calibrated_lattice.calibrators.values():
+        mock_assert = Mock()
+        calibrator.assert_constraints = mock_assert
+        mock_asserts.append(mock_assert)
 
-        calibrated_lattice.assert_constraints()
+    calibrated_lattice.assert_constraints()
 
-        mock_lattice_assert_constraints.assert_called_once()
-        for mock_assert in mock_asserts:
-            mock_assert.assert_called_once()
-        mock_output_assert.assert_called_once()
+    mock_lattice_assert_constraints.assert_called_once()
+    for mock_assert in mock_asserts:
+        mock_assert.assert_called_once()
+    mock_output_assert_constraints.assert_called_once()
 
 
-def test_constrain():
+@patch.object(Lattice, "constrain")
+@patch.object(NumericalCalibrator, "constrain")
+def test_constrain(mock_lattice_constrain, mock_output_calibrator_constrain):
     """Tests `constrain()` method calls internal constrain functions."""
     calibrated_lattice = CalibratedLattice(
         features=[
@@ -369,22 +317,15 @@ def test_constrain():
         ],
         output_calibration_num_keypoints=2,
     )
+    mock_constrains = []
+    for calibrator in calibrated_lattice.calibrators.values():
+        mock_calibrator_constrain = Mock()
+        calibrator.constrain = mock_calibrator_constrain
+        mock_constrains.append(mock_calibrator_constrain)
 
-    with patch.object(
-        calibrated_lattice.lattice, "constrain", Mock()
-    ) as mock_lattice_constrain:
-        with patch.object(
-            calibrated_lattice.output_calibrator, "constrain", Mock()
-        ) as mock_output_calibrator_constrain:
-            mock_constrains = []
-            for calibrator in calibrated_lattice.calibrators.values():
-                mock_calibrator_constrain = Mock()
-                calibrator.constrain = mock_calibrator_constrain
-                mock_constrains.append(mock_calibrator_constrain)
+    calibrated_lattice.constrain()
 
-            calibrated_lattice.constrain()
-
-            mock_lattice_constrain.assert_called_once()
-            mock_output_calibrator_constrain.assert_called_once()
-            for mock_constrain in mock_constrains:
-                mock_constrain.assert_called_once()
+    mock_lattice_constrain.assert_called_once()
+    mock_output_calibrator_constrain.assert_called_once()
+    for mock_constrain in mock_constrains:
+        mock_constrain.assert_called_once()

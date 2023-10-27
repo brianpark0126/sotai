@@ -266,10 +266,10 @@ def test_calibrate_and_stack(data, expected_args):
     }
     calibrators = torch.nn.ModuleDict(mock_calibrators)
 
-    calibrate_and_stack(data, calibrators)
+    result = calibrate_and_stack(data, calibrators)
 
-    for mock_calibrator in calibrators.values():
+    for mock_calibrator, expected_arg in zip(calibrators.values(), expected_args):
         mock_calibrator.assert_called_once()
-    for i, expected_arg in enumerate(expected_args):
-        actual_arg = data[:, i, None]
-        assert torch.equal(actual_arg, expected_arg)
+        assert torch.allclose(mock_calibrator.call_args[0][0], expected_arg)
+    expected_result = torch.zeros(data.shape[0], data.shape[1])
+    assert torch.allclose(result, expected_result)

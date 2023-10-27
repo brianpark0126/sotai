@@ -3,7 +3,6 @@ from typing import Dict, Union
 
 import pandas as pd
 import torch
-from tqdm import trange
 
 from sotai import (
     CategoricalFeatureConfig,
@@ -44,30 +43,6 @@ def train_calibrated_module(  # pylint: disable=too-many-arguments
     """Trains a calibrated module for testing purposes."""
     for _ in range(epochs):
         for batched_inputs, batched_labels in _batch_data(examples, labels, batch_size):
-            optimizer.zero_grad()
-            outputs = calibrated_module(batched_inputs)
-            loss = loss_fn(outputs, batched_labels)
-            loss.backward()
-            optimizer.step()
-            calibrated_module.constrain()
-
-
-def train_calibrated_module_tqdm(  # pylint: disable=too-many-arguments
-    calibrated_module: torch.nn.Module,  # note: must have constrain(...) function
-    examples: Union[torch.Tensor, CSVData],
-    labels: torch.Tensor,
-    loss_fn: torch.nn.Module,
-    optimizer: torch.optim.Optimizer,
-    epochs: int,
-    batch_size: int,
-):
-    """Trains a calibrated module for testing purposes, supporting tqdm and CSVData."""
-    for _ in trange(epochs, desc="Epoch"):
-        if isinstance(examples, torch.Tensor):
-            batch_generator = _batch_data(examples, labels, batch_size)
-        elif isinstance(examples, CSVData):
-            batch_generator = examples.batch(batch_size)
-        for batched_inputs, batched_labels in batch_generator:
             optimizer.zero_grad()
             outputs = calibrated_module(batched_inputs)
             loss = loss_fn(outputs, batched_labels)

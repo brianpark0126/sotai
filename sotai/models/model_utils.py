@@ -131,10 +131,10 @@ def initialize_output_calibrator(
     return None
 
 
-# pylint: disable=invalid-name
 def calibrate_and_stack(
     x: torch.Tensor, calibrators: torch.nn.ModuleDict
 ) -> torch.Tensor:
+    # pylint: disable=invalid-name
     """Helper function to run calibrators along columns of given data.
 
     Args:
