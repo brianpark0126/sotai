@@ -1,24 +1,17 @@
-"""PyTorch Calibrated Models to easily implement common calibrated model architectures.
-
-PyTorch Calibrated Models make it easy to construct common calibrated model
-architectures. To construct a PyTorch Calibrated Model, pass a calibrated modeling
-config to the corresponding calibrated model.
-"""
+"""Class for easily constructing a calibrated linear model."""
 from typing import Dict, List, Optional, Union
 
-import numpy as np
 import torch
 
-from .enums import (
-    CategoricalCalibratorInit,
-    FeatureType,
-    Monotonicity,
-    NumericalCalibratorInit,
+from ..enums import Monotonicity
+from ..features import CategoricalFeature, NumericalFeature
+from ..layers import Linear
+from .model_utils import (
+    initialize_feature_calibrators,
+    initialize_output_calibrator,
+    initialize_monotonicities,
+    calibrate_and_stack,
 )
-from .features import CategoricalFeature, NumericalFeature
-from .layers.categorical_calibrator import CategoricalCalibrator
-from .layers.linear import Linear
-from .layers.numerical_calibrator import NumericalCalibrator
 
 
 # pylint: disable-next=too-many-instance-attributes
@@ -91,46 +84,14 @@ class CalibratedLinear(torch.nn.Module):
         self.output_max = output_max
         self.use_bias = use_bias
         self.output_calibration_num_keypoints = output_calibration_num_keypoints
-
-        linear_monotonicities = []
-        self.calibrators = torch.nn.ModuleDict()
-        for feature in features:
-            if feature.feature_type == FeatureType.NUMERICAL:
-                self.calibrators[feature.feature_name] = NumericalCalibrator(
-                    input_keypoints=feature.input_keypoints,
-                    missing_input_value=feature.missing_input_value,
-                    output_min=output_min,
-                    output_max=output_max,
-                    monotonicity=feature.monotonicity,
-                    kernel_init=NumericalCalibratorInit.EQUAL_SLOPES,
-                    projection_iterations=feature.projection_iterations,
-                )
-                if feature.monotonicity == Monotonicity.NONE:
-                    linear_monotonicities.append(Monotonicity.NONE)
-                else:
-                    linear_monotonicities.append(Monotonicity.INCREASING)
-            elif feature.feature_type == FeatureType.CATEGORICAL:
-                self.calibrators[feature.feature_name] = CategoricalCalibrator(
-                    num_categories=len(feature.categories),
-                    missing_input_value=feature.missing_input_value,
-                    output_min=output_min,
-                    output_max=output_max,
-                    monotonicity_pairs=feature.monotonicity_index_pairs,
-                    kernel_init=CategoricalCalibratorInit.UNIFORM,
-                )
-                if not feature.monotonicity_pairs:
-                    linear_monotonicities.append(Monotonicity.NONE)
-                else:
-                    linear_monotonicities.append(Monotonicity.INCREASING)
-            else:
-                raise ValueError(
-                    f"Unknown feature type {feature.feature_type} for feature "
-                    f"{feature.feature_name}"
-                )
+        self.monotonicities = initialize_monotonicities(features)
+        self.calibrators = initialize_feature_calibrators(
+            features=features, output_min=output_min, output_max=output_max
+        )
 
         self.linear = Linear(
             input_dim=len(features),
-            monotonicities=linear_monotonicities,
+            monotonicities=self.monotonicities,
             use_bias=use_bias,
             weighted_average=(
                 output_min is not None
@@ -139,21 +100,12 @@ class CalibratedLinear(torch.nn.Module):
             ),
         )
 
-        self.output_calibrator = None
-        if output_calibration_num_keypoints:
-            non_monotonic = all(m == Monotonicity.NONE for m in linear_monotonicities)
-            self.output_calibrator = NumericalCalibrator(
-                input_keypoints=np.linspace(
-                    0.0, 1.0, num=output_calibration_num_keypoints
-                ),
-                missing_input_value=None,
-                output_min=output_min,
-                output_max=output_max,
-                monotonicity=Monotonicity.NONE
-                if non_monotonic
-                else Monotonicity.INCREASING,
-                kernel_init=NumericalCalibratorInit.EQUAL_HEIGHTS,
-            )
+        self.output_calibrator = initialize_output_calibrator(
+            output_calibration_num_keypoints=output_calibration_num_keypoints,
+            monotonic=not all(m == Monotonicity.NONE for m in self.monotonicities),
+            output_min=output_min,
+            output_max=output_max,
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # pylint: disable=invalid-name
         """Runs an input through the network to produce a calibrated linear output.
@@ -164,12 +116,7 @@ class CalibratedLinear(torch.nn.Module):
         Returns:
             torch.Tensor of shape `(batch_size, 1)` containing the model output result.
         """
-        result = torch.column_stack(
-            tuple(
-                calibrator(x[:, i, None])
-                for i, calibrator in enumerate(self.calibrators.values())
-            )
-        )
+        result = calibrate_and_stack(x, self.calibrators)
         result = self.linear(result)
         if self.output_calibrator is not None:
             result = self.output_calibrator(result)
@@ -194,10 +141,14 @@ class CalibratedLinear(torch.nn.Module):
         for name, calibrator in self.calibrators.items():
             calibrator_messages = calibrator.assert_constraints()
             if calibrator_messages:
-                messages[name] = calibrator_messages
+                messages[f"{name}_calibrator"] = calibrator_messages
         linear_messages = self.linear.assert_constraints()
         if linear_messages:
             messages["linear"] = linear_messages
+        if self.output_calibrator:
+            output_calibrator_messages = self.output_calibrator.assert_constraints()
+            if output_calibrator_messages:
+                messages["output_calibrator"] = output_calibrator_messages
 
         return messages
 

@@ -174,20 +174,20 @@ def test_forward(input_keypoints, kernel_init, kernel_data, inputs, expected_out
     "kernel_data,monotonicity, expected_out",
     [
         (torch.tensor([[0.0], [0.1], [0.2], [0.3]]), Monotonicity.INCREASING, []),
-        (torch.tensor([[0.0], [0.1], [0.09], [0.3]]), Monotonicity.INCREASING, []),
+        (torch.tensor([[0.0], [0.1], [-0.01], [0.3]]), Monotonicity.INCREASING, []),
         (
-            torch.tensor([[0.0], [0.3], [0.2], [0.1]]),
+            torch.tensor([[-1.0], [-0.3], [0.2], [-0.1]]),
             Monotonicity.INCREASING,
-            ["Monotonicity violated at: [(1, 2), (2, 3)]."],
+            ["Monotonicity violated at: [(0, 1), (2, 3)]."],
         ),
-        (torch.tensor([[0.3], [0.2], [0.1], [0.0]]), Monotonicity.DECREASING, []),
-        (torch.tensor([[0.3], [0.2], [0.21], [0.0]]), Monotonicity.DECREASING, []),
+        (torch.tensor([[3.0], [-0.2], [-0.1], [0.0]]), Monotonicity.DECREASING, []),
+        (torch.tensor([[3.0], [0.01], [-0.1], [0.0]]), Monotonicity.DECREASING, []),
         (
-            torch.tensor([[0.3], [0.1], [0.2], [0.3]]),
+            torch.tensor([[1.0], [0.1], [-0.2], [0.3]]),
             Monotonicity.DECREASING,
-            ["Monotonicity violated at: [(1, 2), (2, 3)]."],
+            ["Monotonicity violated at: [(0, 1), (2, 3)]."],
         ),
-        (torch.tensor([[0.4], [0.1], [0.4], [0.1]]), Monotonicity.NONE, []),
+        (torch.tensor([[-0.4], [1.0], [-1.0], [0.0]]), Monotonicity.NONE, []),
     ],
 )
 def test_assert_constraints_monotonicity(kernel_data, monotonicity, expected_out):
@@ -201,18 +201,19 @@ def test_assert_constraints_monotonicity(kernel_data, monotonicity, expected_out
 @pytest.mark.parametrize(
     "kernel_data,expected_out",
     [
-        (torch.tensor([[1.0], [0.8], [0.7], [1.5]]), []),
-        (torch.tensor([[1.0], [-0.1], [0.7], [2.1]]), []),
+        (torch.tensor([[1.0], [-0.1], [-0.1], [-0.1]]), []),
+        (torch.tensor([[1.0], [0.0], [0.0], [0.05]]), []),
+        (torch.tensor([[0.0], [0.0], [0.0], [-0.05]]), []),
         (
-            torch.tensor([[1.0], [0.8], [0.5], [2.5]]),
+            torch.tensor([[0.0], [0.5], [0.5], [0.2]]),
             ["Max weight greater than output_max."],
         ),
         (
-            torch.tensor([[1.0], [0.8], [-0.5], [2.0]]),
+            torch.tensor([[1.0], [-0.5], [-0.5], [-0.2]]),
             ["Min weight less than output_min."],
         ),
         (
-            torch.tensor([[1.0], [0.8], [-0.5], [2.5]]),
+            torch.tensor([[0.5], [0.8], [-1.5], [0.0]]),
             ["Max weight greater than output_max.", "Min weight less than output_min."],
         ),
     ],
@@ -223,15 +224,15 @@ def test_assert_constraints_output_bounds(kernel_data, expected_out):
     calibrator.kernel.data = kernel_data
     calibrator.monotonicity = Monotonicity.NONE
     calibrator.output_min = 0.0
-    calibrator.output_max = 2.0
-    assert calibrator.assert_constraints(eps=0.25) == expected_out
+    calibrator.output_max = 1.0
+    assert calibrator.assert_constraints(eps=0.1) == expected_out
 
 
 @pytest.mark.parametrize(
     "kernel_data,monotonicity, expected_out",
     [
         (
-            torch.tensor([[0.0], [1.0], [0.5], [2.5]]),
+            torch.tensor([[0.0], [2.0], [-0.5], [2.5]]),
             Monotonicity.INCREASING,
             [
                 "Max weight greater than output_max.",
@@ -239,16 +240,16 @@ def test_assert_constraints_output_bounds(kernel_data, expected_out):
             ],
         ),
         (
-            torch.tensor([[-1.0], [1.0], [0.5], [2.5]]),
+            torch.tensor([[-1.0], [3.0], [0.5], [-1.0]]),
             Monotonicity.INCREASING,
             [
                 "Max weight greater than output_max.",
                 "Min weight less than output_min.",
-                "Monotonicity violated at: [(1, 2)].",
+                "Monotonicity violated at: [(2, 3)].",
             ],
         ),
         (
-            torch.tensor([[1.5], [0.2], [1.4], [-1.0]]),
+            torch.tensor([[2.0], [-2.5], [0.5], [-1.0]]),
             Monotonicity.DECREASING,
             ["Min weight less than output_min.", "Monotonicity violated at: [(1, 2)]."],
         ),
